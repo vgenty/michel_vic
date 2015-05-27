@@ -15,7 +15,19 @@
 #ifndef LARLITE_TRIANGLES_H
 #define LARLITE_TRIANGLES_H
 
+//C++ includes
+// #include <map>
+// #include <vector>
+
+// Larlite includes
 #include "Analysis/ana_base.h"
+#include "DataFormat/hit.h"
+#include "LArUtil/GeometryUtilities.h"
+#include "LArUtil/Geometry.h"
+
+// ROOT includes
+#include "TGraphErrors.h"
+#include "TF1.h"
 
 namespace larlite {
   /**
@@ -38,6 +50,16 @@ namespace larlite {
     virtual bool finalize();
 
   protected:
+    
+
+  private:
+
+    TF1 *fTf;
+    std::vector<TGraphErrors*> fTg;
+    
+    std::map<UChar_t,std::vector<std::pair<double,double> > > fHits_xy;
+    std::map<UChar_t,std::vector<std::pair<double,double> > > fHits_xy_err;
+
     
   };
 }
