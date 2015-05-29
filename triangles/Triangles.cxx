@@ -19,7 +19,33 @@ namespace larlite {
   std::pair<double,double> operator*(const double c,const std::pair<double,double> & r) {   
     return {c * r.first, c *  r.second};                                    
   } 
-  
+
+  bool Triangles::inside_boundaries(size_t i, const std::pair<double,double>& xy) {
+    std::cout << "Checking point " << "(" << xy.first << "," << xy.second << ") \n";
+    std::cout << one(i,xy.first) << std::endl;
+    std::cout << two(i,xy.first) << std::endl;
+
+    if(xy.second <= one(i,xy.first)) {
+      std::cout << " is below the first line.." << std::endl;
+      if(xy.second >= two(i,xy.first)) {
+	std::cout << " is above the second... " << std::endl;
+	if(fThree[i].first > 0) { //
+	  if(xy.second >= three(i,xy.first)) {
+	    std::cout << " and is above the hypoteneuse, it's in!!\n";
+	    return true;
+	  }
+	} else {
+	  if(xy.second <= three(i,xy.first)) {
+	    std::cout << " and is below the hypoteneuse, it's in!!\n";
+	    return true;
+	  }
+	}
+      }
+      
+    }
+    
+    return false;
+  }
   
   bool Triangles::opening_direction(double frac,
 				    const size_t i,
@@ -34,19 +60,19 @@ namespace larlite {
     //calculate the distances from the line to all the points
     std::vector<double> distances;
     for(auto const& the_hit : fHits_xy[i])
-      distances.push_back(distance(fFit_params[i].second,fFit_params[i].first,the_hit));
+      fHit_distances[i].push_back(distance(fFit_params[i].second,fFit_params[i].first,the_hit));
       
     for(size_t lp = 0; lp < num; ++lp){
-      lp_avg += distances[sxidx[lp]];
-      rp_avg += distances[sxidx[fHits_num[i] - 1 - lp]];
+      lp_avg += fHit_distances[i][sxidx[lp]];
+      rp_avg += fHit_distances[i][sxidx[fHits_num[i] - 1 - lp]];
       lp_avg_xs += fHits_xy[i][sxidx[lp]].first;
       rp_avg_xs += fHits_xy[i][sxidx[fHits_num[i] - 1 - lp]].first;
 
     }
     lp_avg /= num; rp_avg /= num; lp_avg_xs /= num; rp_avg_xs /= num;
     for(size_t lp = 0; lp < num; ++lp){ // avoid using pow() for no reason
-      lp_rms += (distances[sxidx[lp]] - lp_avg)*(distances[sxidx[lp]] - lp_avg);
-      rp_rms += (distances[sxidx[fHits_num[i] - 1 - lp]]-rp_avg)*(distances[sxidx[fHits_num[i] - 1 - lp]]-rp_avg);
+      lp_rms += (fHit_distances[i][sxidx[lp]] - lp_avg)*(fHit_distances[i][sxidx[lp]] - lp_avg);
+      rp_rms += (fHit_distances[i][sxidx[fHits_num[i] - 1 - lp]]-rp_avg)*(fHit_distances[i][sxidx[fHits_num[i] - 1 - lp]]-rp_avg);
     }
     
     //Write out to global vars
@@ -135,6 +161,10 @@ namespace larlite {
   }
   
   bool Triangles::analyze(storage_manager* storage) {
+
+    size_t chosen;
+    double chosen_e = 10000.0;
+    
     std::cout << "Event: " << storage->get_entries_read() << "\n";
     
     auto evt_hits = storage->get_data<event_hit>("gaushit"); 
@@ -159,6 +189,7 @@ namespace larlite {
       UChar_t plane = ::larutil::Geometry::GetME()->ChannelToPlane(h.Channel());
 
       fHits_xy[plane].push_back(std::pair<double,double>(x,y));
+      fHits_charge[plane].push_back(h.Integral());
       fHits_xy_err[plane].push_back(std::pair<double,double>(errx,erry));
       //fHits_dist[plane].push_back(0.0);
       // print out the plane
@@ -176,10 +207,11 @@ namespace larlite {
       
       fTg[i] = new TGraphErrors();
       fTg[i]->SetName(tg.str().c_str());
-      fTf[i] = new TF1(tf.str().c_str(),"[0]+[1]*x",0,1100); //come back and make sure the ranges are kosher
+      //fTf[i] = new TF1(tf.str().c_str(),"[0]+[1]*x",0,1100); //come back and make sure the ranges are kosher
+      fTf[i] = new TF1(tf.str().c_str(),"1.0++x",0,1100); //special linear fitting symbol ++
 
-      fTf[i]->SetParameter(0,400);
-      fTf[i]->SetParameter(1,-1.0);
+      //fTf[i]->SetParameter(0,400);
+      //fTf[i]->SetParameter(1,-1.0);
 
       for(int j = 0; j < fHits_xy[i].size(); ++j) {
 	fTg[i]->SetPoint(j,
@@ -192,6 +224,7 @@ namespace larlite {
       }
       
       fTg[i]->Fit(fTf[i],"QCFN");
+      //fTg[i]->Fit(fTf[i],"QFN");
       fFit_params[i] = std::make_pair(fTf[i]->GetParameter(0),fTf[i]->GetParameter(1));
       
       
@@ -240,6 +273,9 @@ namespace larlite {
 											 fLeft_right_xs[i].first);
       
       fPerp_unit_vector[i] = 5.0/(1.0 + fFit_params[i].second*fFit_params[i].second) * std::make_pair(-1.0,1.0*fFit_params[i].second);
+
+if(fPerp_unit_vector[i].second < 0) fPerp_unit_vector[i] = -1.0*fPerp_unit_vector[i];
+
       fPoint_above[i]      = right ? fPoint_on_line[i] + (fLeft_right_dist[i].second * fPerp_unit_vector[i]) : fPoint_on_line[i] + (fLeft_right_dist[i].first * fPerp_unit_vector[i]);
       fPoint_below[i]      = right ? fPoint_on_line[i] - (fLeft_right_dist[i].second * fPerp_unit_vector[i]) : fPoint_on_line[i] - (fLeft_right_dist[i].first * fPerp_unit_vector[i]);
       
@@ -274,8 +310,18 @@ namespace larlite {
       std::cout << "point above: " << " (" << fPoint_above[i].first << "," << fPoint_above[i].second << ")\n";
       std::cout << "point below: " << " (" << fPoint_below[i].first << "," << fPoint_below[i].second << ")\n";
       std::cout << "perp direction " << "(" << fPerp_unit_vector[i].first << "," << fPerp_unit_vector[i].second << ")\n";
+      std::cout << "The CHI for this PLOT is " << fTf[i]->GetChisquare() << "\n";
+      std::cout << "The slope err for this PLOT is " << fTf[i]->GetParError(1) << "\n";
+      
+      if(fTf[i]->GetParError(1) < chosen_e) {
+	chosen_e = fTf[i]->GetParError(1);
+	chosen = i;
+      }
+      
+      
+      std::cout << "\t\n I thought view: " << chosen << " was the best\n";
       //Stop here and check the output this could be horrible we don't know
-      if(!i) {
+      if(i == 2) {
 	ONE    = new TF1("ONE",  "[0]+[1]*x",0,1100);
 	TWO    = new TF1("TWO",  "[0]+[1]*x",0,1100);
 	THREE  = new TF1("THREE","[0]+[1]*x",0,1100);
@@ -341,11 +387,30 @@ namespace larlite {
 	}
     
   
+      //Now I have my chosen view....
     
-    std::cout << "\n Fit diagonistics: \n";
-    std::cout << fTf[0]->GetParameter(0) << " " << fTf[0]->GetParameter(1) << "\n";
-    std::cout << fTf[1]->GetParameter(0) << " " << fTf[1]->GetParameter(1) << "\n";
-    std::cout << fTf[2]->GetParameter(0) << " " << fTf[2]->GetParameter(1) << "\n";
+      //Loop over the hits in this view add up the charge in the triangle
+
+    double tot_charge = 0.0;
+    double excess_charge = 0.0;
+
+    for(int k = 0; k < fHits_num[chosen]; ++k)
+      if(inside_boundaries(chosen,fHits_xy[chosen][k]))
+	tot_charge += fHits_charge[chosen][k];
+      else
+	excess_charge += fHits_charge[chosen][k];
+    
+         
+    
+    
+    std::cout << "\tMy tot_charge:      " << tot_charge << "\n";
+    std::cout << "\tAll charge in event " << tot_charge+excess_charge << "\n";
+    
+
+    // std::cout << "\n Fit diagonistics: \n";
+    // std::cout << fTf[0]->GetParameter(0) << " " << fTf[0]->GetParameter(1) << "\n";
+    // std::cout << fTf[1]->GetParameter(0) << " " << fTf[1]->GetParameter(1) << "\n";
+    // std::cout << fTf[2]->GetParameter(0) << " " << fTf[2]->GetParameter(1) << "\n";
     
     return true;
   }

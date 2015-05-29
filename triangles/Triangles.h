@@ -94,9 +94,12 @@ namespace larlite {
     
     
     std::map<UChar_t,std::vector<std::pair<double,double> > > fHits_xy;
+    std::map<UChar_t,std::vector<double > > fHits_charge;
+
     std::map<UChar_t,std::vector<std::pair<double,double> > > fHits_xy_err;
     std::map<UChar_t,size_t> fHits_num;
     std::map<int,std::pair<double,double> > fFit_params;
+    std::map<int,std::vector<double> > fHit_distances;
     
     std::map<UChar_t,std::vector<double> > fHits_dist;
 
@@ -116,12 +119,16 @@ namespace larlite {
     std::map<int,std::pair<double,double> > fOne;
     std::map<int,std::pair<double,double> > fTwo;
     std::map<int,std::pair<double,double> > fThree;
+
+    
     
     //Boundary functions
     inline double one  (const int i, const double x) { return fOne[i].first * x   + fOne[i].second; }
     inline double two  (const int i, const double x) { return fTwo[i].first * x   + fTwo[i].second; }
     inline double three(const int i, const double x) { return fThree[i].first * x + fThree[i].second; }
     
+    
+    bool inside_boundaries(size_t i, const std::pair<double,double>& xy);
     
   };
 }

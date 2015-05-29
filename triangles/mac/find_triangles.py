@@ -21,7 +21,7 @@ proc.add_process(tri_ana)
 proc.set_ana_output_file("the_dataa.root");
 
 #process one event?
-proc.process_event(11)
+proc.process_event(18)
 
 #call finalize explicitly
 proc.finalize()
