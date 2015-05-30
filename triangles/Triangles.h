@@ -62,33 +62,35 @@ namespace larlite {
     TF1 *THREE;
     
     
-    //Functions
+    //General functions
+    
+    
+    void reset();
+    //Distance from point to line (-1.0*slope = a, c = y-inter)
     inline double distance(const double a, const double c,
 			   const std::pair<double,double>& xy) {
       return fabs(-1.0*a*xy.first + xy.second - 1.0*c)/(sqrt(a*a+1));
     }
     
+    //Point on line closest to given point
     inline std::pair<double,double> location(const double a, const double c,
 					     const std::pair<double,double>&xy) {
       return std::make_pair(((xy.first + a*xy.second) - a * c) / (a*a + 1),
 			    (-1.0*a*(-1.0*xy.first - a*xy.second) + c) / (a*a + 1));
     }
     
-    bool opening_direction(double frac,
-			   const size_t i,
-			   std::vector<size_t>& sxidx);
-    
-    std::vector<size_t> sort_indexes(const std::vector<double> &v);
-    std::vector<size_t> sort_indexes(const std::vector<std::pair<double,double> > &v);
-    
 
-    // size_t Triangle::the_index(double percentage,
-    // 			       std::vector<double>& dists,
-    // 			       std::vector<double>& idx);
+    //Determine shower direction
+    bool opening_direction(double frac,
+			   const size_t i);
+
+    std::vector<size_t> sort_indexes(const std::vector<double> & v);
+    std::vector<size_t> sort_indexes(const std::vector<std::pair<double,double> > &v,int coord);
+
+    std::pair<double,double> find_first_hit(const bool right,int i);
     
     //Vars
-    TH1D* fTh1d;
-    
+    TH1D* fTh1d;   
     std::vector<TF1*> fTf;
     std::vector<TGraphErrors*> fTg;
     
@@ -123,8 +125,8 @@ namespace larlite {
     
     
     //Boundary functions
-    inline double one  (const int i, const double x) { return fOne[i].first * x   + fOne[i].second; }
-    inline double two  (const int i, const double x) { return fTwo[i].first * x   + fTwo[i].second; }
+    inline double one  (const int i, const double x) { return fOne[i].first   * x   + fOne[i].second; }
+    inline double two  (const int i, const double x) { return fTwo[i].first   * x   + fTwo[i].second; }
     inline double three(const int i, const double x) { return fThree[i].first * x + fThree[i].second; }
     
     

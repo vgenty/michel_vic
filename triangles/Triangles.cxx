@@ -1,11 +1,13 @@
-#ifndef LARLITE_TRIANGLES_CXX
+Tri#ifndef LARLITE_TRIANGLES_CXX
 #define LARLITE_TRIANGLES_CXX
 
 #include "Triangles.h"
 
 namespace larlite {
+  
+  //functions for addition, subtraction, multiplication of two std::pairs
   //Addition of two pair
-    //template <typename T,typename U>                                                   
+  //template <typename T,typename U>                                                   
   std::pair<double,double> operator+(const std::pair<double,double> & l,const std::pair<double,double> & r) {   
     return {l.first+r.first,l.second+r.second};                                    
   } 
@@ -20,23 +22,80 @@ namespace larlite {
     return {c * r.first, c *  r.second};                                    
   } 
 
+  std::pair<double,double> Triangles::find_first_hit(const bool right,int i) {
+    
+    //Project all the hits on to the line
+    std::vector<double > projection; //first is index distance second is x coordinate on the line
+
+    for(const auto& xy : fHits_xy[i])
+      projection.push_back(location(fFit_params[i].second,fFit_params[i].first,xy).first);
+    
+    //Sort projection from smallest to largest
+    auto sorted_proj = sort_indexes(projection);
+    
+    if (right) 
+      return fHits_xy[i][sorted_proj[0]];
+    else
+      return fHits_xy[i][sorted_proj[fHits_num[i] - 1]];
+	
+    
+  }
+  
+  void Triangles::reset() {
+    //Hit information    
+    fHits_xy.clear();
+    fHits_charge.clear();
+    fHits_xy_err.clear();
+    fHits_num.clear();
+    
+    
+
+    fHit_distances.clear();
+    fHits_dist.clear();
+    
+    fLeft_right_dist.clear();
+    fLeft_right_dist_rms.clear();
+    fLeft_right_xs.clear();
+    
+    fFirst_point.clear();
+    fPoint_on_line.clear();
+    
+    fPerp_unit_vector.clear();
+    fPoint_above.clear();
+    fPoint_below.clear();
+    
+    
+    fOne.clear();
+    fTwo.clear();
+    fThree.clear();
+
+    for(int m = 0; m < 3; ++m) {
+      delete fTg[m];
+      fTg[m] = 0;
+      delete fTf[m];
+      fTf[m] = 0;
+    }
+      
+
+  }
+  
   bool Triangles::inside_boundaries(size_t i, const std::pair<double,double>& xy) {
-    std::cout << "Checking point " << "(" << xy.first << "," << xy.second << ") \n";
-    std::cout << one(i,xy.first) << std::endl;
-    std::cout << two(i,xy.first) << std::endl;
+    //std::cout << "Checking point " << "(" << xy.first << "," << xy.second << ") \n";
+    //std::cout << one(i,xy.first) << std::endl;
+    //std::cout << two(i,xy.first) << std::endl;
 
     if(xy.second <= one(i,xy.first)) {
-      std::cout << " is below the first line.." << std::endl;
+      //std::cout << " is below the first line.." << std::endl;
       if(xy.second >= two(i,xy.first)) {
-	std::cout << " is above the second... " << std::endl;
+	//std::cout << " is above the second... " << std::endl;
 	if(fThree[i].first > 0) { //
 	  if(xy.second >= three(i,xy.first)) {
-	    std::cout << " and is above the hypoteneuse, it's in!!\n";
+	    //std::cout << " and is above the hypoteneuse, it's in!!\n";
 	    return true;
 	  }
 	} else {
 	  if(xy.second <= three(i,xy.first)) {
-	    std::cout << " and is below the hypoteneuse, it's in!!\n";
+	    //std::cout << " and is below the hypoteneuse, it's in!!\n";
 	    return true;
 	  }
 	}
@@ -48,8 +107,8 @@ namespace larlite {
   }
   
   bool Triangles::opening_direction(double frac,
-				    const size_t i,
-				    std::vector<size_t>& sxidx) {
+				    const size_t i) {
+    
     int num = floor(frac*fHits_num[i]);
     double lp_avg = 0.0, rp_avg = 0.0, lp_rms = 0.0, rp_rms = 0.0;
     double lp_avg_xs = 0.0, rp_avg_xs = 0.0;
@@ -61,23 +120,32 @@ namespace larlite {
     std::vector<double> distances;
     for(auto const& the_hit : fHits_xy[i])
       fHit_distances[i].push_back(distance(fFit_params[i].second,fFit_params[i].first,the_hit));
-      
+
+    
+    //calculate the projections of the points on the line, use the farthest right and left projections along with their distances
+    std::vector<double > projection; //first is index distance second is x coordinate on the line
+    
+    for(const auto& xy : fHits_xy[i])
+      projection.push_back(location(fFit_params[i].second,fFit_params[i].first,xy).first);
+    
+    //Sort projection from smallest to largest
+    auto sorted_proj = sort_indexes(projection);
+
+    
+    
     for(size_t lp = 0; lp < num; ++lp){
-      lp_avg += fHit_distances[i][sxidx[lp]];
-      rp_avg += fHit_distances[i][sxidx[fHits_num[i] - 1 - lp]];
-      lp_avg_xs += fHits_xy[i][sxidx[lp]].first;
-      rp_avg_xs += fHits_xy[i][sxidx[fHits_num[i] - 1 - lp]].first;
+      lp_avg += fHit_distances[i][sorted_proj[lp]];
+      rp_avg += fHit_distances[i][sorted_proj[fHits_num[i] - 1 - lp]];
+      lp_avg_xs += fHits_xy[i][sorted_proj[lp]].first;
+      rp_avg_xs += fHits_xy[i][sorted_proj[fHits_num[i] - 1 - lp]].first;
 
     }
     lp_avg /= num; rp_avg /= num; lp_avg_xs /= num; rp_avg_xs /= num;
     for(size_t lp = 0; lp < num; ++lp){ // avoid using pow() for no reason
-      lp_rms += (fHit_distances[i][sxidx[lp]] - lp_avg)*(fHit_distances[i][sxidx[lp]] - lp_avg);
-      rp_rms += (fHit_distances[i][sxidx[fHits_num[i] - 1 - lp]]-rp_avg)*(fHit_distances[i][sxidx[fHits_num[i] - 1 - lp]]-rp_avg);
+      lp_rms += (fHit_distances[i][sorted_proj[lp]] - lp_avg)*(fHit_distances[i][sorted_proj[lp]] - lp_avg);
+      rp_rms += (fHit_distances[i][sorted_proj[fHits_num[i] - 1 - lp]]-rp_avg)*(fHit_distances[i][sorted_proj[fHits_num[i] - 1 - lp]]-rp_avg);
     }
     
-    //Write out to global vars
-    // std::pair<double,double> fLeft_right_dist;
-    // std::pair<double,double> fLeft_right_xs;
     
     lp_rms /= num;         rp_rms /= num;
     lp_rms = sqrt(lp_rms); rp_rms = sqrt(rp_rms);
@@ -93,47 +161,21 @@ namespace larlite {
     
   }
 
-  
-  
-  // size_t Triangles::the_index(double percentage,
-  // 			      std::vector<double>& dists,
-  // 			      std::vector<double>& idx) {
+  //sorts std::vector<double>
+  std::vector<size_t> Triangles::sort_indexes(const std::vector<double> & v) {
     
-  //   const double num = floor(percentage*dists.size());
-  //   double avg = 0.0;
-  //   double close = 1000;
-  //   size_t close_idx;
-  //   for(int o = 0; o < num; ++o)
-  //     avg += dists[idx[o]];
-    
-  //   avg /= num;
-    
-  //   for(int o = 0; o < num; ++o) {
-  //     if(fabs(dists[idx[o]] - avg) < close) {
-  // 	close = dists[idx[o]];
-  // 	close_idx = o;
-  //     } 
-  //   }
-    
-  //   return close_idx;
-  //}
-  
-  std::vector<size_t> Triangles::sort_indexes(const std::vector<double> &v) {
-    //im not sure how intensive this piece of code is...
-    
-    // copy the original index locations
     std::vector<size_t> idx(v.size());
     for (size_t i = 0; i != idx.size(); ++i) idx[i] = i;
     
     // sort indexes by comparing values in vector
-    sort(idx.begin(), idx.end(),
-	 [&v](size_t i1, size_t i2) {return v[i1] > v[i2];}); //sort high to low
+	sort(idx.begin(), idx.end(),
+	   [&v](size_t i1, size_t i2) {return v[i1] < v[i2];}); //sort low to high
     
     return idx;
-  }  
-
+  }
+  
   //Sorts by pair.first
-  std::vector<size_t> Triangles::sort_indexes(const std::vector<std::pair<double,double> > &v) {
+  std::vector<size_t> Triangles::sort_indexes(const std::vector<std::pair<double,double> > &v,int coord) {
     //im not sure how intensive this piece of code is...
     
     // copy the original index locations
@@ -141,9 +183,13 @@ namespace larlite {
     for (size_t i = 0; i != idx.size(); ++i) idx[i] = i;
     
     // sort indexes by comparing values in vector
-    sort(idx.begin(), idx.end(),
-	 [&v](size_t i1, size_t i2) {return v[i1].first < v[i2].first;}); //sort low to high
-    
+    if(!coord) //sort by x's
+      sort(idx.begin(), idx.end(),
+	   [&v](size_t i1, size_t i2) {return v[i1].first < v[i2].first;}); //sort low to high
+    else       //sort by y's
+      sort(idx.begin(), idx.end(),
+	   [&v](size_t i1, size_t i2) {return v[i1].second < v[i2].second;}); //sort low to high
+
     return idx;
   }  
   
@@ -161,7 +207,8 @@ namespace larlite {
   }
   
   bool Triangles::analyze(storage_manager* storage) {
-
+    reset();
+    
     size_t chosen;
     double chosen_e = 10000.0;
     
@@ -172,8 +219,13 @@ namespace larlite {
     // >> Initialize only once
     const auto wire2cm   = ::larutil::GeometryUtilities::GetME()->WireToCm();
     const auto time2cm   = ::larutil::GeometryUtilities::GetME()->TimeToCm();
-
-    int c = 0;
+    
+    
+    // no hits just return do nothing
+    std::cout << evt_hits->size() << "\n";
+    if(evt_hits->size() < 2)
+      return true;
+    
     for(auto const& h : *evt_hits) {
       // Locations of hits
       double x      = h.WireID().Wire   * wire2cm;
@@ -207,11 +259,11 @@ namespace larlite {
       
       fTg[i] = new TGraphErrors();
       fTg[i]->SetName(tg.str().c_str());
-      //fTf[i] = new TF1(tf.str().c_str(),"[0]+[1]*x",0,1100); //come back and make sure the ranges are kosher
-      fTf[i] = new TF1(tf.str().c_str(),"1.0++x",0,1100); //special linear fitting symbol ++
+      fTf[i] = new TF1(tf.str().c_str(),"[0]+[1]*x",0,1100); //come back and make sure the ranges are kosher
+      //fTf[i] = new TF1(tf.str().c_str(),"1.0++x",0,1100); //special linear fitting symbol ++
 
-      //fTf[i]->SetParameter(0,400);
-      //fTf[i]->SetParameter(1,-1.0);
+      fTf[i]->SetParameter(0,400);
+      fTf[i]->SetParameter(1,-1.0);
 
       for(int j = 0; j < fHits_xy[i].size(); ++j) {
 	fTg[i]->SetPoint(j,
@@ -230,12 +282,17 @@ namespace larlite {
       
       //Sort the hits by x location
       //soted_xs returns the index of fHits_xy with the most left wire# (sorted_xs[0])
-      auto sorted_xs = sort_indexes(fHits_xy[i]);
+      auto sorted_xs = sort_indexes(fHits_xy[i],0);
+      auto sorted_ys = sort_indexes(fHits_xy[i],1);
 
+      
+      //Determine whether the shower is pointing down past pi/4 (currently no up)
+      //      bool extreme_up_down = fabs(fFit_params[i].second) > 1.0 ? true : false;
+      //std::cout << extreme_up_down << std::endl;
 
       //Determine which way the shower opens to the left
       //or to the right, bool right is true of it opens to the right
-      bool right = opening_direction(0.10,i,sorted_xs);
+      bool right = opening_direction(0.10,i);
       
       // take the start of the shower (first point on the left or the right
       // depending on how the shower opens, find the point on the line down the way
@@ -260,7 +317,8 @@ namespace larlite {
       // 	}
       // }
       
-      fFirst_point[i]   = right ? fHits_xy[i][sorted_xs[0]] : fHits_xy[i][sorted_xs[fHits_num[i]-1]];
+      //fFirst_point[i]   = right ? fHits_xy[i][sorted_xs[i]] : fHits_xy[i][sorted_xs[fHits_num[i]-1]];
+      fFirst_point[i]   = find_first_hit(right,i);
       
       
       
@@ -321,17 +379,17 @@ if(fPerp_unit_vector[i].second < 0) fPerp_unit_vector[i] = -1.0*fPerp_unit_vecto
       
       std::cout << "\t\n I thought view: " << chosen << " was the best\n";
       //Stop here and check the output this could be horrible we don't know
-      if(i == 2) {
-	ONE    = new TF1("ONE",  "[0]+[1]*x",0,1100);
-	TWO    = new TF1("TWO",  "[0]+[1]*x",0,1100);
-	THREE  = new TF1("THREE","[0]+[1]*x",0,1100);
+      if(i == 1) {
+      	ONE    = new TF1("ONE",  "[0]+[1]*x",0,1100);
+      	TWO    = new TF1("TWO",  "[0]+[1]*x",0,1100);
+      	THREE  = new TF1("THREE","[0]+[1]*x",0,1100);
 
-	ONE->SetParameter(0,fOne[i].second);
-	ONE->SetParameter(1,fOne[i].first);
-	TWO->SetParameter(0,fTwo[i].second);
-	TWO->SetParameter(1,fTwo[i].first);
-	THREE->SetParameter(0,fThree[i].second);
-	THREE->SetParameter(1,fThree[i].first);
+      	ONE->SetParameter(0,fOne[i].second);
+      	ONE->SetParameter(1,fOne[i].first);
+      	TWO->SetParameter(0,fTwo[i].second);
+      	TWO->SetParameter(1,fTwo[i].first);
+      	THREE->SetParameter(0,fThree[i].second);
+      	THREE->SetParameter(1,fThree[i].first);
 	
 	
       }
@@ -400,13 +458,13 @@ if(fPerp_unit_vector[i].second < 0) fPerp_unit_vector[i] = -1.0*fPerp_unit_vecto
       else
 	excess_charge += fHits_charge[chosen][k];
     
-         
+    bool extreme_up_down = fabs(fFit_params[chosen].second) > 1.0 ? true : false;
     
-    
+    std::cout << "\tChosen plane:       " << chosen << std::endl;
     std::cout << "\tMy tot_charge:      " << tot_charge << "\n";
     std::cout << "\tAll charge in event " << tot_charge+excess_charge << "\n";
+    std::cout << "\tExtreme up down?    " << extreme_up_down << std::endl;
     
-
     // std::cout << "\n Fit diagonistics: \n";
     // std::cout << fTf[0]->GetParameter(0) << " " << fTf[0]->GetParameter(1) << "\n";
     // std::cout << fTf[1]->GetParameter(0) << " " << fTf[1]->GetParameter(1) << "\n";
@@ -423,7 +481,7 @@ if(fPerp_unit_vector[i].second < 0) fPerp_unit_vector[i] = -1.0*fPerp_unit_vecto
       k->Write();
     
     fTh1d->Write();
-
+    
     ONE->Write();
     TWO->Write();
     THREE->Write();
