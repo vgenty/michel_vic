@@ -6,7 +6,8 @@
 Triangle::Triangle(const std::pair<double,double>& First,
 		   const std::pair<double,double>& Above,
 		   const std::pair<double,double>& Below,
-		   const int v) {
+		   const int  v,
+		   const bool r) {
   
   fLine_one   = std::make_pair(  (Above.second - First.second)
 			       / (Above.first - First.first  ),
@@ -28,27 +29,41 @@ Triangle::Triangle(const std::pair<double,double>& First,
 
   fChosen = false;
   fView   = v;
+  fRight  = r;
 }
 
 void Triangle::check_boundaries(const std::vector<std::pair<double,double> >& xy ){
-
+  
   for(unsigned int k = 0; k < xy.size(); ++k) {
-    
     if(xy[k].second <= above(xy[k].first)) {
       if(xy[k].second >= below(xy[k].first)) {
-	if(fLine_three.first > 0) { //
-	  if(xy[k].second >= hypot(xy[k].first)) {
-	    fHits.push_back(k); // write the index to fHits
+	if(fRight) {
+	  if(fLine_three.first > 0) { //
+	    if(xy[k].second >= hypot(xy[k].first)) {
+	      fHits.push_back(k); // write the index to fHits
+	    }
+	  } else {
+	    if(xy[k].second <= hypot(xy[k].first)) {
+	      fHits.push_back(k); // write the index to fHits
+	    }
 	  }
-	} else {
-	  if(xy[k].second <= hypot(xy[k].first)) {
-	    fHits.push_back(k); // write the index to fHits
+	} else { // if opens to the left
+	  if(fLine_three.first < 0) {
+	    if(xy[k].second >= hypot(xy[k].first)) {
+	      fHits.push_back(k); // write the index to fHits
+	    }
+	  } else {
+	    if(xy[k].second <= hypot(xy[k].first)) {
+	      fHits.push_back(k); // write the index to fHits
+	    }
 	  }
 	}
       }
     }
   }
-  
+
+
+
 }
 
 

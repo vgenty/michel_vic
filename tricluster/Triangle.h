@@ -25,7 +25,8 @@ public:
   Triangle(const std::pair<double,double>& First,
 	   const std::pair<double,double>& Above,
 	   const std::pair<double,double>& Below,
-	   const int v);
+	   const int  v,
+	   const bool r);
   
   /// Default destructor
   ~Triangle(){}
@@ -35,7 +36,8 @@ public:
   //Set chosen
   inline void set_chosen() { fChosen = true; }
   
-  inline const bool                       is_chosen()  { return fChosen;     }
+  inline bool                             is_chosen()  { return fChosen;     }
+  inline bool                             is_right()   { return fRight;      }
   inline const std::vector<int>         & get_fHit()   { return fHits;       }
   inline const std::pair<double,double> & line_one()   { return fLine_one;   }
   inline const std::pair<double,double> & line_two()   { return fLine_two;   }

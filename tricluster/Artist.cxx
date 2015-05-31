@@ -234,8 +234,9 @@ void Artist::create_triangle(const int p) {
   fTriangles[p] = new Triangle(fPoint_first[p],
 			       fPoint_above[p],
 			       fPoint_below[p],
-			       p);
-
+			       p,
+			       fRight[p]);
+  
   fTriangles[p]->check_boundaries(fHits_xy[p]);
 }
 
