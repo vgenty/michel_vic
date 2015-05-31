@@ -75,18 +75,27 @@ while True:
         xmax_one   = x2
         xmax_two   = x3
 
+        if(triangle.line_three().first > 0):
+            xmax_thr = xmax_one
+            xmin_thr = xmax_two
+        else:
+            xmax_thr = xmax_two
+            xmin_thr = xmax_one
+
+
     else:
         xmax_one = x1
-        xmax_one = x1
+        xmax_two = x1
         xmin_one = x2
         xmin_two = x3
 
-    if(triangle.line_three().first > 0):
-        xmax_thr = xmax_one
-        xmin_thr = xmax_two
-    else:
-        xmax_thr = xmax_two
-        xmin_thr = xmax_one
+
+        if(triangle.line_three().first > 0):
+            xmax_thr = xmin_one
+            xmin_thr = xmin_two
+        else:
+            xmax_thr = xmin_two
+            xmin_thr = xmin_one
 
     
 
