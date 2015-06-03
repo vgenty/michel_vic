@@ -4,6 +4,7 @@
 # In[71]:
 
 #!/usr/bin/python -i
+import pdb
 from scipy.stats.stats import pearsonr
 from numpy import array, zeros, empty, append,asarray
 import numpy as np
@@ -15,13 +16,13 @@ ff = [TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/179
 
 
 def near(p1,p2):
-    if(abs(p2[0] - p1[0]) < 2.0 and
-       abs(p2[1] - p1[1]) < 2.0):
+    if(abs(p2[0] - p1[0]) < 1.5 and
+       abs(p2[1] - p1[1]) < 1.5):
         return True;
         
     return False;
 
-evt = 273
+evt = 302
 ff[0].hit_gaushit_tree.GetEntry(evt)
 b = ff[0].hit_gaushit_tree.hit_gaushit_branch
 
@@ -29,7 +30,7 @@ b = ff[0].hit_gaushit_tree.hit_gaushit_branch
 k = []
 
 for h in xrange(len(b)):
-    if(b[h].View() == 0) :
+    if(b[h].View() == 2) :
         
         x = b[h].WireID().Wire * 0.3;
         y = b[h].PeakTime()    * 0.0802814;
@@ -146,35 +147,124 @@ def is_in(w,lis):
 
 cluster = []; clusters = []
 
-clusters.append([])
-# In[77]:
-bad = []
-for i in np.argsort(k[:,0]):
-    if(p[i] < 0.9):
-        if(cluster): clusters.append(cluster)
-        cluster = []
-        bad.append(i)
-        continue
+
+
+
+def overlap(i,j):
+    return any(k in idx[i] for k in idx[j])
+def overlapp(i,j):
+    return i in j
+def overlappp(i,j):
+    return any(xx in i for xx in j)
+
+
+index  = [i for i in xrange(len(k)) if p[i] > 0.9]
+index1 = [i for i in xrange(len(k)) if p[i] > 0.9]
+
+#clusters.append(idx[index[0]]);
+# clusters.append(idx[index[7]])
+
+# for i in index1:
+
+#     #if index is present in a cluster already
+#     if(is_inn(i,clusters)):
+#         #for each cluster
+#         for c in clusters:
+#             if(is_in(i,c)):
+#                 ext = [o for o in idx[i] if o not in c]
+#                 print "Found  " + str(i) + " in " + str(c)
+#                 print "Append " + str([o for o in idx[i] if o not in c])
+#                 if(ext): c.extend([o for o in idx[i] if o not in c])
+#                 break
+#     else:
+#         print "Didn't find " + str(i) + " creating new cluster " + str(idx[i])
+#         clusters.append(idx[i])
         
-    for j in idx[i]:
-        if(p[j] > 0.9 and not is_in(j,cluster)
-           and not is_inn(j,clusters)):
-            cluster.append(j)
+    
+    #check if any clusters overlap if so merge the
+
+for y in xrange(len(idx)):
+    idx[y].append(y)
+
+idx1 = idx[:]
+
+#idx = [idx[i] for i in index]
+idx2 = idx[:]
+uuu = 0
+bads = True
+while(bads):
+    for i in idx:
+        for l in i:
+            if p[l] < 0.9: 
+                i.remove(l)
+                uuu += 1
+    if(uuu == 0):
+        bads = False
+    uuu = 0
+
+idx3 = idx[:]
+
+isoverlap = True
+qq = 0
+
+idx = [x for x in idx if x != []]
+idx = sorted(idx)
+
+www = [idx[i] for i in range(len(idx)) if i == 0 or sorted(idx[i]) != sorted(idx[i-1])]
+idx = www
+
+
+ttt = 0
+while(isoverlap):
+    ttt += 1
+    for c in idx:
+        for z in idx:
+            if( set(c) != set(z) ):
+                if(any(xx in c for xx in z)):
+                    c.extend([o for o in z if o not in c])
+                    idx.remove(z)
+                    qq += 1
+    if(qq == 0):
+        isoverlap = False
+    qq = 0
+    
+    print "Executed overlap " + str(ttt)
+    print idx
+
+clusters = idx
+#clusters.append(idx[0]) #seed cluster
+# In[77]:
+
+# def combine(l):
+#     for i in l:
+#         combine(idx[l])
+
+# bad = []
+# for i in np.argsort(k[:,0]):
+
+#     if(p[i] < 0.9):
+#         if(cluster): clusters.append(cluster)
+#         cluster = []
+#         bad.append(i)
+#         continue
+        
+#     for j in idx[i]:
+#         if(p[j] > 0.9 and not is_in(j,cluster)
+#            and not is_inn(j,clusters)):
+#             cluster.append(j)
         
 
-    if(i == len(idx) - 1 and cluster):
-        clusters.append(cluster)
+#     if(i == len(idx) - 1 and cluster):
+#         clusters.append(cluster)
    
 
-clusters.pop(0)
+# clusters.pop(0)
 # # In[78]:
-
-clusters
 
 
 # In[75]:
 
-np.where(p < 0.9)
+print np.where(p < 0.9)
 
 
 # In[102]:
@@ -205,6 +295,9 @@ tgs = [TGraph() for j in xrange(len(clusters))]
 
 # In[104]:
 
+# for i in xrange(len(clusters)):
+#     tgs[i].SetPoint(j,k[clusters[i][j]][0],k[clusters[i][j]][1])
+
 for i in xrange(len(clusters)):
     for j in xrange(len(clusters[i])):
         tgs[i].SetPoint(j,k[clusters[i][j]][0],k[clusters[i][j]][1])
@@ -212,17 +305,18 @@ for i in xrange(len(clusters)):
 
 # In[105]:
 
-tgs
+print tgs
 
 
 # In[109]:
 
-c=1
+uu = 2
 for tk in tgs:
-    tk.SetMarkerColor(c+1)
+    tk.SetMarkerColor(uu)
     tk.SetMarkerStyle(20)
-    c+=1
+    uu+=1
     tmg.Add(tk)
+
     
 rest = TGraph()
 fill_graph(rest,k[np.where(p < 0.9)])
