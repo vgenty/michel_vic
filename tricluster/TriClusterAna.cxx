@@ -13,6 +13,9 @@ namespace larlite {
     fWire2cm   = ::larutil::GeometryUtilities::GetME()->WireToCm();
     fTime2cm   = ::larutil::GeometryUtilities::GetME()->TimeToCm();    
 
+    
+    std::cout << "fWire2cm: " << fWire2cm << "\n";
+    std::cout << "fTime2cm: " << fTime2cm << "\n";
     return true;
   }
   
@@ -33,6 +36,7 @@ namespace larlite {
       // xy coordinates
       double x = h.WireID().Wire * fWire2cm;
       double y = h.PeakTime()    * fTime2cm;
+
       
       
       //Arbitrary scaling of x/y error bars. Hit's with low charge
