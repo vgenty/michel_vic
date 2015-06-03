@@ -146,27 +146,27 @@ def is_in(w,lis):
 
 cluster = []; clusters = []
 
-# clusters.append([])
-# # In[77]:
-# bad = []
-# for i in np.argsort(k[:,0]):
-#     if(p[i] < 0.9):
-#         if(cluster): clusters.append(cluster)
-#         cluster = []
-#         bad.append(i)
-#         continue
+clusters.append([])
+# In[77]:
+bad = []
+for i in np.argsort(k[:,0]):
+    if(p[i] < 0.9):
+        if(cluster): clusters.append(cluster)
+        cluster = []
+        bad.append(i)
+        continue
         
-#     for j in idx[i]:
-#         if(p[j] > 0.9 and not is_in(j,cluster)
-#            and not is_inn(j,clusters)):
-#             cluster.append(j)
+    for j in idx[i]:
+        if(p[j] > 0.9 and not is_in(j,cluster)
+           and not is_inn(j,clusters)):
+            cluster.append(j)
         
 
-#     if(i == len(idx) - 1 and cluster):
-#         clusters.append(cluster)
+    if(i == len(idx) - 1 and cluster):
+        clusters.append(cluster)
    
 
-# clusters.pop(0)
+clusters.pop(0)
 # # In[78]:
 
 clusters
