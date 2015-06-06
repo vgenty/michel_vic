@@ -3,6 +3,8 @@ import ROOT as rr
 import root_numpy as rn
 import numpy as np
 import sys
+
+from cluster import Cluster
 from scipy.stats.stats import pearsonr
 
 rr.gSystem.Load("libLArLite_DataFormat.so")
@@ -11,9 +13,13 @@ rr.gSystem.Load("libLArLite_LArUtil.so")
 #def Get2DPointProjection(x,y,z,plane):
 #TODO???
 
+
+def distance(p1,p2):
+    return (p1[0] - p2[0])**2 + (p1[1] - p2[1])**2
+
 def near(p1,p2,dx,dy):
     if(abs(p2[0] - p1[0]) < 1.5 and 
-       abs(p2[1] - p1[1]) < 3.0):
+       abs(p2[1] - p1[1]) < 5.65):   #(0.3/0.08)
         return True
     return False
     
@@ -96,7 +102,7 @@ def AhoCluster(hits_xy):
 
     idx = [idx[i] + [i] for i in xrange(nhits)]
     
-    pthresh = 0.9
+    pthresh = 0.8
     
     #clusters have bad hits in them (pvals < pthresh), remove them
     u = 0
@@ -134,8 +140,8 @@ def AhoCluster(hits_xy):
         
     return [idx,pvals]
     
-def EvtDisplay(clusters,hits_xy,p) :
-        #Draw something useful...
+def EvtDisplay(cobjects,hits_xy,p) :
+    #Draw something useful...
 
     c2 = rr.TCanvas("c2")
     c2.cd()
@@ -163,10 +169,11 @@ def EvtDisplay(clusters,hits_xy,p) :
     
     tmg  = rr.TMultiGraph()
     rest = rr.TGraph()
-    tgs  = [rr.TGraph() for j in xrange(len(clusters))]
-    for i in xrange(len(clusters)):
-        for j in xrange(len(clusters[i])):
-            tgs[i].SetPoint(j,hits_xy[clusters[i][j]][0],hits_xy[clusters[i][j]][1])
+    tgs  = [rr.TGraph() for j in xrange(len(cobjects))]
+
+    for i in xrange(len(cobjects)):
+        for j in xrange(cobjects[i].size):
+            tgs[i].SetPoint(j,hits_xy[cobjects[i].idxs[j]][0],hits_xy[cobjects[i].idxs[j]][1])
         
     u = 2
     for tk in tgs:
@@ -176,7 +183,7 @@ def EvtDisplay(clusters,hits_xy,p) :
         u += 1
 
         
-    rn.fill_graph(rest,hits_xy[np.where(p < 0.9)])
+    rn.fill_graph(rest,hits_xy[np.where(p < 0.8)])
     rest.SetMarkerStyle(20)
 
     tmg.Add(rest)
@@ -186,7 +193,6 @@ def EvtDisplay(clusters,hits_xy,p) :
     c1.Update()
     c1.Modified()
     
-    print "Just showed Event %d. Hit enter to go next event..." % user_input_evt_no
     raw_input('')
     c1.Clear()
     c2.Clear()
@@ -199,21 +205,73 @@ if __name__ == '__main__':
 
     k = find_michel_events(truefiles)
     print "Found michel events"
+
+    hits_xy = extract_hits(int(sys.argv[1]),recofiles[0])
+    cc = AhoCluster(hits_xy)
+    clusters = cc[0]; p = cc[1]
     
-    while True:
-        try:
-            user_input_evt_no = input('Hit Enter to continue to next evt, or type in an event number to jump to that event:')
-        except SyntaxError:
-            user_input_evt_no = user_input_evt_no + 1
+    if(len(clusters) == 1): 
+        print "Found only one cluster so who cares..."
+        #continue;
+        
+    
+    # convert clusters[i] to np.array and sort based on wire
+    # clusters  = [np.array(sorted(c,key=lambda wire : hits_xy[wire][0]))
+    #              for c in clusters]
+
+
+    
+    #some clusters are cut in half or more, try and add the indicies
+    
+    left_overs = [ i for i in xrange(len(hits_xy)) if not is_val_in_lists(i,clusters) ] 
+    
+    
+    
+    # create cluster objects
+    cobjects = [Cluster(idx) for idx in clusters]
+    
+    o = 0
+    for cc in clusters:
+        nears = {k: [] for k in cc}    
+        for c in cc:
+            for k in cc:
+                if(c != k):
+                    if(near(hits_xy[c],hits_xy[k],1,1)):
+                        nears[c].append(k)
+
+        min_keys = sorted(nears, key=lambda key: len(nears[key]))
+        cstart   = min_keys.pop(0)
+        cend     = 0.0
+
+        #find the next key that is not "near"
+        for i in min_keys:
+            if (near(hits_xy[i],hits_xy[cstart],1,1) is False):
+                cend = i
+                break
+       
+        cobjects[o].start = cstart
+        cobjects[o].end   = cend
+        o += 1
+ 
+            
+        
+            
+    # For event display
+
+    # while True:
+    #     try:
+    #         user_input_evt_no = input('Hit Enter to continue to next evt, or type in an event number to jump to that event:')
+    #     except SyntaxError:
+    #         user_input_evt_no = user_input_evt_no + 1
             
 
-        print "Extracting hits..."
-        hits_xy = extract_hits(int(user_input_evt_no),recofiles[0])
-        print "Ahoclustering..."
-        cc = AhoCluster(hits_xy)
-        clusters = cc[0]; p = cc[1]
-        print "Drawing..."
+    #     print "Extracting hits..."
+    #     hits_xy = extract_hits(int(user_input_evt_no),recofiles[0])
+    #     print "Ahoclustering..."
+    #     cc = AhoCluster(hits_xy)
+    #     clusters = cc[0]; p = cc[1]
+    #     print "Drawing..."
         
-        EvtDisplay(clusters,hits_xy,p)
+    EvtDisplay(cobjects,hits_xy,p)
 
 

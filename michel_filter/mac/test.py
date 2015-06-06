@@ -9,6 +9,7 @@ c1 = TCanvas()
 thcharge = TH1D("xx",";;",50,0,100)
 thenergy = TH1D("xx2",";;",50,0,100)
 
+
 for f in ff :
     nevents = f.mcshower_mcreco_tree.GetEntries()
     for i in xrange(nevents):
