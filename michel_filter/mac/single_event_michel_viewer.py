@@ -18,8 +18,10 @@ def distance(p1,p2):
     return (p1[0] - p2[0])**2 + (p1[1] - p2[1])**2
 
 def near(p1,p2,dx,dy):
-    if(abs(p2[0] - p1[0]) < 1.5 and 
-       abs(p2[1] - p1[1]) < 5.65):   #(0.3/0.08)
+    # if(abs(p2[0] - p1[0]) < 1.5 and 
+    #    abs(p2[1] - p1[1]) < 5.65):   #(0.3/0.08)
+    if(abs(p2[0] - p1[0]) < 1.0 and 
+       abs(p2[1] - p1[1]) < 3.75):   #(0.3/0.08)
         return True
     return False
     
@@ -95,15 +97,15 @@ def AhoCluster(hits_xy):
     # we will use pearsonsr as a way to find regions of interest
     pvals = np.zeros(nhits)
     for i in xrange(nhits): 
-        pvals[i] = abs(pearsonr(hits_xy[idx[i],:][:,0],hits_xy[idx[i],:][:,1])[0])     
+        pvals[i] = abs(pearsonr(hits_xy[idx[i],:][:,0],hits_xy[idx[i],:][:,1])[0])    
+        if(np.isnan(pvals[i])) : pvals[i] = 0.0
        
     #now idx is technically a list of clusters so lets start
     #ignoring that idx index matches hits_xy
 
     idx = [idx[i] + [i] for i in xrange(nhits)]
     
-    pthresh = 0.8
-    
+    pthresh = 0.9    
     #clusters have bad hits in them (pvals < pthresh), remove them
     u = 0
     bad = True
@@ -118,6 +120,12 @@ def AhoCluster(hits_xy):
     
     #there will now be some empty lists in idx, remove them
     idx = [x for x in idx if x != []]
+    
+    idx = Do_Grouping(idx)
+
+    return [idx,pvals]
+
+def Do_Grouping(idx):
     
     #you will also find that some lists are duplicated, this 
     #following lines helps remove some not all i don't understand why
@@ -138,8 +146,8 @@ def AhoCluster(hits_xy):
         if(qq == 0): isoverlap = False
         qq = 0
         
-    return [idx,pvals]
-    
+    return idx
+
 def EvtDisplay(cobjects,hits_xy,p) :
     #Draw something useful...
 
@@ -168,7 +176,7 @@ def EvtDisplay(cobjects,hits_xy,p) :
     c1.cd()
     
     tmg  = rr.TMultiGraph()
-    rest = rr.TGraph()
+    #rest = rr.TGraph()
     tgs  = [rr.TGraph() for j in xrange(len(cobjects))]
 
     for i in xrange(len(cobjects)):
@@ -177,16 +185,18 @@ def EvtDisplay(cobjects,hits_xy,p) :
         
     u = 2
     for tk in tgs:
+        if(u == 0 or u == 10):
+            u += 1
         tk.SetMarkerColor(u)
         tk.SetMarkerStyle(20)
         tmg.Add(tk)
         u += 1
 
         
-    rn.fill_graph(rest,hits_xy[np.where(p < 0.8)])
-    rest.SetMarkerStyle(20)
+    #rn.fill_graph(rest,hits_xy[np.where(p < 0.8)])
+    #rest.SetMarkerStyle(20)
 
-    tmg.Add(rest)
+    #tmg.Add(rest)
     tmg.Draw("AP")
     tmg.GetXaxis().SetTitle("Wire [cm]")
     tmg.GetYaxis().SetTitle("Time [cm]")
@@ -203,7 +213,8 @@ if __name__ == '__main__':
     truefiles = [rr.TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791009_%d/larlite_mcinfo.root" % g,"READ")  for g in xrange(20)]
     recofiles = [rr.TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791010_%d/larlite_reco2d.root" % g,"READ")  for g in xrange(20)]
 
-    k = find_michel_events(truefiles)
+    pthresh = 0.9
+    kk = find_michel_events(truefiles)
     print "Found michel events"
 
     hits_xy = extract_hits(int(sys.argv[1]),recofiles[0])
@@ -224,34 +235,121 @@ if __name__ == '__main__':
     #some clusters are cut in half or more, try and add the indicies
     
     left_overs = [ i for i in xrange(len(hits_xy)) if not is_val_in_lists(i,clusters) ] 
+    left_over_nears = {k : [] for k in left_overs}
+    for key in left_over_nears:
+        for i in left_overs:
+            if(i != key):
+                if(near(hits_xy[key],hits_xy[i],1,1)):
+                    left_over_nears[key].append(i)
     
+    left = [left_over_nears[key] + [key] for key in left_over_nears]
+    left = Do_Grouping(left)
     
-    
+    # left holds the other clusters
+    # cluster holds the main muon one
+
     # create cluster objects
-    cobjects = [Cluster(idx) for idx in clusters]
+    cobjects =  [ Cluster(xx,
+                          p[xx].mean(),
+                          p[xx].std(),
+                          sorted(xx, 
+                                 key = lambda id: hits_xy[id][0])[0],
+                          sorted(xx, 
+                                 key = lambda id: hits_xy[id][0])[-1],
+                          p,
+                          True) 
+                  for xx in clusters ]
+    for l in left:
+        cobjects.append(Cluster(l,
+                                p[l].mean(),
+                                p[l].std(),
+                                sorted(l, 
+                                       key = lambda id: hits_xy[id][0])[0],
+                                sorted(l, 
+                                       key = lambda id: hits_xy[id][0])[-1],
+                                p,
+                                False))
+        
     
-    o = 0
-    for cc in clusters:
-        nears = {k: [] for k in cc}    
-        for c in cc:
-            for k in cc:
-                if(c != k):
-                    if(near(hits_xy[c],hits_xy[k],1,1)):
-                        nears[c].append(k)
 
-        min_keys = sorted(nears, key=lambda key: len(nears[key]))
-        cstart   = min_keys.pop(0)
-        cend     = 0.0
+    #look through clusters and find ones that are "inside" others....
+    poop = 0
+    yes = True
+    final_objects = []
+    deleted = []
 
-        #find the next key that is not "near"
-        for i in min_keys:
-            if (near(hits_xy[i],hits_xy[cstart],1,1) is False):
-                cend = i
-                break
+    while yes:
+        for c in cobjects:
+            for k in cobjects:
+                if(c != k ):
+                    if(hits_xy[k.start][0] < hits_xy[c.start][0]
+                       and 
+                       hits_xy[k.end][0]   > hits_xy[c.end][0]):
+                        final_objects.append(c + k)
+                        cobjects.remove(c)
+                        cobjects.remove(k)
+                        poop += 1
+        if(poop == 0): 
+            yes = False
+            final_objects += cobjects
+        poop = 0
+        
+    # import copy
+    # cobjects = copy.copy(final_objects)
+    # final_objects = []
+    # #look through clusters and find ones that are between two high pavg clusters
+    # yes = True
+    # while yes:
+    #     for c in cobjects:
+    #         for k in cobjects:
+    #             for z in cobjects:
+    #                 if(c in cobjects and 
+    #                    k in cobjects and 
+    #                    z in cobjects and
+    #                    c != k and c != z and k != z 
+    #                    and z.large == 0
+    #                    and c.large == 1
+    #                    and k.large == 1
+    #                    and z.size < c.size
+    #                    and z.size < k.size):
+    #                     if(near(hits_xy[z.start],hits_xy[c.end],1,1)
+    #                        and 
+    #                        near(hits_xy[z.end],hits_xy[k.start],1,1)):
+    #                         final_objects.append((c + k) + z)
+    #                         print str(hits_xy[z.start]) + " near " + str(hits_xy[c.end]) + " and " + str(hits_xy[z.end]) + " near " + str(hits_xy[z.start])
+    #                         print "z.large " + str(z.large) + " c.large " + str(c.large) + " k.large " + str(k.large)
+    #                         cobjects.remove(c)
+    #                         cobjects.remove(k)
+    #                         cobjects.remove(z)
+    #                         poop += 1
+
+    #     if(poop == 0): 
+    #         yes = False
+    #         final_objects += cobjects
+    #     poop = 0
+    
+        
+    # cobjects = final_objects
+    # xx.avg   = p[xx.idxs].mean()
+    # xx.std   = p[xx.idxs].std()
+    # xsorted  = sorted(xx.idxs, key = lambda id: hits_xy[id][0])
+    # xx.start = xsorted[0]
+    # xx.end   = xsorted[-1]
+
+
+    #     min_keys = sorted(nears, key=lambda key: len(nears[key]))
+    #     cstart   = min_keys.pop(0)
+    #     cend     = 0.0
+
+    #     #find the next key that is not "near"
+    #     for i in min_keys:
+    #         if (near(hits_xy[i],hits_xy[cstart],1,1) is False):
+    #             cend = i
+    #             break
        
-        cobjects[o].start = cstart
-        cobjects[o].end   = cend
-        o += 1
+    #     cobjects[o].start = cstart
+    #     cobjects[o].end   = cend
+    #     o += 1
  
             
         
@@ -272,6 +370,9 @@ if __name__ == '__main__':
     #     clusters = cc[0]; p = cc[1]
     #     print "Drawing..."
         
+    
+    
+    
     EvtDisplay(cobjects,hits_xy,p)
 
 
