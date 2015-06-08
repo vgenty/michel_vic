@@ -177,18 +177,34 @@ def EvtDisplay(cobjects,hits_xy,p) :
     
     tmg  = rr.TMultiGraph()
     #rest = rr.TGraph()
-    tgs  = [rr.TGraph() for j in xrange(len(cobjects))]
+    tgs     = [rr.TGraph() for j in xrange(len(cobjects))]
+    tgspts  = [rr.TGraph() for j in xrange(len(cobjects))]
 
     for i in xrange(len(cobjects)):
         for j in xrange(cobjects[i].size):
             tgs[i].SetPoint(j,hits_xy[cobjects[i].idxs[j]][0],hits_xy[cobjects[i].idxs[j]][1])
-        
+            
+    for t in xrange(len(tgspts)):
+        tgspts[t].SetPoint(0,hits_xy[cobjects[t].start][0],
+                           hits_xy[cobjects[t].start][1])
+        tgspts[t].SetPoint(1,hits_xy[cobjects[t].end][0],
+                           hits_xy[cobjects[t].end][1])
+
     u = 2
     for tk in tgs:
         if(u == 0 or u == 10):
             u += 1
         tk.SetMarkerColor(u)
         tk.SetMarkerStyle(20)
+        tmg.Add(tk)
+        u += 1
+    u = 2
+    for tk in tgspts:
+        if(u == 0 or u == 10):
+            u += 1
+        tk.SetMarkerColor(1)
+        tk.SetMarkerStyle(29)
+        tk.SetMarkerSize(2)
         tmg.Add(tk)
         u += 1
 
@@ -206,7 +222,102 @@ def EvtDisplay(cobjects,hits_xy,p) :
     raw_input('')
     c1.Clear()
     c2.Clear()
+
+
+def remove_inside(cobjects,hits_xy):
     
+    # check inside bounding rectangle
+
+    yes = True
+    before = 0
+    after  = 0
+    poop = 0
+    while yes:
+        final_objects = []
+        poop = 0
+        #print " before " + str(len(cobjects))
+        #before = len(cobjects)
+        for c in cobjects:
+            for k in cobjects:
+                if(c in cobjects and k in cobjects and c != k):
+                    if(k.inside(c)):
+                        final_objects.append(c + k)
+                        cobjects.remove(c)
+                        cobjects.remove(k)
+                        poop += 1
+        
+        #print " after " + str(len(cobjects))
+        #after = len(cobjects)
+        cobjects += final_objects
+        if(poop == 0): 
+            yes = False
+            #final_objects += cobjects
+              
+        
+    #cobjects = final_objects
+    return cobjects
+
+    
+def check_boundaries(cobjects,hits_xy):
+    
+    yes = True
+    poop = 0
+    while yes:
+        poop = 0
+        final_objects = []
+        #for c, k, z in zip(cobjects,cobjects,cobjects):
+        for c in cobjects:
+            for k in cobjects:
+                for z in cobjects:
+                    if(c != k and c != z and k != z and
+                       c in cobjects and k in cobjects and z in cobjects):
+                        if(z.close_to(k) and z.close_to(c) and
+                           c.size > 25 and k.size > 25):
+                            final_objects.append((c + k) + z)
+                            cobjects.remove(c)
+                            cobjects.remove(k)
+                            cobjects.remove(z)
+                            poop += 1
+
+        cobjects += final_objects
+        if(poop == 0): 
+            yes = False
+
+    return cobjects
+
+def stitch(cobjects,hits_xy):
+    
+
+    yes = True
+    poop = 0
+    while yes:
+        poop = 0
+        final_objects = []
+        for c in cobjects:
+            for k in cobjects:
+                for z in cobjects:
+                    if(c in cobjects and 
+                       k in cobjects and 
+                       z in cobjects and
+                       c != k and c != z and k != z 
+                       and z.size < c.size
+                       and z.size < k.size):
+                       #and z.pears < c.pears
+                       #and z.pears < k.pears):
+                        if(z.touching(c) and z.touching(k)):
+                            final_objects.append((c + k) + z)
+                            cobjects.remove(c)
+                            cobjects.remove(k)
+                            cobjects.remove(z)
+                            poop += 1
+        cobjects += final_objects
+        if(poop == 0): 
+            yes = False
+
+
+    return cobjects
+
+
 if __name__ == '__main__':
     print "Parsing mc_info and reco files..."
     # 20 is a hard number here
@@ -250,50 +361,48 @@ if __name__ == '__main__':
 
     # create cluster objects
     cobjects =  [ Cluster(xx,
-                          p[xx].mean(),
-                          p[xx].std(),
                           sorted(xx, 
                                  key = lambda id: hits_xy[id][0])[0],
                           sorted(xx, 
                                  key = lambda id: hits_xy[id][0])[-1],
-                          p,
-                          True) 
+                          hits_xy)
                   for xx in clusters ]
     for l in left:
         cobjects.append(Cluster(l,
-                                p[l].mean(),
-                                p[l].std(),
                                 sorted(l, 
                                        key = lambda id: hits_xy[id][0])[0],
                                 sorted(l, 
                                        key = lambda id: hits_xy[id][0])[-1],
-                                p,
-                                False))
-        
+                                hits_xy))
+                        
+                        
+                        
+    # look through clusters and find ones that are "inside" others....
+    # currently this loop doesn't catch "overlapping ones"
+    
+    
+    cobjects = remove_inside(cobjects,hits_xy)
+    cobjects = [c for c in cobjects if c.size > 1]
+    cobjects = check_boundaries(cobjects,hits_xy)
+    cobjects = remove_inside(cobjects,hits_xy)
+
+    
+    #temporarily disable stitch
+    #cobjects = stitch(cobjects,hits_xy)
+    
+    
+    
+    
+    
+    
+    
+    
+    # at this point we are left with long individual clusters broken up by
+    # somewhat linear ones, we need a connector algorithm
+    
+    
     
 
-    #look through clusters and find ones that are "inside" others....
-    poop = 0
-    yes = True
-    final_objects = []
-    deleted = []
-
-    while yes:
-        for c in cobjects:
-            for k in cobjects:
-                if(c != k ):
-                    if(hits_xy[k.start][0] < hits_xy[c.start][0]
-                       and 
-                       hits_xy[k.end][0]   > hits_xy[c.end][0]):
-                        final_objects.append(c + k)
-                        cobjects.remove(c)
-                        cobjects.remove(k)
-                        poop += 1
-        if(poop == 0): 
-            yes = False
-            final_objects += cobjects
-        poop = 0
-        
     # import copy
     # cobjects = copy.copy(final_objects)
     # final_objects = []
@@ -328,7 +437,7 @@ if __name__ == '__main__':
     #         final_objects += cobjects
     #     poop = 0
     
-        
+       
     # cobjects = final_objects
     # xx.avg   = p[xx.idxs].mean()
     # xx.std   = p[xx.idxs].std()
@@ -370,8 +479,7 @@ if __name__ == '__main__':
     #     clusters = cc[0]; p = cc[1]
     #     print "Drawing..."
         
-    
-    
+        
     
     EvtDisplay(cobjects,hits_xy,p)
 
