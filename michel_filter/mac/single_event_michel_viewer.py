@@ -72,18 +72,24 @@ def extract_hits(evt,recofile):
     recofile.hit_gaushit_tree.GetEntry(evt)
     br = recofile.hit_gaushit_tree.hit_gaushit_branch
     
-    hits_xy = []
-    
+    hits_xy     = []
+    hits_xy_err = []
+
     for h in xrange(len(br)): #lol br not iterable???
         if(br[h].View() == 2):
             x = br[h].WireID().Wire * 0.3       # from larsoft
             y = br[h].PeakTime()    * 0.0802814 # from larsoft
-        
+
+            #i made this shit up
+            hits_xy_err.append(50.0/(br[h].Integral()))
             hits_xy.append([x,y])
 
     #make into numpy array
     hits_xy = np.asarray(hits_xy)
-    return hits_xy
+    hits_xy_err = np.asarray(hits_xy_err)
+
+    return [hits_xy,hits_xy_err]
+    
 
 def AhoCluster(hits_xy):
     
@@ -272,7 +278,7 @@ def check_boundaries(cobjects,hits_xy):
                     if(c != k and c != z and k != z and
                        c in cobjects and k in cobjects and z in cobjects):
                         if(z.close_to(k) and z.close_to(c) and
-                           c.size > 25 and k.size > 25):
+                           c.size > 15 and k.size > 15): #this here could use some improvement
                             final_objects.append((c + k) + z)
                             cobjects.remove(c)
                             cobjects.remove(k)
@@ -283,6 +289,36 @@ def check_boundaries(cobjects,hits_xy):
         if(poop == 0): 
             yes = False
 
+    return cobjects
+
+
+
+def mostly_contained(cobjects,hits_xy):
+    
+    yes = True
+    poop = 0
+    while yes:
+        final_objects = []
+        poop = 0
+        for c in cobjects:
+            for k in cobjects:
+                if(c in cobjects and k in cobjects 
+                   and c != k and c.size > k.size):
+                    if(k.mostly_contained(c,0.7)):
+                        final_objects.append(c + k)
+                        cobjects.remove(c)
+                        cobjects.remove(k)
+                        poop += 1
+        
+        #print " after " + str(len(cobjects))
+        #after = len(cobjects)
+        cobjects += final_objects
+        if(poop == 0): 
+            yes = False
+            #final_objects += cobjects
+    
+    
+    
     return cobjects
 
 def stitch(cobjects,hits_xy):
@@ -317,7 +353,37 @@ def stitch(cobjects,hits_xy):
 
     return cobjects
 
+def dir(xy,err):
+    invERR2 = 1.0/np.square(err)
 
+    X  = (xy[:,0]*invERR2).sum()
+    Y  = (xy[:,1]*invERR2).sum()
+    XY = ((xy[:,0]*xy[:,1]*invERR2).sum())*(invERR2.sum())
+    X2 = ((xy[:,0]*xy[:,0]*invERR2).sum())*(invERR2.sum())
+    denom = X*X-X2
+    return (-1.0)*(X*Y - XY)/(denom) #(-1.0 return (a,b)\cdot(x,y) for unit vector...
+
+def calc_direction(c,hits_xy,hits_xy_err):
+    nearbys = {k: 0.0 for k in c.idxs}
+        
+    for key in nearbys:
+        close = [ l for l in c.idxs if near(hits_xy[key],hits_xy[l],1.0,1.0) and key != l] + [key]
+        if(len(close) > 1):
+            nearbys[key] = dir(hits_xy[close],
+                               hits_xy_err[close])
+        
+    c.dirs = nearbys
+    
+def calculate_directions(cobjects,hits_xy,hits_xy_err):
+    for c in cobjects:
+        calc_direction(c,hits_xy,hits_xy_err)
+
+    return cobjects
+                            
+def merge_final(cobjects):
+    return cobjects
+    
+    
 if __name__ == '__main__':
     print "Parsing mc_info and reco files..."
     # 20 is a hard number here
@@ -328,7 +394,10 @@ if __name__ == '__main__':
     kk = find_michel_events(truefiles)
     print "Found michel events"
 
-    hits_xy = extract_hits(int(sys.argv[1]),recofiles[0])
+    hhh = extract_hits(int(sys.argv[1]),recofiles[0])
+    hits_xy     = hhh[0]
+    hits_xy_err = hhh[1]
+
     cc = AhoCluster(hits_xy)
     clusters = cc[0]; p = cc[1]
     
@@ -381,18 +450,25 @@ if __name__ == '__main__':
     # currently this loop doesn't catch "overlapping ones"
     
     
-    cobjects = remove_inside(cobjects,hits_xy)
+    #cobjects = remove_inside(cobjects,hits_xy)
     cobjects = [c for c in cobjects if c.size > 1]
-    cobjects = check_boundaries(cobjects,hits_xy)
-    cobjects = remove_inside(cobjects,hits_xy)
-
     
+    #group clusters mostly contained in others
+    cobjects = mostly_contained(cobjects,hits_xy)
+    
+    #pick three clusters, if one is touching two distinct big ones group
+    cobjects = check_boundaries(cobjects,hits_xy)
+
+    #group clusters mostly contained in others...
+    cobjects = mostly_contained(cobjects,hits_xy)
+
+    #cobjects = remove_inside(cobjects,hits_xy)
     #temporarily disable stitch
     #cobjects = stitch(cobjects,hits_xy)
     
-    
-    
-    
+
+    cobjects = calculate_directions(cobjects,hits_xy,hits_xy_err)    
+    cobjects  = merge_final(cobjects)
     
     
     
@@ -459,8 +535,10 @@ if __name__ == '__main__':
     #     cobjects[o].start = cstart
     #     cobjects[o].end   = cend
     #     o += 1
- 
-            
+    
+    ## probably as good as we are going to get, lets not try
+    ## to add more clusters geometrically 
+    
         
             
     # For event display

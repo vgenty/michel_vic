@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats.stats import pearsonr
 from pyhull.convex_hull import ConvexHull;
+import matplotlib.path as mplPath;
 
 class Cluster:
     def __init__(self,idx,start,end,hits_xy):
@@ -10,13 +11,26 @@ class Cluster:
         self.end    = end
         self.pears  = abs(pearsonr(hits_xy[idx,:][:,0],hits_xy[idx,:][:,1])[0])
         self.hitsxy = hits_xy
+
         self.boundary = []
         if(self.size > 2):
-            hull = ConvexHull(self.hitsxy[self.idxs])
-            for v in hull.vertices:
-                if(v[0] not in self.boundary): self.boundary.append(v[0])
-
+            hull  = ConvexHull(self.hitsxy[self.idxs])
+            vert  = hull.vertices
+            first = vert.pop(0)
+            self.boundary.append(first[0])
+            self.boundary.append(first[1])
+            while (len(vert) > 0):
+                for l in xrange(len(vert)):
+                    if(self.boundary[-1] == vert[l][0]):
+                        self.boundary.append(vert[l][1])
+                        vert.remove(vert[l])
+                        break
         
+            self.boundary.pop()
+        self.boundary = [self.idxs[x] for x in self.boundary]
+        self.path = mplPath.Path(np.array(self.hitsxy[self.boundary]))
+        self.dirs = {}
+
     def __add__(self, other):
         start = float(0.0)
         end   = float(0.0)
@@ -79,4 +93,15 @@ class Cluster:
                     #print "is near...."
                     return True
 
+        return False
+
+    def mostly_contained(self,other,frac):
+        tot_points = 0
+        for i in self.idxs:
+            if(other.path.contains_point(self.hitsxy[i])):
+                tot_points += 1
+                    
+        if (float(frac)*self.size < tot_points):
+            return True
+        
         return False
