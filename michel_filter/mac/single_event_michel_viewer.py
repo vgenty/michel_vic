@@ -3,15 +3,20 @@ import ROOT as rr
 import root_numpy as rn
 import numpy as np
 import sys
+from looks import *
 
 from cluster import Cluster
 from scipy.stats.stats import pearsonr
 
 rr.gSystem.Load("libLArLite_DataFormat.so")
 rr.gSystem.Load("libLArLite_LArUtil.so")
+geo = rr.larutil.GeometryUtilities.GetME()  
 
 #def Get2DPointProjection(x,y,z,plane):
 #TODO???
+
+looks_minos()
+rr.gStyle.SetPalette(1)
 
 
 def distance(p1,p2):
@@ -23,6 +28,10 @@ def near(p1,p2,dx,dy):
     if(abs(p2[0] - p1[0]) < 1.0 and 
        abs(p2[1] - p1[1]) < 3.75):   #(0.3/0.08)
         return True
+        
+    #if(abs(p2[0] - p1[0]) < 0.61 and 
+    #   abs(p2[1] - p1[1]) < 2.29):   #(0.3/0.08)
+    #    return True
     return False
     
 def is_val_in_lists(w,lis):
@@ -37,6 +46,10 @@ def list_overlap(l1,l2):
 def find_michel_events(TF):
     found_events = {}
     counter = 0;
+
+
+
+
     for f in TF :
         nevents = f.mcshower_mcreco_tree.GetEntries()
         for i in xrange(nevents):
@@ -47,16 +60,29 @@ def find_michel_events(TF):
                    b[s].Charge(2) > 50.0 and
                    b[s].PdgCode() == 11  and
                    b[s].MotherPdgCode() == 13):
-                    found_events[counter] = { "file"   : f,
-                                              "event"  : i,
-                                              "charge" : b[s].Charge(2),
-                                              "startx" : b[s].Start().X(),
-                                              "starty" : b[s].Start().Y(),
-                                              "startz" : b[s].Start().Z(),
-                                              "energy" : b[s].Start().E()}
+                    found_events[counter] = { "file"       : f,
+                                              "event"      : i,
+                                              "charge"     : b[s].Charge(2),
+                                              "startx"     : b[s].Start().X(),
+                                              "starty"     : b[s].Start().Y(),
+                                              "startz"     : b[s].Start().Z(),
+                                              "energy"     : b[s].Start().E(),
+                                              "motherendX" : b[s].MotherEnd().X(),
+                                              "motherendY" : b[s].MotherEnd().Y(),
+                                              "motherendZ" : b[s].MotherEnd().Z()
+                                            }
+
                     counter += 1
 
+                    print "Found a michel"
+                    print "The XYZ is ("  + str(b[s].Start().X()) + " , " + str(b[s].Start().Y())  + " , " + str(b[s].Start().Z()) + ")"
 
+                    loc =  geo.Get2DPointProjectionVIC(b[s].Start().X(),
+                                                       b[s].Start().Y(),
+                                                       b[s].Start().Z(),
+                                                       2);
+                    
+                    print "( " + str(loc[0]) + "," + str(loc[1]) + " )"
 
                     #charge b[s].Charge(0)/100000.0
                     #energy b[s].Start().E()
@@ -74,21 +100,24 @@ def extract_hits(evt,recofile):
     
     hits_xy     = []
     hits_xy_err = []
+    charge      = []
 
     for h in xrange(len(br)): #lol br not iterable???
         if(br[h].View() == 2):
             x = br[h].WireID().Wire * 0.3       # from larsoft
             y = br[h].PeakTime()    * 0.0802814 # from larsoft
 
+            
             #i made this shit up
             hits_xy_err.append(50.0/(br[h].Integral()))
             hits_xy.append([x,y])
+            charge.append(br[h].Integral())
 
     #make into numpy array
     hits_xy = np.asarray(hits_xy)
     hits_xy_err = np.asarray(hits_xy_err)
-
-    return [hits_xy,hits_xy_err]
+    charge      = np.asarray(charge)
+    return [hits_xy,hits_xy_err,charge]
     
 
 def AhoCluster(hits_xy):
@@ -154,7 +183,7 @@ def Do_Grouping(idx):
         
     return idx
 
-def EvtDisplay(cobjects,hits_xy,p) :
+def EvtDisplay(cobjects,hits_xy,p,kk,evt) :
     #Draw something useful...
 
     c2 = rr.TCanvas("c2")
@@ -169,7 +198,8 @@ def EvtDisplay(cobjects,hits_xy,p) :
     nbinsy = int(np.ceil((ymax-ymin)/0.08))
 
     th2 = rr.TH2D("baka",";;",nbinsx,xmin,xmax,nbinsy,ymin,ymax)
-        
+    th2.SetTitle(";Wire [cm]; Time [cm]")
+
     for i in xrange(len(hits_xy)) :
         th2.Fill(hits_xy[i][0],hits_xy[i][1],p[i])
     
@@ -214,6 +244,30 @@ def EvtDisplay(cobjects,hits_xy,p) :
         tmg.Add(tk)
         u += 1
 
+    
+    the_key = 999
+
+    for key in kk:
+        if(kk[key]["event"] == int(evt)):
+            the_key = key
+            break
+
+    tTruth    = rr.TGraph()
+    tTruthMom = rr.TGraph()
+    
+    if(the_key != 999):
+        loc    =  geo.Get2DPointProjectionVIC(kk[key]["startx"],
+                                              kk[key]["starty"],
+                                              kk[key]["startz"],
+                                              2);
+
+        tTruth.SetPoint(0,loc[0]*0.3,loc[1]*0.0802814)
+        tTruth.SetMarkerStyle(34)
+        tTruth.SetMarkerSize(2)
+        tTruth.SetMarkerColor(30)
+        tmg.Add(tTruth)
+    
+        
         
     #rn.fill_graph(rest,hits_xy[np.where(p < 0.8)])
     #rest.SetMarkerStyle(20)
@@ -387,8 +441,16 @@ def merge_final(cobjects):
 if __name__ == '__main__':
     print "Parsing mc_info and reco files..."
     # 20 is a hard number here
-    truefiles = [rr.TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791009_%d/larlite_mcinfo.root" % g,"READ")  for g in xrange(20)]
-    recofiles = [rr.TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791010_%d/larlite_reco2d.root" % g,"READ")  for g in xrange(20)]
+    
+    #For now let's just get the first folder.
+    
+#truefiles = [rr.TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791009_%d/larlite_mcinfo.root" % g,"READ")  for g in xrange(20)]
+    #recofiles = [rr.TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791010_%d/larlite_reco2d.root" % g,"READ")  for g in xrange(20)]
+
+    
+    
+    truefiles = [rr.TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791009_%d/larlite_mcinfo.root" % g,"READ")  for g in xrange(1)]
+    recofiles = [rr.TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791010_%d/larlite_reco2d.root" % g,"READ")  for g in xrange(1)]
 
     pthresh = 0.9
     kk = find_michel_events(truefiles)
@@ -397,7 +459,9 @@ if __name__ == '__main__':
     hhh = extract_hits(int(sys.argv[1]),recofiles[0])
     hits_xy     = hhh[0]
     hits_xy_err = hhh[1]
+    charge      = hhh[2]
 
+        
     cc = AhoCluster(hits_xy)
     clusters = cc[0]; p = cc[1]
     
@@ -559,6 +623,6 @@ if __name__ == '__main__':
         
         
     
-    EvtDisplay(cobjects,hits_xy,p)
-
+    EvtDisplay(cobjects,hits_xy,p,kk,sys.argv[1])
+           
 
