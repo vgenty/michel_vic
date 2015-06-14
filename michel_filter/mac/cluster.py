@@ -13,6 +13,8 @@ class Cluster:
         self.hitsxy = hits_xy
 
         self.boundary = []
+
+        #putting the convex hull in the correct order is a challenge
         if(self.size > 2):
             hull  = ConvexHull(self.hitsxy[self.idxs])
             vert  = hull.vertices
@@ -30,6 +32,9 @@ class Cluster:
         self.boundary = [self.idxs[x] for x in self.boundary]
         self.path = mplPath.Path(np.array(self.hitsxy[self.boundary]))
         self.dirs = {}
+        self.ordered_pts = []
+        self.ds = []
+        self.dqdx = []
 
     def __add__(self, other):
         start = float(0.0)
@@ -105,3 +110,64 @@ class Cluster:
             return True
         
         return False
+        
+    def distance(self,p1,p2):
+        return np.sqrt(  (self.hitsxy[p1][0] - self.hitsxy[p2][0])**2 
+                       + (self.hitsxy[p1][1] - self.hitsxy[p2][1])**2 )
+
+    def order_points(self):
+        self.ordered_pts.append(self.start)
+        idxx = self.idxs[:]
+
+        aho = True
+        closest = 9999.0
+        zz = 0.0
+        cnt = 0
+        idxholder = 0
+        
+        idxx.remove(self.start)
+        
+        j = 0
+        while aho:
+            for i in idxx:
+                zz = self.distance(self.ordered_pts[cnt],i)
+                if(zz < closest and zz < 0.3*5):
+                    idxholder = i
+                    closest   = zz
+                    j = 1
+                    
+
+
+            if(j == 1):        
+                idxx.remove(idxholder)            
+                self.ordered_pts.append(idxholder)
+                self.ds.append(closest)
+                
+                idxholder = 0
+                closest = 9999.0
+                zz   = 0.0
+                cnt += 1
+            
+            if(len(idxx) == 0 or j == 0) :
+                aho = False
+                
+            j = 0
+            
+    def fill_dqdx(self,charge):
+        d = 0.0
+        for i in xrange(len(self.ordered_pts)-1):
+            
+            d = 0.0
+
+            
+            for k in xrange(i):
+                d += self.ds[k]
+
+            #print "d: " + str(d)
+            
+            self.dqdx.append([d,
+                              (charge[self.ordered_pts[i+1]] - charge[self.ordered_pts[i]])/(self.ds[i])])
+            
+            
+            
+            d = 0.0

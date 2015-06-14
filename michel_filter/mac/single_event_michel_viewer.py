@@ -127,7 +127,7 @@ def AhoCluster(hits_xy):
     # hit (hits_xy[5]) has neighbors hits_xy[6,7,45]
     nhits = len(hits_xy)
     idx = [ [j for j in xrange(nhits) if near(hits_xy[i],hits_xy[j],1.5,1.5) and i != j] for i in xrange(nhits) ]
-
+    
     
     # we will use pearsonsr as a way to find regions of interest
     pvals = np.zeros(nhits)
@@ -183,7 +183,7 @@ def Do_Grouping(idx):
         
     return idx
 
-def EvtDisplay(cobjects,hits_xy,p,kk,evt) :
+def EvtDisplay(cobjects,hits_xy,p,kk,evt,charge) :
     #Draw something useful...
 
     c2 = rr.TCanvas("c2")
@@ -278,11 +278,44 @@ def EvtDisplay(cobjects,hits_xy,p,kk,evt) :
     tmg.GetYaxis().SetTitle("Time [cm]")
     c1.Update()
     c1.Modified()
+
     
+    c3 = rr.TCanvas()
+    tdqdx = rr.TGraph()
+    rn.fill_graph(tdqdx,np.array(cobjects[-1].dqdx))
+    tdqdx.Draw("AL")
+    
+    
+    c3.Update()
+    c3.Modified()
+    
+    
+    c4 = rr.TCanvas()
+    tgc = rr.TGraph()
+    rn.fill_graph(tgc,hits_xy[cobjects[-1].ordered_pts])
+    tgc.Draw("AL")
+    
+    c4.Update()
+    c4.Modified()
+    
+    
+    c5 = rr.TCanvas()
+    tgcharge = rr.TGraph()
+    for u in xrange(len(cobjects[-1].ordered_pts)):
+        tgcharge.SetPoint(u,u,charge[cobjects[-1].ordered_pts[u]])
+
+    tgcharge.SetMarkerStyle(20)
+    tgcharge.Draw("AP")
+    
+    
+    c5.Update()
+    c5.Modified()
+
     raw_input('')
     c1.Clear()
     c2.Clear()
-
+    c3.Clear()
+    c4.Clear()
 
 def remove_inside(cobjects,hits_xy):
     
@@ -437,14 +470,22 @@ def calculate_directions(cobjects,hits_xy,hits_xy_err):
 def merge_final(cobjects):
     return cobjects
     
+def order_points_dqdx(cobjects,hits_xy,charge):
+
+    for c in cobjects : 
+        c.order_points()
+        c.fill_dqdx(charge)
     
+    return cobjects
+
 if __name__ == '__main__':
+
     print "Parsing mc_info and reco files..."
     # 20 is a hard number here
     
     #For now let's just get the first folder.
     
-#truefiles = [rr.TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791009_%d/larlite_mcinfo.root" % g,"READ")  for g in xrange(20)]
+    #truefiles = [rr.TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791009_%d/larlite_mcinfo.root" % g,"READ")  for g in xrange(20)]
     #recofiles = [rr.TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791010_%d/larlite_reco2d.root" % g,"READ")  for g in xrange(20)]
 
     
@@ -530,8 +571,10 @@ if __name__ == '__main__':
     #temporarily disable stitch
     #cobjects = stitch(cobjects,hits_xy)
     
-
-    cobjects = calculate_directions(cobjects,hits_xy,hits_xy_err)    
+    
+    cobjects  = calculate_directions(cobjects,hits_xy,hits_xy_err)    
+    
+    cobjects  = order_points_dqdx(cobjects,hits_xy,charge)
     cobjects  = merge_final(cobjects)
     
     
@@ -623,6 +666,6 @@ if __name__ == '__main__':
         
         
     
-    EvtDisplay(cobjects,hits_xy,p,kk,sys.argv[1])
+    EvtDisplay(cobjects,hits_xy,p,kk,sys.argv[1],charge)
            
 
