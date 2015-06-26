@@ -131,7 +131,7 @@ class Cluster:
         while aho:
             for i in idxx:
                 zz = self.distance(self.ordered_pts[cnt],i)
-                if(zz < closest and zz < 0.3*5):
+                if(zz < closest and zz < 0.3*6):
                     idxholder = i
                     closest   = zz
                     j = 1
@@ -158,7 +158,6 @@ class Cluster:
         for i in xrange(len(self.ordered_pts)-1):
             
             d = 0.0
-
             
             for k in xrange(i):
                 d += self.ds[k]
@@ -171,3 +170,19 @@ class Cluster:
             
             
             d = 0.0
+    
+    def n_shared_boundaries(self,c):
+        aho = 0 
+        l = []
+        for b1,b2 in zip(self.boundary,c.boundary):
+            if(self.near(self.hitsxy[b1],self.hitsxy[b2],1.0,1.0) and b1 not in l and b2 not in l) :
+                aho += 1
+                l.append(b1); l.append(b2)
+            
+        
+        return aho
+        
+        
+        
+        
+        

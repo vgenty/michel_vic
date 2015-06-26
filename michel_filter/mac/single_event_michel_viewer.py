@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import ROOT as rr
+from ROOT import TLatex
 import root_numpy as rn
 import numpy as np
 import sys
@@ -83,7 +84,8 @@ def find_michel_events(TF):
                                                        2);
                     
                     print "( " + str(loc[0]) + "," + str(loc[1]) + " )"
-
+                
+                    print "event: " + str(i)
                     #charge b[s].Charge(0)/100000.0
                     #energy b[s].Start().E()
                     
@@ -112,6 +114,7 @@ def extract_hits(evt,recofile):
             hits_xy_err.append(50.0/(br[h].Integral()))
             hits_xy.append([x,y])
             charge.append(br[h].Integral())
+            #print "charge : " + str(br[h].Integral()) + "sigma charge : " + str(br[h].SigmaIntegral())
 
     #make into numpy array
     hits_xy = np.asarray(hits_xy)
@@ -279,10 +282,21 @@ def EvtDisplay(cobjects,hits_xy,p,kk,evt,charge) :
     c1.Update()
     c1.Modified()
 
+    l  = 0
+    ll = 0
+
+    h = 0
+    for c in cobjects:
+        if (c.size > h) :
+            h  = c.size
+            ll = l
+        l+=1
     
     c3 = rr.TCanvas()
     tdqdx = rr.TGraph()
-    rn.fill_graph(tdqdx,np.array(cobjects[-1].dqdx))
+    rn.fill_graph(tdqdx,np.array(cobjects[ll].dqdx))
+    tdqdx.GetXaxis().SetTitle("s [cm]")
+    tdqdx.GetYaxis().SetTitle("#frac{dq}{ds} [ADC/cm]")
     tdqdx.Draw("AL")
     
     
@@ -292,7 +306,9 @@ def EvtDisplay(cobjects,hits_xy,p,kk,evt,charge) :
     
     c4 = rr.TCanvas()
     tgc = rr.TGraph()
-    rn.fill_graph(tgc,hits_xy[cobjects[-1].ordered_pts])
+    rn.fill_graph(tgc,hits_xy[cobjects[ll].ordered_pts])
+    tgc.GetXaxis().SetTitle("wire")
+    tgc.GetYaxis().SetTitle("time")
     tgc.Draw("AL")
     
     c4.Update()
@@ -301,21 +317,123 @@ def EvtDisplay(cobjects,hits_xy,p,kk,evt,charge) :
     
     c5 = rr.TCanvas()
     tgcharge = rr.TGraph()
-    for u in xrange(len(cobjects[-1].ordered_pts)):
-        tgcharge.SetPoint(u,u,charge[cobjects[-1].ordered_pts[u]])
-
+    ch = 0.0
+    dd = 10.0
+    print len(cobjects[ll].ordered_pts)
+    #the_charge = [[ooo,charge[cobjects[ll].ordered_pts[ooo]]] for ooo in xrange(len(cobjects[ll].ordered_pts))]
+    
+    # the_charge = [charge[cobjects[ll].ordered_pts[ooo]] for ooo in xrange(len(cobjects[ll].ordered_pts))]
+    # from itertools import count, tee, izip, islice
+    # the_charge = map(np.median, izip(*(islice(it,i,None,10)
+    #                                  for i, it in enumerate(tee(the_charge, 10)))))
+    
+    the_charge = []
+    gggg = 0.0
+    for w in xrange(len(cobjects[ll].ordered_pts) - 1):
+        tgcharge.SetPoint(w,gggg,charge[cobjects[ll].ordered_pts[w]])
+        gggg += cobjects[ll].ds[w]
+        
+        
+    # for u in xrange(len(the_charge)):
+    #     tgcharge.SetPoint(u,u,the_charge[u])
+        
+    # rn.fill_graph(tgcharge,the_charge)
+    
     tgcharge.SetMarkerStyle(20)
+    tgcharge.GetXaxis().SetTitle("s [cm]")
+    tgcharge.GetYaxis().SetTitle("Charge [ADC]")
     tgcharge.Draw("AP")
     
     
     c5.Update()
     c5.Modified()
 
+    c6 = rr.TCanvas()
+    tgacharge = rr.TGraph()
+    ch = 0.0
+    dd = 10.0
+    the_chargey = [charge[cobjects[ll].ordered_pts[ooo]] for ooo in xrange(len(cobjects[ll].ordered_pts))]
+
+    a = 4
+    b = 10
+
+    # a = 5
+    # b = 10
+    
+    from itertools import count, tee, izip, islice
+    the_chargey = map(np.median, izip(*(islice(it,i,None,a)
+                                        for i, it in enumerate(tee(the_chargey, b)))))
+    # the_x = map(np.mean, izip(*(islice(it,i,None,a)
+    #                         for i, it in enumerate(tee(hits_xy[cobjects[ll].ordered_pts][:,0]), b))))
+    # the_y = map(np.mean, izip(*(islice(it,i,None,a)
+    #                             for i, it in enumerate(tee(hits_xy[cobjects[ll].ordered_pts][:,1]), b))))
+    
+    for u in xrange(len(the_chargey)):
+        tgacharge.SetPoint(u,u,the_chargey[u])
+         
+        
+    tgacharge.SetMarkerStyle(20)
+    tgacharge.GetXaxis().SetTitle("z [arbitrary]")
+    tgacharge.GetYaxis().SetTitle("Median Charge [ADC]")
+    tgacharge.Draw("AP")
+    
+    
+    c6.Update()
+    c6.Modified()
+
+    
+    c7     = rr.TCanvas()
+    thchrage = rr.TH1D("ch",";;",100,0,0)
+    rn.fill_hist(thchrage,charge[cobjects[ll].ordered_pts])
+    # the_dirs = [k for k in cobjects[ll]]
+    # gggg = 0.0
+    # for w in xrange(len(cobjects[ll].ordered_pts)-1):
+    #     tgcharge.SetPoint(w,gggg,XXXXXXXXXX)
+    #     gggg += cobjects[ll].ds[w
+    thchrage.GetXaxis().SetTitle("charge")
+    thchrage.GetYaxis().SetTitle("count")
+    
+    thchrage.Draw()
+    c7.Update()
+    c7.Modified()
+    
+    c8      = rr.TCanvas()
+    tgdirs  = rr.TGraph()
+    
+    
+
+    c8.Update()
+    c8.Modified()
+
+    
+    # c9 = rr.TCanvas(); tgmeans = rr.TGraph()
+    
+    # meancharge = []
+    # gggg = 0.0
+    # window = 10;
+    # percentile = 5 #percentile, can't be <0 or >100
+    
+    # import scipy.stats
+    # num = len(cobjects[ll].ordered_pts)
+    
+    # for w in xrange(num):
+    #     if(w < window or w > num - window) :
+            
+        
+    #     tgcharge.SetPoint(w,gggg,charge[cobjects[ll].ordered_pts[w]])
+    #     gggg += cobjects[ll].ds[w]
+
+    
     raw_input('')
+
     c1.Clear()
     c2.Clear()
     c3.Clear()
     c4.Clear()
+    c5.Clear()
+    c6.Clear()
+    c7.Clear()
+    c8.Clear()
 
 def remove_inside(cobjects,hits_xy):
     
@@ -391,7 +509,7 @@ def mostly_contained(cobjects,hits_xy):
             for k in cobjects:
                 if(c in cobjects and k in cobjects 
                    and c != k and c.size > k.size):
-                    if(k.mostly_contained(c,0.7)):
+                    if(k.mostly_contained(c,0.5)):
                         final_objects.append(c + k)
                         cobjects.remove(c)
                         cobjects.remove(k)
@@ -478,6 +596,34 @@ def order_points_dqdx(cobjects,hits_xy,charge):
     
     return cobjects
 
+def add_kinks(cobjects,hits_xy) :
+
+    yes = True
+    poop = 0
+    while yes:
+        final_objects = []
+        poop = 0
+        for c in cobjects:
+            for k in cobjects:
+                if(c in cobjects and k in cobjects 
+                   and c != k and c.size > k.size):
+                    if(k.n_shared_boundaries(c) >= 2):
+                        final_objects.append(c + k)
+                        cobjects.remove(c)
+                        cobjects.remove(k)
+                        poop += 1
+                        
+        #print " after " + str(len(cobjects))
+        #after = len(cobjects)
+        cobjects += final_objects
+        if(poop == 0): 
+            yes = False
+            #final_objects += cobjects
+    
+    
+    
+    return cobjects
+
 if __name__ == '__main__':
 
     print "Parsing mc_info and reco files..."
@@ -490,8 +636,8 @@ if __name__ == '__main__':
 
     
     
-    truefiles = [rr.TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791009_%d/larlite_mcinfo.root" % g,"READ")  for g in xrange(1)]
-    recofiles = [rr.TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791010_%d/larlite_reco2d.root" % g,"READ")  for g in xrange(1)]
+    truefiles = [rr.TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791009_%d/larlite_mcinfo.root" % g,"READ")  for g in xrange(2)]
+    recofiles = [rr.TFile("/Users/vgenty/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791010_%d/larlite_reco2d.root" % g,"READ")  for g in xrange(2)]
 
     pthresh = 0.9
     kk = find_michel_events(truefiles)
@@ -563,10 +709,17 @@ if __name__ == '__main__':
     
     #pick three clusters, if one is touching two distinct big ones group
     cobjects = check_boundaries(cobjects,hits_xy)
-
+    
+    
     #group clusters mostly contained in others...
     cobjects = mostly_contained(cobjects,hits_xy)
 
+    # #add "kinks" so if one cluster shares two boundary points with another then something is fishy, combine
+    cobjects = add_kinks(cobjects,hits_xy)
+    
+    # #group clusters mostly contained in others one final time..................................
+    cobjects = mostly_contained(cobjects,hits_xy)
+    
     #cobjects = remove_inside(cobjects,hits_xy)
     #temporarily disable stitch
     #cobjects = stitch(cobjects,hits_xy)
@@ -665,7 +818,7 @@ if __name__ == '__main__':
     #     print "Drawing..."
         
         
-    
+                
     EvtDisplay(cobjects,hits_xy,p,kk,sys.argv[1],charge)
            
 
