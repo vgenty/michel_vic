@@ -25,12 +25,10 @@ def windowed_means(data,window_size,p_down,p_up) :
 
         lower_limit = np.percentile(means, p_down)
         upper_limit = np.percentile(means, p_up)
-        print means
         mean_window.append(scipy.stats.tmean(means,
                                              limits=(lower_limit,upper_limit),
                                              inclusive=(True, True)))
-        
-        
+
     return mean_window
 
 def coeff(k,N) :

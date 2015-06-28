@@ -6,6 +6,8 @@ import numpy as np
 import sys
 from looks import *
 
+from windows import *
+
 from cluster import Cluster
 from scipy.stats.stats import pearsonr
 
@@ -396,34 +398,25 @@ def EvtDisplay(cobjects,hits_xy,p,kk,evt,charge) :
     thchrage.Draw()
     c7.Update()
     c7.Modified()
-    
-    c8      = rr.TCanvas()
-    tgdirs  = rr.TGraph()
-    
-    
 
+
+    
+    c9 = rr.TCanvas(); tgmeans = rr.TGraph()
+    
+    meancharge = windowed_means(charge[cobjects[ll].ordered_pts],13,0,20)
+    g = np.asarray([[i,meancharge[i]] for i in xrange(len(meancharge))])
+
+    rn.fill_graph(tgmeans,g)
+    tgmeans.Draw("ALP")
+    c9.Update()
+    c9.Modified()
+
+    
+    c8        = rr.TCanvas()
     c8.Update()
     c8.Modified()
 
-    
-    # c9 = rr.TCanvas(); tgmeans = rr.TGraph()
-    
-    # meancharge = []
-    # gggg = 0.0
-    # window = 10;
-    # percentile = 5 #percentile, can't be <0 or >100
-    
-    # import scipy.stats
-    # num = len(cobjects[ll].ordered_pts)
-    
-    # for w in xrange(num):
-    #     if(w < window or w > num - window) :
-            
-        
-    #     tgcharge.SetPoint(w,gggg,charge[cobjects[ll].ordered_pts[w]])
-    #     gggg += cobjects[ll].ds[w]
 
-    
     raw_input('')
 
     c1.Clear()
@@ -434,6 +427,7 @@ def EvtDisplay(cobjects,hits_xy,p,kk,evt,charge) :
     c6.Clear()
     c7.Clear()
     c8.Clear()
+    c9.Clear()
 
 def remove_inside(cobjects,hits_xy):
     
