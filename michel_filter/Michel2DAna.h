@@ -1,9 +1,9 @@
 /**
- * \file MichelFilter.h
+ * \file Michel2DAna.h
  *
  * \ingroup michel_filter
  * 
- * \brief Class def header for a class MichelFilter
+ * \brief Class def header for a class Michel2DAna
  *
  * @author vgenty
  */
@@ -12,26 +12,32 @@
 
     @{*/
 
-#ifndef LARLITE_MICHELFILTER_H
-#define LARLITE_MICHELFILTER_H
+#ifndef LARLITE_MICHEL2DANA_H
+#define LARLITE_MICHEL2DANA_H
 
+//larlite 
 #include "Analysis/ana_base.h"
-#include "DataFormat/mctrack.h"
+
+//ROOT
+#include "TTree.h"
+
 
 namespace larlite {
   /**
-     \class MichelFilter
+     \class Michel2DAna
      User custom analysis class made by SHELL_USER_NAME
    */
-  class MichelFilter : public ana_base{
+  class Michel2DAna : public ana_base{
   
   public:
 
     /// Default constructor
-    MichelFilter(){ _name="MichelFilter"; _fout=0;}
+    Michel2DAna() : 
+      _output_tree(nullptr)
+    { _name="Michel2DAna"; _fout=0;}
 
     /// Default destructor
-    virtual ~MichelFilter(){}
+    virtual ~Michel2DAna(){}
 
     virtual bool initialize();
 
@@ -39,7 +45,12 @@ namespace larlite {
 
     virtual bool finalize();
 
-  protected:
+    
+  private:
+    
+    TTree *_output_tree;
+    
+    
     
   };
 }

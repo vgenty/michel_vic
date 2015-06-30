@@ -9,8 +9,10 @@
 #pragma link off all classes;
 #pragma link off all functions;
 
-#pragma link C++ class sample+;
-#pragma link C++ class larlite::MichelFilter+;
+#pragma link C++ class larlite::Michel2DAna+;
+#pragma link C++ class Shower2D+;
 //ADD_NEW_CLASS ... do not change this line
 #endif
+
+
 
