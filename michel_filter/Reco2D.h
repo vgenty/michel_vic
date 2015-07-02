@@ -34,11 +34,22 @@ public:
   Double_t coeff(Double_t k, Double_t N);
   unsigned int nCk( unsigned int n, unsigned int k );
   
-  std::vector<Double_t> windowed_means(int window_size;, int p_above, int p_below,
+  std::vector<Double_t> windowed_means(int window_size, Double_t p_above, Double_t p_below,
 				       const std::vector<ahit>    & data,
 				       const std::vector<HitIdx_t>& order);
+
   
+  Double_t smooth_derive(const std::vector<Double_t> f,
+			 const std::vector<Double_t> x,
+			 Int_t N);
+			 
+			 
+			 
+  //inline methods
+  inline void cut(std::vector<Double_t>& data,
+		  double frac, bool above);
   
+  inline Double_t calc_mean(std::vector<Double_t> &data);
 };
 
 #endif

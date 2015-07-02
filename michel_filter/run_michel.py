@@ -32,7 +32,8 @@ print
 
 # Let's run it.
 #my_proc.run();
-my_proc.process_event(1)
+my_proc.process_event(300)
+the_ana.finalize()
 # done!
 print
 print "Finished running ana_processor event loop!"

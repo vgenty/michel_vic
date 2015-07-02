@@ -7,16 +7,23 @@ ClusterYPlane::ClusterYPlane(const ClusterYPlane& other)
 {
 
 
-  _ahits = other._ahits;
+  _ahits    = other._ahits;
   _clusters = other._clusters;
  
-  _start = other._start;
-  _end  = other._end;
+  // _start = other._start;
+  // _end  = other._end;
   
-  _ordered_pts =other._ordered_pts;
-  _ds = other._ds;
-  _s = other._s;
+  // _ordered_pts =other._ordered_pts;
+  // _ds = other._ds;
+  // _s = other._s;
+  //quickly sort the hits based on x location
+  sort_hits();
   
+  //set start and end point
+  set_start_end();
+  
+  //order the points
+  order_points();
 
 }
 
@@ -130,10 +137,10 @@ void ClusterYPlane::order_points() {
        _s.push_back(stot);
        
        
-       // std::cout << "Found closest point to "
-       // 		 << _ordered_pts[cnt] << " is " 
-       // 		 << o << " at closest = "
-       // 		 << closest << "\n";
+       std::cout << "Found closest point to "
+		 << _ordered_pts[cnt] << " is " 
+		  << o << " at closest = "
+		  << closest << "\n";
        
        closest = 9999.9;
        zz      = 0.0;

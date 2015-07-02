@@ -27,6 +27,7 @@
 //ROOT
 #include "TTree.h"
 #include "TBranch.h"
+#include "TGraph.h"
 
 //Vic's
 #include "ClusterYPlane.h"
@@ -67,7 +68,15 @@ namespace larlite {
     std::vector<ClusterYPlane*> _clusters; 
     
     std::string _cluster_producer;
+    
 
+    Reco2D* r2d;
+    
+    //Temporary stuff...
+    TGraph *tgMeans;
+    TGraph *tgPoints;
+    TGraph *tgdqdx;
+    
     //geo
     Double_t _time2cm;
     Double_t _wire2cm;

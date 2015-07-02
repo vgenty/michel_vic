@@ -87,7 +87,7 @@ public:
     std::sort(_ahits.begin(), _ahits.end(), 
 	      [](const ahit & a, const ahit & b) -> bool
 	      { 
-		return a.vec->X() > b.vec->X();
+		return a.vec->X() < b.vec->X();
 	      });
   };
   
