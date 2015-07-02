@@ -26,9 +26,11 @@
 
 //ROOT
 #include "TTree.h"
+#include "TBranch.h"
 
 //Vic's
 #include "ClusterYPlane.h"
+#include "Reco2D.h"
 
 namespace larlite {
   /**
@@ -60,6 +62,7 @@ namespace larlite {
   private:
     
     TTree *_output_tree;
+    TBranch *_aho;
     
     std::vector<ClusterYPlane*> _clusters; 
     
@@ -69,6 +72,10 @@ namespace larlite {
     Double_t _time2cm;
     Double_t _wire2cm;
     
+    //crap
+    Double_t _sss;
+    
+    //reco2d
     
     
     //Methods
@@ -78,7 +85,7 @@ namespace larlite {
     
     
     void check_cluster_boundaries();
-    void clear();
+    void clear_all();
   };
 }
 #endif

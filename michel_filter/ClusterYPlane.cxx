@@ -3,6 +3,23 @@
 
 #include "ClusterYPlane.h"
 
+ClusterYPlane::ClusterYPlane(const ClusterYPlane& other)
+{
+
+
+  _ahits = other._ahits;
+  _clusters = other._clusters;
+ 
+  _start = other._start;
+  _end  = other._end;
+  
+  _ordered_pts =other._ordered_pts;
+  _ds = other._ds;
+  _s = other._s;
+  
+
+}
+
 
 ClusterYPlane::ClusterYPlane(std::vector<larlite::hit>     in_hits,
 			     std::vector<larlite::cluster> in_clusters)
@@ -37,7 +54,7 @@ ClusterYPlane::ClusterYPlane(std::vector<larlite::hit>     in_hits,
 			     larlite::cluster              in_cluster)
 { 
   
-  _clusters.pusbh_back(in_cluster);
+  _clusters.push_back(in_cluster);
   _ahits.resize(in_hits.size());
   
   //Lambda encapsulates xy conversion
@@ -151,10 +168,10 @@ Double_t ClusterYPlane::distance(const TVector2* a,
 
 ClusterYPlane ClusterYPlane::operator+(const ClusterYPlane* other) {
   
-  (this->_ahits).insert   ( this->_ahits.end(), 
-			    other->_ahits.begin(), other->_ahits.end() );
-  this->_clusters.insert( this->_clusters.end(), 
-			  other->_clusters.begin(), other->_clusters.end() );
+  // (this->_ahits).insert   ( this->_ahits.end(), 
+  // 			    other->_ahits.begin(), other->_ahits.end() );
+  // (this->_clusters).insert( this->_clusters.end(), 
+  // 			    other->_clusters.begin(), other->_clusters.end() );
   //scary
   
   
@@ -163,11 +180,17 @@ ClusterYPlane ClusterYPlane::operator+(const ClusterYPlane* other) {
   
   for(auto const& h : this->_ahits)
     send_hits.push_back(h.hit);
+  for(auto const& h : other->_ahits)
+    send_hits.push_back(h.hit);
 
   for(auto const& c : this->_clusters)
     send_clusters.push_back(c);
+  for(auto const& c : other->_clusters)
+    send_clusters.push_back(c);
   
   ClusterYPlane baby(send_hits,send_clusters);
+  // std::cout << "found a baby ... \n";
+  // baby.dump();
   return baby;
   
 }
@@ -200,4 +223,25 @@ bool ClusterYPlane::near(const TVector2* a, const TVector2* b) {
   
 }
 
+void ClusterYPlane::dump() {
+  // std::vector<ahit>             _ahits;
+  // std::vector<larlite::cluster> _clusters;
+  
+  // ahit _start;
+  // ahit _end;
+  
+  // std::vector<HitIdx_t>  _ordered_pts;
+  // std::vector<Double_t>  _ds;
+  // std::vector<Double_t>  _s;
+  
+  std::cout << "\n==start dump==\n";
+  std::cout << "A cluster with " << _ahits.size() << " hits in " << _clusters.size() << "\n";
+  std::cout << "The start point is at (" << _start.vec->X() << "," << _start.vec->Y() << ")\n";
+  std::cout << "The end point is at ("   << _end.vec->X() << ","   << _end.vec->Y()   << ")\n";
+  std::cout << _ordered_pts.size() << " of the hits are ordered and nearby ";
+  std::cout << "\n==sned dump==\n";
+  
+  
+
+}
 #endif

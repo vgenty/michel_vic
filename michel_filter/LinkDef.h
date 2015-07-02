@@ -12,8 +12,12 @@
 #pragma link C++ class larlite::Michel2DAna+;
 #pragma link C++ class ClusterYPlane+;
 #pragma link C++ class Hit2D+;
+#pragma link C++ class RecoMethods+;
+#pragma link C++ class Reco2D+;
 //ADD_NEW_CLASS ... do not change this line
 #endif
+
+
 
 
 

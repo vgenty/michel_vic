@@ -47,9 +47,14 @@ public:
   ClusterYPlane(std::vector<larlite::hit>     in_hits,
 		std::vector<larlite::cluster> in_clusters);  
 
+  
   /// Default destructor
   virtual ~ClusterYPlane(){}
   
+
+
+  //copy ctor? THIS must Go under destructor wtf??
+  ClusterYPlane(const ClusterYPlane& other);
   
   
   
@@ -69,7 +74,9 @@ public:
   ClusterYPlane operator+(const ClusterYPlane* other);
   
   //Usual methods
+
   void     order_points();
+  void     dump();
   Double_t distance(const TVector2* a,
 		    const TVector2* b);
   bool near(const TVector2* a, const TVector2* b);

@@ -12,7 +12,12 @@ namespace larlite {
     _wire2cm   = ::larutil::GeometryUtilities::GetME()->WireToCm();
     _time2cm   = ::larutil::GeometryUtilities::GetME()->TimeToCm();    
     
+    _output_tree = new TTree("out_tree","aho_tree");
+    _output_tree->Branch("charge_sum",&_sss,"sss/D");
+    std::cout << "initialize with " << _output_tree->GetNbranches() << " branches\n";
+
     return true;
+    
   }
   
   bool Michel2DAna::analyze(storage_manager* storage) {
@@ -27,11 +32,17 @@ namespace larlite {
 		   evt_ass_data)) return false;
     
     
+
+    clear_all();
     
-    return true;
   }
   
   bool Michel2DAna::finalize() {
+    
+    
+    _output_tree->Write();
+      
+    //    RecoMethods::getInstance().aho();
     
     
     return true;
@@ -61,7 +72,7 @@ namespace larlite {
 	
 	std::vector<hit> the_hits; the_hits.resize(hit_indicies.size());
 	
-	std::cout << "size of the hits: " << the_hits.size() << "\n";
+	//std::cout << "size of the hits: " << the_hits.size() << "\n";
 	
 	if(the_hits.size() < 3)
 	  continue;
@@ -75,10 +86,10 @@ namespace larlite {
 
 	_clusters.push_back(new ClusterYPlane(the_hits,
 					      evt_clusters->at(out_cnt)));
-
+	
 	in_cnt++;
       }
-
+      
     }
     
     // merge them...
@@ -86,13 +97,13 @@ namespace larlite {
     check_cluster_boundaries();
     
     
-    clear();
+    //clear_all();
     return true;
   }
   
   void Michel2DAna::check_cluster_boundaries() {
     
-    std::cout << "Checking all cluster boundaries\n";
+    //std::cout << "Checking all cluster boundaries\n";
     bool aho = true;
     
     std::vector<ClusterYPlane*>::iterator itr1;    
@@ -112,31 +123,35 @@ namespace larlite {
     bool j = false;
     size_t a = 0;
     size_t b = 0;
-    std::cout << _clusters.size() << "\n";
+    // std::cout << _clusters.size() << "\n";
+    // std::cout << "\tclusters BEFORE merge\n";
+    // for(const auto& _c : _clusters)
+    //   _c->dump();
+
     while(1) {
-      std::cout << "While 1\n";
+      //std::cout << "While 1\n";
       for( a = 0; a < _clusters.size(); ++a) {
 	//for(itr1 = _clusters.begin(); itr1 != _clusters.end(); ++itr1) {
-	std::cout << "a " << a << " ";
+	//std::cout << "a " << a << " ";
 	//	for(itr2 = _clusters.begin(); itr2 != _clusters.end(); ++itr2) {
 	for( b = 0; b < _clusters.size(); ++b) {
-	  std::cout << "b " << b << " ";
+	  // std::cout << "b " << b << " ";
 	  //	  if(itr1 != itr2 && (*itr1)->touching(*itr2) ) {
 	  if(a != b && (_clusters[a])->touching(_clusters[b]) ) {
-	    std::cout << "\nc\n ";
-	    std::cout << "Found two touchers \n";
-	    auto bb = *_clusters[a] + _clusters[b];
-	    _clusters.push_back(&bb); //wow
+	    //std::cout << "\nc\n ";
+	    //std::cout << "Found two touchers \n";
+	    auto bb = *_clusters[a] + _clusters[b]; //real object, how do I put this in a reference of pointers??
+	    _clusters.push_back(new ClusterYPlane(bb)); //wow
 	    goto baka; //ouch
 	  }
 	}
       }
   
-      if(!j)
+      if(!j) //probably not necessary
 	break;
 	    
       
-    baka: //ouch x2
+    baka: //holy shit this is ghetto, goto past break statement
       
       //auto p1 = *itr1;
       //auto p2 = *itr2;
@@ -169,12 +184,19 @@ namespace larlite {
       
       
       
+      
+      
     }
+    
+    // std::cout << "\tclusters after merge\n";
+    // for(const auto& _c : _clusters)
+    //  _c->dump();
+    
     
   
   }
   
-  void Michel2DAna::clear() {
+  void Michel2DAna::clear_all() {
     
     _clusters.clear();
     
