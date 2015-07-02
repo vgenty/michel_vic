@@ -100,6 +100,7 @@ void ClusterYPlane::order_points() {
   
   
   _ordered_pts.push_back(0);
+  _s.push_back(0);
   
   bool aho = true;
   Double_t zz = 0.0;

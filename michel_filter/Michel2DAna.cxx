@@ -51,6 +51,9 @@ namespace larlite {
       
       
       std::cout << "windowed means gave me a b............       ";
+      std::cout << "do b and _s have same size? b.size " 
+		<< b.size() << " and _s.size "  << c->_s.size() << "\n";
+
       for(int i = 0; i < b.size(); ++i) {
 	tgMeans ->SetPoint(i,c->_s[i],b[i]);
       	tgPoints->SetPoint(i,c->_ahits[c->_ordered_pts[i]].vec->X(),
@@ -123,9 +126,9 @@ namespace larlite {
 	
 	//std::cout << "size of the hits: " << the_hits.size() << "\n";
 	
-	if(the_hits.size() < 4)
+	if(the_hits.size() < 4) // control the minimum size of clusters, hard set
 	  continue;
-	    
+	
 	for(unsigned int i = 0; i < the_hits.size(); ++i)
 	  the_hits[i] = evt_hits->at(hit_indicies[i]);
 	
