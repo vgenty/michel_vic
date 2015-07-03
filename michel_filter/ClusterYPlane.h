@@ -81,6 +81,8 @@ public:
 		    const TVector2* b);
   bool near(const TVector2* a, const TVector2* b);
   bool touching(const ClusterYPlane* other);
+
+  size_t find_closest_hit(const TVector2* point);
   
   //Inline Methods
   inline void sort_hits() {

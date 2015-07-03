@@ -14,6 +14,7 @@
 #pragma link C++ class Hit2D+;
 #pragma link C++ class RecoMethods+;
 #pragma link C++ class Reco2D+;
+#pragma link C++ class larlite::MichelFilter+;
 //ADD_NEW_CLASS ... do not change this line
 #endif
 

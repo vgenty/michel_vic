@@ -163,7 +163,7 @@ def read_true_michels(f,i,geo) :
             loc =  geo.Get2DPointProjectionVIC(b[s].Start().X(),
                                                b[s].Start().Y(),
                                                b[s].Start().Z(),
-                                                   2);
+                                               2);
             
             print "( " + str(loc[0]) + "," + str(loc[1]) + " )"
             
@@ -184,7 +184,6 @@ def EvtDisplay(clusters,michels,geo) :
 
     for i in xrange(len(clusters)) :
         for j in xrange(clusters[i].hits_xy[:,0].size) :
-            # print "i : " + str(i) + " j: " + str(j) + " ~ " + str(clusters[i].hits_xy[j])
             tgs[i].SetPoint(j,
                             clusters[i].hits_xy[j][0],
                             clusters[i].hits_xy[j][1])
@@ -223,14 +222,22 @@ def EvtDisplay(clusters,michels,geo) :
     
 
     c1.cd(2)
+    
+    sizes = [ len(zz.ordered_pts) for zz in clusters ]
+    larg  = sizes.index(max(sizes))
+    
     tgmeans = rr.TGraph()
-    tc = clusters[-1]
+    tc = clusters[larg]
     
     charges = [h.Integral() for h in tc.hits[tc.ordered_pts] ]
                
     meancharge = windowed_means(charges,25,0,25)
-    meancharge.pop(0); meancharge.pop(-1)
-    meancharge.pop(0); meancharge.pop(-1)
+    #meancharge.pop(0); meancharge.pop(-1)
+    #meancharge.pop(0); meancharge.pop(-1)
+    
+
+    print len(meancharge)
+    print len(tc.s)
 
     g = np.asarray([[tc.s[i],meancharge[i]] for i in xrange(len(meancharge))])
 

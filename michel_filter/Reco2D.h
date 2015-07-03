@@ -44,7 +44,12 @@ public:
 			 Int_t N);
 			 
 			 
-			 
+  std::pair<size_t,size_t> DetEVtx(const std::vector<Double_t>& q,
+				   const std::vector<Double_t>& dqds);
+  size_t REALDetEVtx(std::vector<ahit> h,
+		     std::vector<HitIdx_t> o,
+		     size_t mean_michel_vtx);
+  
   //inline methods
   inline void cut(std::vector<Double_t>& data,
 		  double frac, bool above);

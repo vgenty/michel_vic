@@ -53,6 +53,7 @@ class ACluster:
 
     def order_points(self):
         self.ordered_pts.append(self.start)
+        self.s.append(0)
         idxx = self.left2right[:]
 
         aho = True

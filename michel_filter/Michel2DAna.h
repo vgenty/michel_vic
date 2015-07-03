@@ -23,6 +23,7 @@
 #include "Analysis/ana_base.h"
 #include "DataFormat/event_ass.h"
 #include "LArUtil/GeometryUtilities.h"
+#include "DataFormat/mcshower.h"
 
 //ROOT
 #include "TTree.h"
@@ -69,13 +70,18 @@ namespace larlite {
     
     std::string _cluster_producer;
     
+    Double_t _tX;
+    Double_t _tY;
+    Double_t _rX;
+    Double_t _rY;
+
 
     Reco2D* r2d;
     
     //Temporary stuff...
-    TGraph *tgMeans;
-    TGraph *tgPoints;
-    TGraph *tgdqdx;
+    // TGraph *tgMeans;
+    // TGraph *tgPoints;
+    // TGraph *tgdqdx;
     
     //geo
     Double_t _time2cm;

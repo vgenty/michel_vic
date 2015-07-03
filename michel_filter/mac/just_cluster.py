@@ -17,8 +17,8 @@ geo = rr.larutil.GeometryUtilities.GetME()
 
 
 if __name__ == '__main__':
-    truefile = rr.TFile("~/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791009_0/larlite_mcinfo.root","READ")
-    recofile = rr.TFile("~/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791010_0/larlite_reco2d.root","READ")
+    truefile = rr.TFile("~/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791009_7/larlite_mcinfo.root","READ")
+    recofile = rr.TFile("~/git/data/prod_muminus_0.1-2.0GeV_isotropic_uboone/1791010_7/larlite_reco2d.root","READ")
     
     evt = int(sys.argv[1])
     michels  = read_true_michels(truefile,evt,geo)

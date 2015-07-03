@@ -18,11 +18,13 @@ for x in xrange(len(sys.argv)-1):
     my_proc.add_input_file(sys.argv[x+1])
 
 my_proc.set_io_mode(fmwk.storage_manager.kREAD)
-
 my_proc.set_ana_output_file("output.root");
+my_proc.enable_filter(True)
 
-the_ana = fmwk.Michel2DAna("fuzzycluster");
+the_filter = fmwk.MichelFilter()
+the_ana    = fmwk.Michel2DAna("fuzzycluster");
 
+my_proc.add_process(the_filter)
 my_proc.add_process(the_ana)
 #my_proc.add_process(fmwk.josh())
 
@@ -31,9 +33,9 @@ print  "Finished configuring ana_processor. Start event loop!"
 print
 
 # Let's run it.
-#my_proc.run();
-my_proc.process_event(300)
-the_ana.finalize()
+my_proc.run();
+#my_proc.process_event(302)
+#the_ana.finalize()
 # done!
 print
 print "Finished running ana_processor event loop!"

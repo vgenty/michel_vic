@@ -12,20 +12,32 @@ namespace larlite {
     _wire2cm   = ::larutil::GeometryUtilities::GetME()->WireToCm();
     _time2cm   = ::larutil::GeometryUtilities::GetME()->TimeToCm();    
     
-    //_output_tree = new TTree("out_tree","aho_tree");
-    //_output_tree->Branch("charge_sum",&_sss,"sss/D");
+    _output_tree = new TTree("out_tree","aho_tree");
+    _output_tree->Branch("true_X",&_tX,"tX/D");
+    _output_tree->Branch("true_Y",&_tY,"tY/D");
+    _output_tree->Branch("reco_X",&_rX,"rX/D");
+    _output_tree->Branch("reco_Y",&_rY,"rY/D");
+
     //std::cout << "initialize with " << _output_tree->GetNbranches() << " branches\n";
     
 
-    tgMeans  = new TGraph();
-    tgPoints = new TGraph();
-    tgdqdx   = new TGraph();
+    // tgMeans  = new TGraph();
+    // tgPoints = new TGraph();
+    // tgdqdx   = new TGraph();
     
     return true;
     
   }
   
   bool Michel2DAna::analyze(storage_manager* storage) {
+    clear_all();
+    std::cout << "\n\t\tOn event... " << storage->event_id() << "\n";
+    
+    //True
+    auto evt_mcshower = storage->get_data<event_mcshower>("mcreco");
+    
+    //auto ev_mcshower  = storage->get_data<event_mcshower>("mcreco");    
+    //Reco
     
     auto evt_hits     = storage->get_data<event_hit>    ("gaushit");
     auto evt_clusters = storage->get_data<event_cluster>(_cluster_producer);
@@ -37,63 +49,186 @@ namespace larlite {
 		   evt_ass_data)) return false;
     
 
-    std::cout << " I created the clusters...   ";
-    
-    if(_clusters.size() != 1) {
-      std::cout << "too many big bab\|n";
-      return false;
-    }
+    //std::cout << " I created the clusters...   ";
+     
+    // if(_clusters.size() != 1) {
+    //   std::cout << "too many big baby\n";
+    //   return false;
+    // }
     
     std::cout << "about to do the windowed means.... \n";
-    for(const auto& c : _clusters) {
-      auto b = r2d->windowed_means(25,0.25,0,
-				   c->_ahits, c->_ordered_pts);
-      
-      
-      std::cout << "windowed means gave me a b............       ";
-      std::cout << "do b and _s have same size? b.size " 
-		<< b.size() << " and _s.size "  << c->_s.size() << "\n";
+    
+    auto largest = [](const std::vector<ClusterYPlane*>& _cl)
+      {
+	size_t idx = 0; size_t size = 0; size_t ret = 0;
+	for(const auto& c : _cl) {
+	  if(c->_ordered_pts.size() > size) {
+	    ret = idx; size = c->_ordered_pts.size();
+	  }
+	  ++idx;
+	}
+	return ret;
+      };
+    
 
-      for(int i = 0; i < b.size(); ++i) {
-	tgMeans ->SetPoint(i,c->_s[i],b[i]);
-      	tgPoints->SetPoint(i,c->_ahits[c->_ordered_pts[i]].vec->X(),
-			   c->_ahits[c->_ordered_pts[i]].vec->Y());
-      }
+    std::vector<Double_t> b;
+    std::vector<Double_t> baka;
+
+    std::cout << "c  size: " << _clusters.size() << "\n";
+    
+    auto c = _clusters[largest(_clusters)];
+    //for(const auto& c : _clusters) {
+    
+    if(c->_ordered_pts.size() < 25)
+      return false;
+
+    b = r2d->windowed_means(25,0.25,0,
+			    c->_ahits, c->_ordered_pts);
       
-      tgMeans->SetName("q");
-      tgPoints->SetName("points");
       
-      int s = 3;
-      std::vector<Double_t> baka;
-      std::cout << "smooth_deriving................          \n";
-      for(int i = s; i < b.size() - s + 1; ++i) {
-	std::vector<Double_t> f(b.begin() + i - s,b.begin() + i + s);
-	std::vector<Double_t> x(c->_s.begin() + i - s,c->_s.begin() + i + s);
+    // std::cout << "windowed means gave me a b............       ";
+    // std::cout << "do b and _s have same size? b.size " 
+    // 		<< b.size() << " and _s.size "  << c->_s.size() << "\n";
+      
+      
+      
+    //ok lets cut off the bullshit on the edges of mean
+      
+    size_t soff = 2;
+    b.erase(b.begin()   ,b.begin()+soff);
+    b.erase(b.end()-soff,b.end()       );
+      
+    // for(int i = 0; i < b.size(); ++i) {
+    // 	tgMeans ->SetPoint(i,c->_s[i+2],b[i]);
+    // 	tgPoints->SetPoint(i,c->_ahits[c->_ordered_pts[i+soff]].vec->X(),
+    // 			   c->_ahits[c->_ordered_pts[i+soff]].vec->Y());
+    // }
+      
+    // tgMeans->SetName("q");
+    // tgPoints->SetName("points");
+      
+    int s = 3;
+      
+    std::cout << "smooth_deriving................          \n";
+    for(int o = 0; o < s; ++o)
+      baka.push_back(0.0);
+
+    for(int i = s; i < b.size() - s + 1; ++i) {
+      std::vector<Double_t> f(b.begin() + i - s,b.begin() + i + s);
+      std::vector<Double_t> x(c->_s.begin() + i - s + soff,c->_s.begin() + i + s + soff);
 	
-	baka.push_back(r2d->smooth_derive(f,x,2*s+1));
-      }
-      
-      
-      tgdqdx->SetName("dqds");
-      for(int i = 0; i < baka.size(); ++i) {
-	tgdqdx->SetPoint(i,i,baka[i]);
-      }
-
+      baka.push_back(r2d->smooth_derive(f,x,2*s+1));
     }
+      
+    for(int o = 0; o < s; ++o)
+      baka.push_back(0.0);
+      
+    // tgdqdx->SetName("dqds");
+    // for(int i = 0; i < baka.size(); ++i) {
+    // 	tgdqdx->SetPoint(i,c->_s[i+soff],baka[i]);
+    // }
+
+    
+    // b holds mean charges
+    // baka holds dqdx
+    // do the reco
     
     
-    //_output_tree->Fill();
+    std::cout << " the size of _orderdpts is " << c->_ordered_pts.size() << "\n";
+    auto mean_michel_vtx = r2d->DetEVtx(b,baka); //should return index in charge with highest cham
+    
+    
+    std::cout << "mean_michel_vtx : first ~ "
+	      << mean_michel_vtx.first  << " second ~"
+	      << mean_michel_vtx.second << " \n";
+
+    if(mean_michel_vtx.first == 999)
+      return false;
+    
+    auto real_michel_vtx = r2d->REALDetEVtx(c->_ahits,
+					    c->_ordered_pts,
+					    mean_michel_vtx.first);
+    
+    auto the_vtx = size_t{0};
+    
+    if(mean_michel_vtx.first < mean_michel_vtx.second)
+      the_vtx = real_michel_vtx + 1;
+    else
+      the_vtx = real_michel_vtx - 1;
+    
+
+    
+    //
+    //
+    // Get the closest reconstructed hit to the start of the mcshower
+    
+    
+    TLorentzVector true_start;
+    auto bb = false;
+    for(const auto& shower : *evt_mcshower) {
+      if (shower.Process() == "muMinusCaptureAtRest" &&
+	  shower.Charge(2) > 1.0 )	  {
+	true_start = shower.Start().Position();
+	bb = true; // just a quick check to see if there is a michel
+      }
+    }
+    if(!bb)
+      return false;
+    
+    TVector3 *ttt = new TVector3(true_start.Vect());
+    
+    ::larutil::PxPoint pxpoint;
+    
+    try{ 
+      pxpoint = ::larutil::GeometryUtilities::GetME()->Get2DPointProjection2(ttt,2);
+    } catch(larutil::LArUtilException) { return false; }
+    TVector2 *proj_start = new TVector2(pxpoint.w*0.3,
+					pxpoint.t*0.0802814);
+    
+
+
+    //get the closest hit in ordered_pts to the projected start...
+    auto real_michel = c->find_closest_hit(proj_start);
+
+    std::cout << "\tthe_vtx : " << the_vtx
+	      << "\treal_mic: " << real_michel;
+    
+    std::cout << "wire : " << proj_start->X() << " time: " << proj_start->Y() << "\n";
+    
+    
+    
+    
+    // std::cout << "maybe we found the michel point we don't know...";
+    // std::cout << real_michel_vtx << "\n";
+    auto thit = c->_ahits[c->_ordered_pts[the_vtx]];
+    std::cout << "it could be at... " << the_vtx
+	       << ": (" << thit.vec->X() << "," << thit.vec->Y() << ")\n";
+    
+    
+    _tX = c->_ahits[c->_ordered_pts[real_michel]].vec->X();
+    _tY = c->_ahits[c->_ordered_pts[real_michel]].vec->Y();
+    _rX = c->_ahits[c->_ordered_pts[the_vtx]].vec->X();
+    _rY = c->_ahits[c->_ordered_pts[the_vtx]].vec->Y();
+
+    
+    _output_tree->Fill();
     clear_all();
-    
+
+    // delete evt_hits;
+    // delete evt_clusters;
+    // delete evt_mcshower;
+    //delete evt_ass_data;
+    delete proj_start;
+    delete ttt;
   }
   
   bool Michel2DAna::finalize() {
     
-    tgMeans->Write();
-    tgPoints->Write();
-    tgdqdx->Write();
-    //_output_tree->Write();
-      
+    // tgMeans->Write();
+    // tgPoints->Write();
+    // tgdqdx->Write();
+    _output_tree->Write();
+    
     //    RecoMethods::getInstance().aho();
     
     
@@ -104,7 +239,7 @@ namespace larlite {
 			       const event_cluster *evt_clusters,
 			       const event_ass     *evt_ass_data) {
     
-
+    
     AssSet_t cluster_to_hit_ass;
 
     //std::cout << Form("how big are the clusters %d\n",evt_clusters->size());
@@ -143,7 +278,7 @@ namespace larlite {
       }
       
     }
-    
+
     // merge them...
     
     check_cluster_boundaries();
@@ -176,9 +311,9 @@ namespace larlite {
     size_t a = 0;
     size_t b = 0;
     // std::cout << _clusters.size() << "\n";
-    std::cout << "\tclusters BEFORE merge\n";
-    for(const auto& _c : _clusters)
-      _c->dump();
+    // std::cout << "\tclusters BEFORE merge\n";
+    // for(const auto& _c : _clusters)
+    //   _c->dump();
 
     while(1) {
       //std::cout << "While 1\n";
@@ -218,31 +353,12 @@ namespace larlite {
       
       if(a > b) _clusters.erase(_clusters.begin() + b);
       else      _clusters.erase(_clusters.begin() + b - 1);
-	
-      // while(p) {
-      // 	for(size_t y = 0; y < _clusters.size(); ++y) {
-      // 	  if(a == _clusters[y]) {
-      // 	    _clusters.erase(_clusters.begin() + y);
-      // 	    p--;
-      // 	    break;
-      // 	  }
-      // 	  if(p2 == _clusters[y]) {
-      // 	    _clusters.erase(_clusters.begin() + y);
-      // 	    p--;
-      // 	    break;
-      // 	  }
-      // 	}
-      //	 }
-      
-      
-      
-      
       
     }
     
-    std::cout << "\tclusters after merge\n";
-    for(const auto& _c : _clusters)
-      _c->dump();
+    // std::cout << "\tclusters after merge\n";
+    // for(const auto& _c : _clusters)
+    //   _c->dump();
     
     
   
@@ -250,6 +366,8 @@ namespace larlite {
   
   void Michel2DAna::clear_all() {
     
+    for (std::vector<ClusterYPlane*>::iterator it = _clusters.begin() 
+	   ; it != _clusters.end(); ++it) { delete (*it); } 
     _clusters.clear();
     
   }

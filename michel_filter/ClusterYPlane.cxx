@@ -138,10 +138,10 @@ void ClusterYPlane::order_points() {
        _s.push_back(stot);
        
        
-       std::cout << "Found closest point to "
-		 << _ordered_pts[cnt] << " is " 
-		  << o << " at closest = "
-		  << closest << "\n";
+       // std::cout << "Found closest point to "
+       // 		 << _ordered_pts[cnt] << " is " 
+       // 		  << o << " at closest = "
+       // 		  << closest << "\n";
        
        closest = 9999.9;
        zz      = 0.0;
@@ -231,6 +231,19 @@ bool ClusterYPlane::near(const TVector2* a, const TVector2* b) {
   
 }
 
+size_t ClusterYPlane::find_closest_hit(const TVector2* point) {
+
+  auto dist = 999.0;
+  auto idx  = size_t{0};
+  
+  for(size_t i = 0; i < _ordered_pts.size(); ++i) {
+    auto d = distance(_ahits[_ordered_pts[i]].vec,point);
+    if( d < dist) { dist = d; idx = i; }
+  } 
+  
+  return idx;
+}
+
 void ClusterYPlane::dump() {
   // std::vector<ahit>             _ahits;
   // std::vector<larlite::cluster> _clusters;
@@ -248,7 +261,6 @@ void ClusterYPlane::dump() {
   std::cout << "The end point is at ("   << _end.vec->X() << ","   << _end.vec->Y()   << ")\n";
   std::cout << _ordered_pts.size() << " of the hits are ordered and nearby ";
   std::cout << "\n==sned dump==\n";
-  
   
 
 }
