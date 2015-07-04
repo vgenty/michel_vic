@@ -20,7 +20,7 @@ endif
 #
 # Define directories to be compile upon a global "make"...
 #
-SUBDIRS := triangles big_boy trianglecluster tricluster michel_filter #ADD_NEW_SUBDIR ... do not remove this comment from this line
+SUBDIRS := triangles trianglecluster tricluster michel_filter trial #ADD_NEW_SUBDIR ... do not remove this comment from this line
 
 #####################################################################################
 #

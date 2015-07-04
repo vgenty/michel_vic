@@ -15,7 +15,6 @@
 #define RECO2D_H
 
 //C++
-#include <iostream>
 #include <cmath>
 
 //Vic

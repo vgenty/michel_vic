@@ -17,7 +17,7 @@
 //C++
 #include <iostream>
 
-//LarLite
+//larLite
 #include "DataFormat/cluster.h"
 #include "DataFormat/hit.h"
 
@@ -30,7 +30,9 @@
    doxygen documentation!
  */
 
+
 typedef size_t HitIdx_t;
+
 struct ahit {
   larlite::hit hit;
   TVector2 *vec;
@@ -51,18 +53,18 @@ public:
   /// Default destructor
   virtual ~ClusterYPlane(){}
   
-
-
   //copy ctor? THIS must Go under destructor wtf??
   ClusterYPlane(const ClusterYPlane& other);
   
-  
-  
+
+  //everything is public : - )
   //private:
   
+  
+  //class variables
   std::vector<ahit>             _ahits;
   std::vector<larlite::cluster> _clusters;
- 
+  
   ahit _start;
   ahit _end;
   
@@ -74,13 +76,14 @@ public:
   ClusterYPlane operator+(const ClusterYPlane* other);
   
   //Usual methods
-
   void     order_points();
   void     dump();
   Double_t distance(const TVector2* a,
 		    const TVector2* b);
+
   bool near(const TVector2* a, const TVector2* b);
   bool touching(const ClusterYPlane* other);
+
 
   size_t find_closest_hit(const TVector2* point);
   
@@ -99,8 +102,6 @@ public:
     _end   = _ahits.back();
   }
 
-  
-  
 };
 
 #endif

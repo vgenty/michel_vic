@@ -10,12 +10,6 @@ ClusterYPlane::ClusterYPlane(const ClusterYPlane& other)
   _ahits    = other._ahits;
   _clusters = other._clusters;
  
-  // _start = other._start;
-  // _end  = other._end;
-  
-  // _ordered_pts =other._ordered_pts;
-  // _ds = other._ds;
-  // _s = other._s;
   //quickly sort the hits based on x location
   sort_hits();
   
@@ -37,7 +31,7 @@ ClusterYPlane::ClusterYPlane(std::vector<larlite::hit>     in_hits,
   
   auto xy = [](const larlite::hit& h,Double_t *a) 
     { a[0] = h.WireID().Wire * 0.3;
-      a[1] = h.PeakTime() * 0.0802814; };
+      a[1] = h.PeakTime()    * 0.0802814; }; // currently missing trigger offset
   
   for(unsigned int i = 0; i < in_hits.size(); ++i) {
     Double_t a[2]; xy(in_hits[i],a);
@@ -65,13 +59,10 @@ ClusterYPlane::ClusterYPlane(std::vector<larlite::hit>     in_hits,
   _ahits.resize(in_hits.size());
   
   //Lambda encapsulates xy conversion
-  
-    // auto xy = [](const larlite::hit& h){ 
-    //   Double_t c[2] = { h.WireID().Wire * 0.3,
-    // 		       h.PeakTime() * 0.0802814 }; return c; };
+
   auto xy = [](const larlite::hit& h,Double_t *a) 
     { a[0] = h.WireID().Wire * 0.3;
-      a[1] = h.PeakTime() * 0.0802814; };
+      a[1] = h.PeakTime() * 0.0802814; }; // no trigger offset
   
   for(unsigned int i = 0; i < in_hits.size(); ++i) {
     Double_t a[2]; xy(in_hits[i],a);
@@ -121,7 +112,6 @@ void ClusterYPlane::order_points() {
 	 idxholder = itr;
 	 closest   = zz;
 	 j = 1;
-	 //std::cout << "!!best!! " << std::endl; 
        }
      }
      
@@ -158,9 +148,7 @@ void ClusterYPlane::order_points() {
   
    // for(const auto& id : _ordered_pts)
    //   std::cout <<  id << " , ";
-       
    // std::cout << "\n";
-   
    // std::cout << "_ordered_pts.size() : " << _ordered_pts.size() << " "
    // 	     << "_ahits.size()       : " << _ahits.size() << "\n";
    
@@ -182,7 +170,6 @@ ClusterYPlane ClusterYPlane::operator+(const ClusterYPlane* other) {
   // 			    other->_clusters.begin(), other->_clusters.end() );
   //scary
   
-  
   std::vector<larlite::hit>     send_hits;
   std::vector<larlite::cluster> send_clusters;
   
@@ -196,10 +183,10 @@ ClusterYPlane ClusterYPlane::operator+(const ClusterYPlane* other) {
   for(auto const& c : other->_clusters)
     send_clusters.push_back(c);
   
-  ClusterYPlane baby(send_hits,send_clusters);
+  ClusterYPlane merged(send_hits,send_clusters);
   // std::cout << "found a baby ... \n";
   // baby.dump();
-  return baby;
+  return merged;
   
 }
 
@@ -217,7 +204,7 @@ bool ClusterYPlane::touching(const ClusterYPlane* other) {
   if(near(this->_start.vec,other->_end.vec) ||
      near(this->_end.vec  ,other->_start.vec))
     return true;
-
+  
   
   return false;
 }
@@ -245,23 +232,11 @@ size_t ClusterYPlane::find_closest_hit(const TVector2* point) {
 }
 
 void ClusterYPlane::dump() {
-  // std::vector<ahit>             _ahits;
-  // std::vector<larlite::cluster> _clusters;
-  
-  // ahit _start;
-  // ahit _end;
-  
-  // std::vector<HitIdx_t>  _ordered_pts;
-  // std::vector<Double_t>  _ds;
-  // std::vector<Double_t>  _s;
-  
   std::cout << "\n==start dump==\n";
   std::cout << "A cluster with " << _ahits.size() << " hits in " << _clusters.size() << "\n";
   std::cout << "The start point is at (" << _start.vec->X() << "," << _start.vec->Y() << ")\n";
   std::cout << "The end point is at ("   << _end.vec->X() << ","   << _end.vec->Y()   << ")\n";
   std::cout << _ordered_pts.size() << " of the hits are ordered and nearby ";
   std::cout << "\n==sned dump==\n";
-  
-
 }
 #endif
