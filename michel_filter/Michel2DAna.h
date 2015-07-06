@@ -84,6 +84,12 @@ namespace larlite {
     std::vector<Double_t>  _dqds_copy;
     std::vector<Double_t>  _s_copy;
 
+    Double_t _startX;
+    Double_t _startY;
+    Double_t _endX;
+    Double_t _endY;
+    
+
     //reco object
     Reco2D* r2d;
     

@@ -23,7 +23,11 @@ namespace larlite {
     _output_tree->Branch("mean_charges", "std::vector<Double_t>" , &_mean_charges_copy);
     _output_tree->Branch("dqds"        , "std::vector<Double_t>" , &_dqds_copy);
     _output_tree->Branch("s"           , "std::vector<Double_t>" , &_s_copy);
-    
+    _output_tree->Branch("startX"      , &_startX, "startX/D");
+    _output_tree->Branch("startY"      , &_startY, "startY/D");
+    _output_tree->Branch("endX"        , &_endX,   "endX/D"  );
+    _output_tree->Branch("endY"        , &_endY,   "startX/D");
+
 
     return true;
     
@@ -181,11 +185,17 @@ namespace larlite {
     for(const auto& pts : c->_ordered_pts)
       _ordered_pts_copy.push_back(pts);
     
+    
     _mean_charges_copy = b;
     _dqds_copy         = baka;
     _s_copy            = c->_s;
-    
-    // _output_tree->Branch("ahits_X"       , "std::vector<Double_t>", &_ahits_copy);
+
+    _startX = c->_start.vec->X();
+    _startY = c->_start.vec->Y();
+    _endX = c->_end.vec->X();
+    _endY = c->_end.vec->Y();
+
+    // _output_tree->Branch("ahits_X"     , "std::vector<Double_t>", &_ahits_copy);
     // _output_tree->Branch("charges"     , "std::vector<Double_t>" , &_charges_copy);
     // _output_tree->Branch("ordered_pts" , "std::vector<size_t>"   , &_ordered_pts_copy);
     // _output_tree->Branch("mean_charges", "std::vector<Double_t>" , &_mean_charges_copy);

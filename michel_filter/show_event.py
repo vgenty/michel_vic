@@ -57,13 +57,34 @@ setaxis(tmg,"Wire [cm]","Time [cm]")
 
 c1.cd(3)
 
+tmgs = rr.TMultiGraph()
 ordered = rr.TGraph()
+tstart  = rr.TGraph()
+tend    = rr.TGraph()
+
 order = np.array([[rec['ahits_X'][evt_num][k],rec['ahits_Y'][evt_num][k]] 
                   for k in rec['ordered_pts'][evt_num]])
 
+ordered.SetMarkerSize(0)
 rn.fill_graph(ordered,order)
-ordered.Draw("AL")
-setaxis(ordered,"Wire [cm]","Time [cm]")
+tstart.SetPoint(0,rec['startX'][evt_num],rec['startY'][evt_num])
+tend.SetPoint  (0,rec['endX'][evt_num]  ,rec['endY'][evt_num])
+
+tstart.SetMarkerStyle(29)
+tstart.SetMarkerSize(2)
+tstart.SetMarkerColor(6)
+
+tend.SetMarkerStyle(20)
+tend.SetMarkerSize(2)
+tend.SetMarkerColor(7)
+
+tmgs.Add(ordered)
+tmgs.Add(tstart)
+tmgs.Add(tend)
+
+tmgs.Draw("ALP")
+setaxis(tmgs,"Wire [cm]","Time [cm]")
+
 
 c1.cd(2)
 meancharge = rr.TGraph()
