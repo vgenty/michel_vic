@@ -42,6 +42,8 @@ Double_t Reco2D::smooth_derive(const std::vector<Double_t> f,
 }
 
 //This should definitely become a templated function but for now lets get moving who cares
+//I just realized we could use TSpectrum::SmoothMarkov as well...
+//you can also use TSpectrum to estimate the the pointwise background, which may be useful
 std::vector<Double_t> Reco2D::windowed_means(int window_size, Double_t p_above, Double_t p_below,
 					     const std::vector<ahit>    & data,
 					     const std::vector<HitIdx_t>& order) {
@@ -131,31 +133,12 @@ std::pair<size_t,size_t> Reco2D::DetEVtx(const std::vector<Double_t>& q,
 					 const std::vector<Double_t>& dqds) {
 
   
-  auto the_max = 0.0;
-  size_t loc = 9999;
-  size_t candidate_loc = 9999;
-  
-  for(size_t i = 0; i < q.size(); ++i) {
-    if(q[i] > the_max) {
-      the_max = q[i]; candidate_loc = i;
-    }
-  }
+  auto candidate_loc     = find_max(q);
+  auto dqdscandidate_loc = find_min(dqds); 
   
 
-  //get lowest dqds
-  auto the_min = 0.0;
-  size_t dqdsloc = 9999;
-  size_t dqdscandidate_loc = 9999;
-  
-  for(size_t i = 0; i < dqds.size(); ++i) {
-    if(dqds[i] < the_min) {
-      the_min = dqds[i]; dqdscandidate_loc = i;
-    }
-  }
-  
-
-  //if the dqdscandidate_loc is within 30 of the candidate_loc fine...
-  if(abs(dqdscandidate_loc - candidate_loc) < 30)
+  //if the dqdscandidate_loc is within 20 of the candidate_loc fine...
+  if(abs(dqdscandidate_loc - candidate_loc) < 20)
     return std::make_pair(candidate_loc,dqdscandidate_loc);  
   else
     return std::make_pair(999,999);
@@ -192,7 +175,7 @@ size_t Reco2D::REALDetEVtx(std::vector<ahit> h,
   // std::cout << "a\n";
   // std::cout << "window start" << mean_michel_vtx - window_size;
   // std::cout << "   window size " << window_size << "\n";
-
+  
   for(int window = mean_michel_vtx - window_size;
       window < mean_michel_vtx + window_size; ++window){
     
@@ -204,6 +187,38 @@ size_t Reco2D::REALDetEVtx(std::vector<ahit> h,
   }
     
   return idx;
+
+}
+
+
+//these following two methods need to be templated
+size_t Reco2D::find_max(const std::vector<Double_t>& data) {
+
+  auto the_max = 0.0;
+  size_t candidate_loc = 9999;
+  
+  for(size_t i = 0; i < data.size(); ++i) {
+    if(data[i] > the_max) {
+      the_max = data[i]; candidate_loc = i;
+    }
+  }
+   
+  return candidate_loc;
+}
+
+size_t Reco2D::find_min(const std::vector<Double_t>& data) {
+  
+  //get lowest dqds
+  auto the_min = 0.0;
+  size_t dqdscandidate_loc = 9999;
+  
+  for(size_t i = 0; i < data.size(); ++i) {
+    if(data[i] < the_min) {
+      the_min = data[i]; dqdscandidate_loc = i;
+    }
+  }
+
+  return dqdscandidate_loc;
 
 }
 

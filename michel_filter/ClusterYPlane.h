@@ -76,10 +76,14 @@ public:
   ClusterYPlane operator+(const ClusterYPlane* other);
   
   //Usual methods
-  void     order_points();
-  void     dump();
+  void order_points();
+  void dump();
+  void calculate_distances();
+
   Double_t distance(const TVector2* a,
 		    const TVector2* b);
+
+  std::vector<HitIdx_t> do_ordering(const size_t start_idx);
 
   bool near(const TVector2* a, const TVector2* b);
   bool touching(const ClusterYPlane* other);
@@ -98,8 +102,8 @@ public:
   
   
   inline void set_start_end() {
-    _start = _ahits.front();
-    _end   = _ahits.back();
+    _start = _ahits[_ordered_pts.front()];
+    _end   = _ahits[_ordered_pts.back() ];
   }
 
 };

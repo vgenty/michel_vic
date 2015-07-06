@@ -15,14 +15,23 @@ namespace larlite {
     _output_tree->Branch("true_Y",&_tY,"tY/D");
     _output_tree->Branch("reco_X",&_rX,"rX/D");
     _output_tree->Branch("reco_Y",&_rY,"rY/D");
+
+    _output_tree->Branch("ahits_X"     , "std::vector<Double_t>" , &_ahits_X_copy);
+    _output_tree->Branch("ahits_Y"     , "std::vector<Double_t>" , &_ahits_Y_copy);
+    _output_tree->Branch("charges"     , "std::vector<Double_t>" , &_charges_copy);
+    _output_tree->Branch("ordered_pts" , "std::vector<size_t>"   , &_ordered_pts_copy);
+    _output_tree->Branch("mean_charges", "std::vector<Double_t>" , &_mean_charges_copy);
+    _output_tree->Branch("dqds"        , "std::vector<Double_t>" , &_dqds_copy);
+    _output_tree->Branch("s"           , "std::vector<Double_t>" , &_s_copy);
     
+
     return true;
     
   }
   
   bool Michel2DAna::analyze(storage_manager* storage) {
     clear_all(); // clear out class variables
-    std::cout << "\n\t\tOn event... " << storage->event_id() << "\n";
+    //std::cout << "\n\t\tOn event... " << storage->event_id() << "\n";
     
     //True
     auto evt_mcshower = storage->get_data<event_mcshower>("mcreco");
@@ -60,7 +69,7 @@ namespace larlite {
     
     auto c = _clusters[largest(_clusters)];
     
-    if(c->_ordered_pts.size() < 25)
+    if(c->_ordered_pts.size() < 25) //only long clusters allowed
       return false;
 
     b = r2d->windowed_means(25,0.25,0,
@@ -94,7 +103,7 @@ namespace larlite {
     
     
     //std::cout << " the size of _orderdpts is " << c->_ordered_pts.size() << "\n";
-    auto mean_michel_vtx = r2d->DetEVtx(b,baka); //should return index in charge with highest cham
+    auto mean_michel_vtx = r2d->DetEVtx(b,baka); //should return index of highest charge
     
     
     // std::cout << "mean_michel_vtx : first ~ "
@@ -137,7 +146,7 @@ namespace larlite {
       pxpoint = ::larutil::GeometryUtilities::GetME()->Get2DPointProjection2(ttt,2);
     } catch(larutil::LArUtilException) { return false; }
     TVector2 *proj_start = new TVector2(pxpoint.w*_wire2cm,
-					pxpoint.t*_wire2cm);
+					pxpoint.t*_time2cm);
     
 
     
@@ -153,8 +162,8 @@ namespace larlite {
     // std::cout << "maybe we found the michel point we don't know...";
     // std::cout << real_michel_vtx << "\n";
     auto thit = c->_ahits[c->_ordered_pts[the_vtx]];
-    std::cout << "it could be at... " << the_vtx
-	       << ": (" << thit.vec->X() << "," << thit.vec->Y() << ")\n";
+    // std::cout << "it could be at... " << the_vtx
+    // 	       << ": (" << thit.vec->X() << "," << thit.vec->Y() << ")\n";
     
     
     _tX = c->_ahits[c->_ordered_pts[real_michel]].vec->X();
@@ -162,6 +171,26 @@ namespace larlite {
     _rX = c->_ahits[c->_ordered_pts[the_vtx]].vec->X();
     _rY = c->_ahits[c->_ordered_pts[the_vtx]].vec->Y();
 
+    //create variables to be filled
+    
+    for(const auto& hit : c->_ahits) {
+      _ahits_X_copy.push_back(hit.vec->X());
+      _ahits_Y_copy.push_back(hit.vec->Y());
+      _charges_copy.push_back(hit.hit.Integral());
+    }
+    for(const auto& pts : c->_ordered_pts)
+      _ordered_pts_copy.push_back(pts);
+    
+    _mean_charges_copy = b;
+    _dqds_copy         = baka;
+    _s_copy            = c->_s;
+    
+    // _output_tree->Branch("ahits_X"       , "std::vector<Double_t>", &_ahits_copy);
+    // _output_tree->Branch("charges"     , "std::vector<Double_t>" , &_charges_copy);
+    // _output_tree->Branch("ordered_pts" , "std::vector<size_t>"   , &_ordered_pts_copy);
+    // _output_tree->Branch("mean_charges", "std::vector<Double_t>" , &_mean_charges_copy);
+    // _output_tree->Branch("dqds"        , "std::vector<Double_t>" , &_dqds_copy);
+        
     
     _output_tree->Fill();
     
@@ -169,7 +198,7 @@ namespace larlite {
     // delete evt_hits;
     // delete evt_clusters;
     // delete evt_mcshower;
-    //delete evt_ass_data;
+    // delete evt_ass_data;
 
     delete proj_start;
     delete ttt;
@@ -261,7 +290,7 @@ namespace larlite {
 	  //	  if(itr1 != itr2 && (*itr1)->touching(*itr2) ) {
 	  if(a != b && (_clusters[a])->touching(_clusters[b]) ) {
 	    //std::cout << "\nc\n ";
-	    std::cout << "Found two touchers \n";
+	    //std::cout << "Found two touchers \n";
 	    auto bb = *_clusters[a] + _clusters[b]; //real object, how do I put this in a reference of pointers??
 	    _clusters.push_back(new ClusterYPlane(bb)); //wow
 	    goto baka; //ouch
@@ -296,7 +325,14 @@ namespace larlite {
     for (std::vector<ClusterYPlane*>::iterator it = _clusters.begin() 
 	   ; it != _clusters.end(); ++it) { delete (*it); } 
     _clusters.clear();
-    
+
+    _ahits_X_copy.clear();
+    _ahits_Y_copy.clear();
+    _charges_copy.clear();
+    _ordered_pts_copy.clear();
+    _mean_charges_copy.clear();
+    _dqds_copy.clear();
+    _s_copy.clear();
   }
 }
 #endif

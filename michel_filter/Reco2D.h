@@ -48,6 +48,10 @@ public:
   size_t REALDetEVtx(std::vector<ahit> h,
 		     std::vector<HitIdx_t> o,
 		     size_t mean_michel_vtx);
+
+  size_t find_max(const std::vector<Double_t>& data);
+  size_t find_min(const std::vector<Double_t>& data);
+
   
   //inline methods
   inline void cut(std::vector<Double_t>& data,

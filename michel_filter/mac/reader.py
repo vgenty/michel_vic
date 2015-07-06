@@ -232,8 +232,8 @@ def EvtDisplay(clusters,michels,geo) :
     charges = [h.Integral() for h in tc.hits[tc.ordered_pts] ]
                
     meancharge = windowed_means(charges,25,0,25)
-    #meancharge.pop(0); meancharge.pop(-1)
-    #meancharge.pop(0); meancharge.pop(-1)
+    meancharge.pop(0); meancharge.pop(-1)
+    meancharge.pop(0); meancharge.pop(-1)
     
 
     print len(meancharge)
@@ -273,11 +273,44 @@ def EvtDisplay(clusters,michels,geo) :
     c1.Modified()
     
     
+    c2 = rr.TCanvas()
+    c2.cd()
+    ts = rr.TSpectrum()
+
+    print len(meancharge)
+    th = rr.TH1D("aho",";;",len(meancharge),0,len(meancharge))
+    for i in xrange(len(meancharge)) :
+        th.SetBinContent(i+1,meancharge[i])
+    b = ts.Background(th)
+    th.Draw()
+    b.Draw("SAMES")
+    setaxis(th,"Wire","Mean Charge")
     
+    c2.Update()
+    c2.Modified()
+
+        
+    c3 = rr.TCanvas()
+    c3.cd()
+    ts2 = rr.TSpectrum()
+
+    th2 = rr.TH1D("aho2",";;",len(charges),0,len(charges))
+    for i in xrange(len(charges)) :
+        th2.SetBinContent(i+1,charges[i])
+    b2 = ts2.Background(th2)
+    th2.Draw()
+    b2.Draw("SAMES")
+    setaxis(th2,"Wire","Charge")
+    
+    c3.Update()
+    c3.Modified()
+
     raw_input('')
     
     
     c1.Clear()
+    c2.Clear()
+    c3.Clear()
 
 
 def find_all_michel_events(TF,geo):

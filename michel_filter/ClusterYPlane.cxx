@@ -10,14 +10,18 @@ ClusterYPlane::ClusterYPlane(const ClusterYPlane& other)
   _ahits    = other._ahits;
   _clusters = other._clusters;
  
-  //quickly sort the hits based on x location
+   //quickly sort the hits based on x location
   sort_hits();
-  
-  //set start and end point
-  set_start_end();
   
   //order the points
   order_points();
+
+  //set start and end point
+  set_start_end();
+  
+  //calculate distances
+  calculate_distances();
+ 
 
 }
 
@@ -39,16 +43,19 @@ ClusterYPlane::ClusterYPlane(std::vector<larlite::hit>     in_hits,
     _ahits[i].vec = new TVector2(a);
   }
   
-  
   //quickly sort the hits based on x location
   sort_hits();
   
+  //order the points
+  order_points();
+
   //set start and end point
   set_start_end();
   
-  //order the points
-  order_points();
+  //calculate distances
+  calculate_distances();
   
+   
 }
 
 ClusterYPlane::ClusterYPlane(std::vector<larlite::hit>     in_hits,
@@ -74,24 +81,66 @@ ClusterYPlane::ClusterYPlane(std::vector<larlite::hit>     in_hits,
     //quickly sort the hits based on x location
   sort_hits();
   
+  //order the points
+  order_points();
+
   //set start and end point
   set_start_end();
   
-  //order the points
-  order_points();
+  //calculate distances
+  calculate_distances();
+  
+}
+
+void ClusterYPlane::calculate_distances() {
+  
+  auto tot_dist = double{0.0};
+  
+  _s.push_back(0.0);
+
+  //for(const auto& pt : _ordered_pts) {
+  for(size_t u = 0; u < _ordered_pts.size() - 1; ++u) {
+    auto zz = distance(_ahits[_ordered_pts[ u ]].vec,
+		       _ahits[_ordered_pts[u+1]].vec);
+      
+    _ds.push_back(zz);
+    tot_dist += zz;
+    _s.push_back(tot_dist);
+  }
+  
   
 }
 
 
 void ClusterYPlane::order_points() {
+  // try to order the points starting from left to right (lower wire -> higher)
+  // then try from right to left (higher -> lower)
+  // take whichever cluster is larger...
   
+  //feed do_ordering the start index inside of ahits
+  
+  auto right_to_left = do_ordering(_ahits.size() - 1); // right to left
+  auto left_to_right = do_ordering(0);                 // left  to right
+  
+  
+  if(right_to_left.size() > left_to_right.size())
+    _ordered_pts = right_to_left;
+  else
+    _ordered_pts = left_to_right;
+}
+
+
+std::vector<HitIdx_t> ClusterYPlane::do_ordering(const size_t start_idx) {
+
   std::vector<HitIdx_t> all_pts(_ahits.size() - 1,0);
   for(size_t b = 0 ; b < all_pts.size(); ++b)
     all_pts[b] = b+1;
+  std::vector<HitIdx_t> the_order;
   
-  
-  _ordered_pts.push_back(0);
-  _s.push_back(0);
+  //_ordered_pts.push_back(0);
+  the_order.push_back(start_idx);
+
+  //  _s.push_back(0);
   
   bool aho = true;
   Double_t zz = 0.0;
@@ -105,10 +154,10 @@ void ClusterYPlane::order_points() {
   
      for(std::vector<HitIdx_t>::iterator itr = all_pts.begin();
 	   itr != all_pts.end(); ++itr) {
-       zz = distance(_ahits[_ordered_pts[cnt]].vec,_ahits[*itr].vec);
-       // std::cout << zz << "  between  " << _ordered_pts[cnt]
+       zz = distance(_ahits[the_order[cnt]].vec,_ahits[*itr].vec);
+       // std::cout << zz << "  between  " << the_order[cnt]
        // 		 << " and " << *itr << "\n";
-       if(zz < closest && zz < 0.3*6) {
+       if(zz < closest && zz < 0.3*6) { //hard cutoff here to avoid delta ray
 	 idxholder = itr;
 	 closest   = zz;
 	 j = 1;
@@ -119,17 +168,17 @@ void ClusterYPlane::order_points() {
      if(j) {
        
        auto o = *idxholder;
-       _ordered_pts.push_back(o);
+       the_order.push_back(o);
        all_pts.erase(idxholder); //this is scary, erase does idxholder++ !
        
-       _ds.push_back(closest);
+       //_ds.push_back(closest);
        
-       stot += closest;
-       _s.push_back(stot);
+       //stot += closest;
+       //_s.push_back(stot);
        
        
        // std::cout << "Found closest point to "
-       // 		 << _ordered_pts[cnt] << " is " 
+       // 		 << the_order[cnt] << " is " 
        // 		  << o << " at closest = "
        // 		  << closest << "\n";
        
@@ -146,15 +195,14 @@ void ClusterYPlane::order_points() {
      j = 0;
    }
   
-   // for(const auto& id : _ordered_pts)
+   // for(const auto& id : the_order)
    //   std::cout <<  id << " , ";
    // std::cout << "\n";
-   // std::cout << "_ordered_pts.size() : " << _ordered_pts.size() << " "
+   // std::cout << "the_order.size() : " << the_order.size() << " "
    // 	     << "_ahits.size()       : " << _ahits.size() << "\n";
    
-  
+   return the_order;
 }
-
 
 Double_t ClusterYPlane::distance(const TVector2* a,
 				 const TVector2* b) {

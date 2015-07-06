@@ -74,6 +74,16 @@ namespace larlite {
     Double_t _rX;
     Double_t _rY;
 
+    
+    std::vector<Double_t> _ahits_X_copy;
+    std::vector<Double_t> _ahits_Y_copy;
+
+    std::vector<Double_t>  _charges_copy;
+    std::vector<size_t>    _ordered_pts_copy;
+    std::vector<Double_t>  _mean_charges_copy;
+    std::vector<Double_t>  _dqds_copy;
+    std::vector<Double_t>  _s_copy;
+
     //reco object
     Reco2D* r2d;
     
