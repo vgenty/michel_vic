@@ -18,12 +18,12 @@ for x in xrange(len(sys.argv)-1):
     my_proc.add_input_file(sys.argv[x+1])
 
 my_proc.set_io_mode(fmwk.storage_manager.kREAD)
-my_proc.set_ana_output_file("output.root");
+my_proc.set_ana_output_file("cosmic_output.root");
 my_proc.enable_filter(True)
 
 the_filter = fmwk.MichelFilter()
-the_ana    = fmwk.Michel2DAna("fuzzycluster");
-#the_ana    = fmwk.Michel2DCosmics("fuzzycluster");
+#the_ana    = fmwk.Michel2DAna("fuzzycluster");
+the_ana    = fmwk.Michel2DCosmics("fuzzycluster");
 
 my_proc.add_process(the_filter)
 my_proc.add_process(the_ana)

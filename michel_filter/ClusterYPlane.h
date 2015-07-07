@@ -62,6 +62,11 @@ public:
   
   
   //class variables
+  bool _has_michel = false;
+  
+  size_t   _michel_location;
+  Double_t _michel_dist;
+  
   std::vector<ahit>             _ahits;
   std::vector<larlite::cluster> _clusters;
   
@@ -88,7 +93,7 @@ public:
   bool near(const TVector2* a, const TVector2* b);
   bool touching(const ClusterYPlane* other);
 
-
+  int match(const TVector2* michel_loc);
   size_t find_closest_hit(const TVector2* point);
   
   //Inline Methods

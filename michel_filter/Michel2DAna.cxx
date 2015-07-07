@@ -15,7 +15,7 @@ namespace larlite {
     _output_tree->Branch("true_Y",&_tY,"tY/D");
     _output_tree->Branch("reco_X",&_rX,"rX/D");
     _output_tree->Branch("reco_Y",&_rY,"rY/D");
-
+    
     _output_tree->Branch("ahits_X"     , "std::vector<Double_t>" , &_ahits_X_copy);
     _output_tree->Branch("ahits_Y"     , "std::vector<Double_t>" , &_ahits_Y_copy);
     _output_tree->Branch("charges"     , "std::vector<Double_t>" , &_charges_copy);
@@ -27,6 +27,7 @@ namespace larlite {
     _output_tree->Branch("startY"      , &_startY, "startY/D");
     _output_tree->Branch("endX"        , &_endX,   "endX/D"  );
     _output_tree->Branch("endY"        , &_endY,   "startX/D");
+    _output_tree->Branch("d_michel_hit", &_d_m_h,   "d_michel_hit/D");
 
 
     return true;
@@ -91,7 +92,7 @@ namespace larlite {
 
     for(int o = 0; o < s; ++o)
       baka.push_back(0.0);
-
+    
     for(int i = s; i < b.size() - s + 1; ++i) {
       std::vector<Double_t> f(b.begin() + i - s,b.begin() + i + s);
       std::vector<Double_t> x(c->_s.begin() + i - s + soff,c->_s.begin() + i + s + soff);
@@ -130,38 +131,20 @@ namespace larlite {
     
     
     // Get the closest reconstructed hit to the start of the mcshower
-    TLorentzVector true_start;
-    auto bb = false;
-    for(const auto& shower : *evt_mcshower) {
-      if (shower.Process() == "muMinusCaptureAtRest" &&
-	  shower.Charge(2) > 2.0 )	  {
-	true_start = shower.Start().Position();
-	bb = true; 
-      }
-    }
-    if(!bb)
+
+    TVector2 *proj_start = nullptr;
+    
+    if(!find_projected_start(proj_start,evt_mcshower))
       return false;
     
-    TVector3 *ttt = new TVector3(true_start.Vect());
-    
-    ::larutil::PxPoint pxpoint;
-    
-    try{ 
-      pxpoint = ::larutil::GeometryUtilities::GetME()->Get2DPointProjection2(ttt,2);
-    } catch(larutil::LArUtilException) { return false; }
-    TVector2 *proj_start = new TVector2(pxpoint.w*_wire2cm,
-					pxpoint.t*_time2cm);
-    
-
-    
     //get the closest hit in ordered_pts to the projected start...
+    
     auto real_michel = c->find_closest_hit(proj_start);
-
+    
     // std::cout << "\tthe_vtx : " << the_vtx
     // 	      << "\treal_mic: " << real_michel;
     
-    // std::cout << "wire : " << proj_start->X() << " time: " << proj_start->Y() << "\n";
-    
+        
     
     // std::cout << "maybe we found the michel point we don't know...";
     // std::cout << real_michel_vtx << "\n";
@@ -182,7 +165,7 @@ namespace larlite {
       _ahits_Y_copy.push_back(hit.vec->Y());
       _charges_copy.push_back(hit.hit.Integral());
     }
-
+    
     for(const auto& pts : c->_ordered_pts)
       _ordered_pts_copy.push_back(pts);
     
@@ -202,7 +185,7 @@ namespace larlite {
     // _output_tree->Branch("mean_charges", "std::vector<Double_t>" , &_mean_charges_copy);
     // _output_tree->Branch("dqds"        , "std::vector<Double_t>" , &_dqds_copy);
         
-    
+    _d_m_h = c->_michel_dist;
     _output_tree->Fill();
     
     // don't delete these heap objects...
@@ -212,7 +195,7 @@ namespace larlite {
     // delete evt_ass_data;
 
     delete proj_start;
-    delete ttt;
+    //delete ttt;
 
     return true;
   }
@@ -345,5 +328,41 @@ namespace larlite {
     _dqds_copy.clear();
     _s_copy.clear();
   }
+
+  bool Michel2DAna::find_projected_start(TVector2*& p, 
+					 const event_mcshower* evt_mcshower) {
+    
+    //std::cout << Form("Afinding the projected start point...\n");
+    TLorentzVector true_start;
+    auto bb = false;
+    for(const auto& shower : *evt_mcshower) {
+      if (shower.Process() == "muMinusCaptureAtRest" &&
+	  shower.Charge(2) > 2.0 )	  {
+	true_start = shower.Start().Position();
+	bb = true; 
+      }
+    }
+    if(!bb)
+      return false;
+    
+    TVector3 *ttt = new TVector3(true_start.Vect());
+    
+    ::larutil::PxPoint pxpoint;
+    
+    try{ 
+      pxpoint = ::larutil::GeometryUtilities::GetME()->Get2DPointProjection2(ttt,2);
+    } catch(larutil::LArUtilException) { return false; }
+    
+    p = new TVector2(pxpoint.w * 0.3,
+		     pxpoint.t * 0.0802814);
+    
+    delete ttt;
+    return true;
+    
+  }
 }
+
+
+
+
 #endif

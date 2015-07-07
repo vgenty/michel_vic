@@ -157,7 +157,8 @@ std::vector<HitIdx_t> ClusterYPlane::do_ordering(const size_t start_idx) {
        zz = distance(_ahits[the_order[cnt]].vec,_ahits[*itr].vec);
        // std::cout << zz << "  between  " << the_order[cnt]
        // 		 << " and " << *itr << "\n";
-       if(zz < closest && zz < 0.3*6) { //hard cutoff here to avoid delta ray
+       //if(zz < closest && zz < 0.3*6) { //hard cutoff here to avoid delta ray
+       if(zz < closest && zz < 0.3*20) { //hard cutoff here to avoid delta ray
 	 idxholder = itr;
 	 closest   = zz;
 	 j = 1;
@@ -276,15 +277,44 @@ size_t ClusterYPlane::find_closest_hit(const TVector2* point) {
     if( d < dist) { dist = d; idx = i; }
   } 
   
+  _michel_location = idx;
+  _michel_dist     = dist;
   return idx;
 }
 
+int ClusterYPlane::match(const TVector2* michel_loc) {
+  if(_has_michel)
+    return 2; //2 I already have a michel...
+  
+  auto dist = 999.0;
+  auto idx  = size_t{0};
+  
+  for(size_t i = 0; i < _ordered_pts.size(); ++i) {
+    auto d = distance(_ahits[_ordered_pts[i]].vec,michel_loc);
+    if( d < dist) { dist = d; idx = i; }
+  } 
+  
+  //std::cout << "how far away from me is the michel: " << dist << "\n";
+  //distance to this michel is dist... , what is the cut off for this??
+  if(dist < 4 ) { //? is this reasonable...
+    _michel_location = idx;
+    _michel_dist     = dist;
+    _has_michel      = true;
+  }
+  else { return 0; } //michel isn't right for me :(
+  
+  return 1; //1 is matched with accepted parameters
+}
+
 void ClusterYPlane::dump() {
-  std::cout << "\n==start dump==\n";
+  std::cout << "\t\n==start dump==\n";
   std::cout << "A cluster with " << _ahits.size() << " hits in " << _clusters.size() << "\n";
   std::cout << "The start point is at (" << _start.vec->X() << "," << _start.vec->Y() << ")\n";
   std::cout << "The end point is at ("   << _end.vec->X() << ","   << _end.vec->Y()   << ")\n";
   std::cout << _ordered_pts.size() << " of the hits are ordered and nearby ";
-  std::cout << "\n==sned dump==\n";
+  std::cout << "I may or may not have a michel, do i? " << _has_michel << "\n";
+  if(_has_michel) 
+    std::cout << "ok I do, it is at a distance : " << _michel_dist << " from one of the hits in my cham\n";
+  std::cout << "\t\n==end dump==\n";
 }
 #endif

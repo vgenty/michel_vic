@@ -89,7 +89,8 @@ namespace larlite {
     Double_t _endX;
     Double_t _endY;
     
-
+    Double_t _d_m_h;
+    
     //reco object
     Reco2D* r2d;
     
@@ -102,6 +103,8 @@ namespace larlite {
 		    const event_cluster *evt_clusters,
 		    const event_ass     *evt_ass_data);
     
+    bool find_projected_start(TVector2*& p, 
+			      const event_mcshower* evt_mcshower);
     
     void check_cluster_boundaries();
     void clear_all();

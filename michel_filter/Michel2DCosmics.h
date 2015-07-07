@@ -33,7 +33,7 @@ namespace larlite {
     //m2Da = new Michel2DAna(cp);}
     
     /// Default destructor
-    virtual ~Michel2DCosmics(){ delete m2Da; }
+    virtual ~Michel2DCosmics(){}
 
     virtual bool initialize();
 
@@ -41,7 +41,21 @@ namespace larlite {
 
     virtual bool finalize();
 
-  protected:
+  private:
+    TTree* _output_tree;
+    int _evt = 0;
+    
+    std::vector<Double_t> _tX;
+    std::vector<Double_t> _tY;
+    
+    std::vector<std::vector<Double_t> > _ahits_X_copy;
+    std::vector<std::vector<Double_t> > _ahits_Y_copy;
+
+    std::vector<std::vector<size_t> >  _ordered_pts_copy;
+    
+    //geo
+    Double_t _time2cm;
+    Double_t _wire2cm;
     
     std::string _cluster_producer;
     std::vector<ClusterYPlane*> _clusters; 
@@ -53,7 +67,9 @@ namespace larlite {
     
     void check_cluster_boundaries();
     void clear_all();
-
+    bool find_projected_starts(std::vector<TVector2*>& p, //is this correect??
+			       const event_mcshower* evt_mcshower);
+  
 
     
     //Michel2DAna *m2Da; //I probably could inherit but why not just make heap instance
