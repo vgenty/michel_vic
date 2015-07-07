@@ -85,8 +85,8 @@ tmgs.Add(tend)
 tmgs.Draw("ALP")
 setaxis(tmgs,"Wire [cm]","Time [cm]")
 
-
 c1.cd(2)
+
 meancharge = rr.TGraph()
 thecharge =  np.array([[rec['s'][evt_num][k],rec['mean_charges'][evt_num][k]] 
                        for k in xrange(rec['mean_charges'][evt_num].size)])

@@ -22,7 +22,8 @@ my_proc.set_ana_output_file("output.root");
 my_proc.enable_filter(True)
 
 the_filter = fmwk.MichelFilter()
-the_ana    = fmwk.Michel2DAna("fuzzycluster");
+#the_ana    = fmwk.Michel2DAna("fuzzycluster");
+the_ana    = fmwk.Michel2DCosmics("fuzzycluster");
 
 my_proc.add_process(the_filter)
 my_proc.add_process(the_ana)

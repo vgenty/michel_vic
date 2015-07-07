@@ -182,6 +182,7 @@ namespace larlite {
       _ahits_Y_copy.push_back(hit.vec->Y());
       _charges_copy.push_back(hit.hit.Integral());
     }
+
     for(const auto& pts : c->_ordered_pts)
       _ordered_pts_copy.push_back(pts);
     
