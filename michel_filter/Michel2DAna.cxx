@@ -27,8 +27,11 @@ namespace larlite {
     _output_tree->Branch("startY"      , &_startY, "startY/D");
     _output_tree->Branch("endX"        , &_endX,   "endX/D"  );
     _output_tree->Branch("endY"        , &_endY,   "startX/D");
-    _output_tree->Branch("d_michel_hit", &_d_m_h,   "d_michel_hit/D");
 
+    _output_tree->Branch("_michel_E", &_michel_E,   "_michel_E/D");
+    _output_tree->Branch("_michel_L", &_michel_L,   "_michel_L/D");
+    _output_tree->Branch("d_michel_hit", &_d_m_h,   "d_michel_hit/D");
+    _output_tree->Branch("_true_michel_E", &_true_michel_E,   "_true_michel_E/D");
 
     return true;
     
@@ -123,12 +126,34 @@ namespace larlite {
 					    mean_michel_vtx.first);
     
     auto the_vtx = size_t{0};
-    
-    if(mean_michel_vtx.first < mean_michel_vtx.second)
+
+    // bool forward;
+    // if(mean_michel_vtx.first < mean_michel_vtx.second) {
+    //   the_vtx = real_michel_vtx + 1;
+    //   forward = true;
+    // }
+    // else {
+    //   std::cout << " michel was behind me... " << std::endl;
+    //   the_vtx = real_michel_vtx - 1;
+    //   forward = false;
+    // }
+    std::cout << "mean_michel_vtx  " << mean_michel_vtx.first << std::endl;
+    std::cout << "real_michel_vtx  " << real_michel_vtx << std::endl;
+    //maybe what is better is to count the number of points before or after...    
+    bool forward;
+    if((double)mean_michel_vtx.first > (double)(c->_ordered_pts.size()/2.0)) {
       the_vtx = real_michel_vtx + 1;
-    else
-      the_vtx = real_michel_vtx - 1;
-    
+      forward = true;
+      std::cout << "true forward the_vtx.. " << the_vtx << std::endl;
+    } else {
+      if(real_michel_vtx !=0)
+	the_vtx = real_michel_vtx - 1;
+      else
+	the_vtx = real_michel_vtx;
+
+      forward = false;
+      std::cout << "false forward the_vtx.. " << the_vtx << std::endl;
+    }
     
     // Get the closest reconstructed hit to the start of the mcshower
 
@@ -152,6 +177,14 @@ namespace larlite {
     // std::cout << "it could be at... " << the_vtx
     // 	       << ": (" << thit.vec->X() << "," << thit.vec->Y() << ")\n";
     
+
+    r2d->tag_michel(c,the_vtx,forward,evt_hits);
+
+
+
+
+
+    ////////////WRITE OUT
     
     _tX = c->_ahits[c->_ordered_pts[real_michel]].vec->X();
     _tY = c->_ahits[c->_ordered_pts[real_michel]].vec->Y();
@@ -169,7 +202,6 @@ namespace larlite {
     for(const auto& pts : c->_ordered_pts)
       _ordered_pts_copy.push_back(pts);
     
-    
     _mean_charges_copy = b;
     _dqds_copy         = baka;
     _s_copy            = c->_s;
@@ -178,7 +210,7 @@ namespace larlite {
     _startY = c->_start.vec->Y();
     _endX = c->_end.vec->X();
     _endY = c->_end.vec->Y();
-
+    
     // _output_tree->Branch("ahits_X"     , "std::vector<Double_t>", &_ahits_copy);
     // _output_tree->Branch("charges"     , "std::vector<Double_t>" , &_charges_copy);
     // _output_tree->Branch("ordered_pts" , "std::vector<size_t>"   , &_ordered_pts_copy);
@@ -186,6 +218,11 @@ namespace larlite {
     // _output_tree->Branch("dqds"        , "std::vector<Double_t>" , &_dqds_copy);
         
     _d_m_h = c->_michel_dist;
+    _michel_E = c->_michel->_charge;
+    _michel_L = c->_michel->_length;
+
+    //_true_michel_E = 
+    
     _output_tree->Fill();
     
     // don't delete these heap objects...
@@ -196,7 +233,8 @@ namespace larlite {
 
     delete proj_start;
     //delete ttt;
-
+    std::cout << "\n\t == Wrote event: " << _evt << "\n";
+    _evt++;
     return true;
   }
   
@@ -339,6 +377,7 @@ namespace larlite {
       if (shower.Process() == "muMinusCaptureAtRest" &&
 	  shower.Charge(2) > 2.0 )	  {
 	true_start = shower.Start().Position();
+	_true_michel_E = shower.Charge(2);
 	bb = true; 
       }
     }

@@ -24,6 +24,9 @@
 //ROOT
 #include "TVector2.h"
 
+//vic
+#include "Michel.h"
+
 /**
    \class ClusterYPlane
    User defined class ClusterYPlane ... these comments are used to generate
@@ -76,6 +79,11 @@ public:
   std::vector<HitIdx_t>  _ordered_pts;
   std::vector<Double_t>  _ds;
   std::vector<Double_t>  _s;
+
+  
+  //Michel
+  Michel *_michel;
+  
   
   //Operator methods
   ClusterYPlane operator+(const ClusterYPlane* other);

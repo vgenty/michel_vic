@@ -14,6 +14,7 @@
 #ifndef RECO2D_H
 #define RECO2D_H
 
+
 //C++
 #include <cmath>
 
@@ -51,6 +52,10 @@ public:
 
   size_t find_max(const std::vector<Double_t>& data);
   size_t find_min(const std::vector<Double_t>& data);
+  void tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c of filter
+		  size_t idx,      // of chosen in michel in orderd_pts
+		  bool forward,    //higher/lower in orderedpts
+		  const larlite::event_hit *evt_hits); //all the hits
 
   
   //inline methods
@@ -58,6 +63,8 @@ public:
 		  double frac, bool above);
   
   inline Double_t calc_mean(std::vector<Double_t> &data);
+  inline Double_t distance(const larlite::hit& a, const larlite::hit& b);
+
 };
 
 #endif

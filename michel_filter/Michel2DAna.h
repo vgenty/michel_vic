@@ -88,9 +88,15 @@ namespace larlite {
     Double_t _startY;
     Double_t _endX;
     Double_t _endY;
+
     
+    Double_t _michel_E;
+    Double_t _michel_L;
+    Double_t _true_michel_E;
+
     Double_t _d_m_h;
     
+    Int_t _evt = 0;
     //reco object
     Reco2D* r2d;
     
