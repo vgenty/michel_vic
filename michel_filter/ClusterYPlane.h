@@ -60,9 +60,8 @@ public:
   ClusterYPlane(const ClusterYPlane& other);
   
 
-  //everything is public : - )
-  //private:
-  
+  //everything is public save me from getters: - )
+  //private:  
   
   //class variables
   bool _has_michel = false;
@@ -83,7 +82,6 @@ public:
   
   //Michel
   Michel *_michel;
-  
   
   //Operator methods
   ClusterYPlane operator+(const ClusterYPlane* other);
@@ -118,8 +116,9 @@ public:
     _start = _ahits[_ordered_pts.front()];
     _end   = _ahits[_ordered_pts.back() ];
   }
-
+  
 };
 
 #endif
 /** @} */ // end of doxygen group 
+

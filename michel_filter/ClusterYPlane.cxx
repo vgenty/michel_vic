@@ -6,23 +6,21 @@
 ClusterYPlane::ClusterYPlane(const ClusterYPlane& other)
 {
 
-
   _ahits    = other._ahits;
   _clusters = other._clusters;
- 
-   //quickly sort the hits based on x location
+  
+  //quickly sort the hits based on x location
   sort_hits();
   
   //order the points
   order_points();
-
+  
   //set start and end point
   set_start_end();
   
   //calculate distances
   calculate_distances();
  
-
 }
 
 
@@ -98,13 +96,13 @@ void ClusterYPlane::calculate_distances() {
   
   _s.push_back(0.0);
 
-  //for(const auto& pt : _ordered_pts) {
   for(size_t u = 0; u < _ordered_pts.size() - 1; ++u) {
     auto zz = distance(_ahits[_ordered_pts[ u ]].vec,
 		       _ahits[_ordered_pts[u+1]].vec);
-      
     _ds.push_back(zz);
+
     tot_dist += zz;
+
     _s.push_back(tot_dist);
   }
   
@@ -131,17 +129,14 @@ void ClusterYPlane::order_points() {
 
 
 std::vector<HitIdx_t> ClusterYPlane::do_ordering(const size_t start_idx) {
-
+  
   std::vector<HitIdx_t> all_pts(_ahits.size() - 1,0);
   for(size_t b = 0 ; b < all_pts.size(); ++b)
     all_pts[b] = b+1;
   std::vector<HitIdx_t> the_order;
   
-  //_ordered_pts.push_back(0);
   the_order.push_back(start_idx);
 
-  //  _s.push_back(0);
-  
   bool aho = true;
   Double_t zz = 0.0;
   size_t j = 0;
@@ -155,9 +150,7 @@ std::vector<HitIdx_t> ClusterYPlane::do_ordering(const size_t start_idx) {
      for(std::vector<HitIdx_t>::iterator itr = all_pts.begin();
 	   itr != all_pts.end(); ++itr) {
        zz = distance(_ahits[the_order[cnt]].vec,_ahits[*itr].vec);
-       // std::cout << zz << "  between  " << the_order[cnt]
-       // 		 << " and " << *itr << "\n";
-       //if(zz < closest && zz < 0.3*6) { //hard cutoff here to avoid delta ray
+       
        if(zz < closest && zz < 0.3*20) { //hard cutoff here to avoid delta ray
 	 idxholder = itr;
 	 closest   = zz;
@@ -165,42 +158,20 @@ std::vector<HitIdx_t> ClusterYPlane::do_ordering(const size_t start_idx) {
        }
      }
      
-     
      if(j) {
-       
        auto o = *idxholder;
        the_order.push_back(o);
        all_pts.erase(idxholder); //this is scary, erase does idxholder++ !
-       
-       //_ds.push_back(closest);
-       
-       //stot += closest;
-       //_s.push_back(stot);
-       
-       
-       // std::cout << "Found closest point to "
-       // 		 << the_order[cnt] << " is " 
-       // 		  << o << " at closest = "
-       // 		  << closest << "\n";
-       
        closest = 9999.9;
        zz      = 0.0;
        cnt    += 1;
      }
      
-     
      if(all_pts.size() == 0 || j == 0)
        aho = false;
-       
-       
+     
      j = 0;
    }
-  
-   // for(const auto& id : the_order)
-   //   std::cout <<  id << " , ";
-   // std::cout << "\n";
-   // std::cout << "the_order.size() : " << the_order.size() << " "
-   // 	     << "_ahits.size()       : " << _ahits.size() << "\n";
    
    return the_order;
 }
@@ -240,15 +211,6 @@ ClusterYPlane ClusterYPlane::operator+(const ClusterYPlane* other) {
 }
 
 bool ClusterYPlane::touching(const ClusterYPlane* other) {
-  // std::cout << "in touching...\n";
-
-  // std::cout << "(" << this->_start.vec->X() 
-  // 	    << "," << this->_start.vec->Y()
-  // 	    << ")\n";
-
-  // std::cout << "(" << other->_start.vec->X() 
-  // 	    << "," << other->_start.vec->Y()
-  // 	    << ")\n";
   
   if(near(this->_start.vec,other->_end.vec) ||
      near(this->_end.vec  ,other->_start.vec))
@@ -259,7 +221,7 @@ bool ClusterYPlane::touching(const ClusterYPlane* other) {
 }
 
 bool ClusterYPlane::near(const TVector2* a, const TVector2* b) {
-  //std::cout << "in near...\n";
+  
   if(abs(a->X() - b->X()) < 1.0 &&
      abs(a->Y() - b->Y()) < 3.75) //hard cutoff, user should set not me :(
     return true;
@@ -294,7 +256,6 @@ int ClusterYPlane::match(const TVector2* michel_loc) {
     if( d < dist) { dist = d; idx = i; }
   } 
   
-  //std::cout << "how far away from me is the michel: " << dist << "\n";
   //distance to this michel is dist... , what is the cut off for this??
   if(dist < 4 ) { //? is this reasonable...
     _michel_location = idx;
@@ -318,3 +279,4 @@ void ClusterYPlane::dump() {
   std::cout << "\t\n==end dump==\n";
 }
 #endif
+

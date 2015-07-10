@@ -23,8 +23,8 @@ c4 = rr.TCanvas()
 tgX = rr.TGraph()
 tgY = rr.TGraph()
 
-thX = rr.TH1D("thX",";;",100,0,0)
-thY = rr.TH1D("thY",";;",100,0,0)
+thX = rr.TH1D("thX",";;",1000,-100,100)
+thY = rr.TH1D("thY",";;",1000,-100,100)
 
 
 Xs = np.array([[rec['reco_X'][i],rec['true_X'][i]] for i in xrange(rec['reco_X'].size)])

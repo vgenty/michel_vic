@@ -29,7 +29,6 @@ Double_t Reco2D::smooth_derive(const std::vector<Double_t> f,
 			       Int_t N) {
  
   // N should def be odd.
-  
   auto M   = int{(N - 1)/2};
   auto tot = double{0.0};
   
@@ -43,7 +42,7 @@ Double_t Reco2D::smooth_derive(const std::vector<Double_t> f,
 
 //This should definitely become a templated function but for now lets get moving who cares
 //I just realized we could use TSpectrum::SmoothMarkov as well...
-//you can also use TSpectrum to estimate the the pointwise background, which may be useful
+//you can also use TSpectrum to estimate the the pointwise background, which may be useful (as a reminder~)
 std::vector<Double_t> Reco2D::windowed_means(int window_size, Double_t p_above, Double_t p_below,
 					     const std::vector<ahit>    & data,
 					     const std::vector<HitIdx_t>& order) {
@@ -80,20 +79,13 @@ std::vector<Double_t> Reco2D::windowed_means(int window_size, Double_t p_above, 
 	means.push_back(charge(data[order[j]]));
       
     }
-    // std::cout << "\ndata before...:";
-    // printvec(means);
     
     if(means.size() > 3) cut(means,p_above,1);
-    
-    // std::cout << "\ndata after...:";
-    // printvec(means);
     
     mean_window.push_back(calc_mean(means));
     means.clear();
   }
   
-  //printvec(mean_window);
-  //std::cout << "we made it!!!\n";
   return mean_window;
   
 }
@@ -117,15 +109,11 @@ inline void Reco2D::cut(std::vector<Double_t>& data,
 	      return a < b;	      
 	    });
   
-  //std::cout << "\tfrac : " << frac << " to_stay : " << to_stay << " above : " << above << " size : " << size << "\n";
-
-  if(above) {
+  if(above) 
     data.erase(data.begin() + to_stay, data.end());
-  }
-  else {
-    //to_stay = 1 - to_stay;
+  else 
     data.erase(data.begin(),data.begin()+to_stay);
-  }
+  
   
 }
 
@@ -137,6 +125,7 @@ std::pair<size_t,size_t> Reco2D::DetEVtx(const std::vector<Double_t>& q,
   auto dqdscandidate_loc = find_min(dqds); 
   
   std::cout << "candidate_loc " << candidate_loc << std::endl;
+  
   //if the dqdscandidate_loc is within 20 of the candidate_loc fine...
   if(abs(dqdscandidate_loc - candidate_loc) < 20)
     return std::make_pair(candidate_loc,dqdscandidate_loc);  
@@ -179,10 +168,7 @@ size_t Reco2D::REALDetEVtx(std::vector<ahit> h,
   if(window_size == 0)
     window_size++; //this only works because I pop...
   
-  std::cout << "window size is... " <<  window_size << std::endl;
-  std::cout << "mean_michel_vtx is.. " << mean_michel_vtx << "\n";
- 
-  
+  //this loop is most contentious!!
   for(int window = mean_michel_vtx - window_size;
       window < mean_michel_vtx + window_size; ++window){
     auto c = h[o[window]].hit.Integral();
@@ -193,7 +179,6 @@ size_t Reco2D::REALDetEVtx(std::vector<ahit> h,
   }
   
   return idx;
-
 }
 
 
@@ -229,149 +214,71 @@ size_t Reco2D::find_min(const std::vector<Double_t>& data) {
 }
 
 void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c of filter
-			size_t idx,      // of chosen in michel in orderd_pts
-			bool forward,    //higher/lower in orderedpts
+			size_t idx,        // of chosen in michel in orderd_pts
+			bool forward,      //higher/lower in orderedpts
 			const larlite::event_hit *evt_hits) { //all the hits
   auto E = double{0.0};
-  auto L = double{0.0};
-  
+    
   //determine the radius of the circle here
   Double_t radius = 0.0;
   
-  //for(const auto& i : c->_ordered_pts) {
-  
   std::vector<size_t>       michel_idxs;
   std::vector<larlite::hit> michel_hits;
-
-  for(size_t i = 0; i < c->_ordered_pts.size(); ++i)
-    //c->_ahits[c->_ordered_pts[i]].hit.Integral();
-    
-    if(forward)  {
-      if(i >= idx) {
-	radius += c->_ds[i];
-	michel_idxs.push_back(c->_ordered_pts[i]);
-      }
+  
+  if(forward)  {
+    if(i >= idx) {
+      radius += c->_ds[i];
+      michel_idxs.push_back(c->_ordered_pts[i]);
     }
-    else {
-      if( i <= idx ) {
-	radius += c->_ds[i];
-	michel_idxs.push_back(c->_ordered_pts[i]);
-      }
+  }
+  else {
+    if( i <= idx ) {
+      radius += c->_ds[i];
+      michel_idxs.push_back(c->_ordered_pts[i]);
     }
+  }
   
   bool there = false;
-  std::cout << "michel idxs . size() : " << michel_idxs.size() << "\n";
-  std::cout << "_ahits . size() : "      << c->_ahits.size() << "\n";
-  std::cout << "_ordered . size() : "    << c->_ordered_pts.size() << "\n";
   
-  int k = 0;
-  //  std::vector<larlite::hit> cluster_hits;
   std::vector<size_t> cluster_hits;
-  std::cout << "michelidxs {";
-  for(auto o : michel_idxs)
-    std::cout << o << ",";
-  std::cout << "}\n";
-  std::cout << "pushing back: {";
-
+  
   for(size_t i = 0; i < c->_ahits.size(); ++i) {
     for(size_t j = 0; j < michel_idxs.size(); ++j) {
       if( i == michel_idxs[j]) {
-	std::cout << " *  ";
-	k = 1;
 	there = true;
 	break;
       }
     }
-    //std::cout << " " << k << " ";
-    if(k  == 0) {
-      std::cout << i << ",";
-    
-      cluster_hits.push_back(i);
+    if(!there)  {
+      cluster_hits.push_back(c->_ahits[i].hit);
     }
-    //there = false;
-    k = 0;
+    there = false;
   }
-  std::cout << "}";
-  std::cout << "cluster_hits . size() : " << cluster_hits.size() << "\n";
-  std::cout << "radius... " << radius << "\n";
-  //michel_idxs.clear();
-  
-  //erase the michels out of here
-  // if(forward)
-  //   ahits.erase(ahits.begin() + idx, ahits.end());
-  // else
-  //   ahits.erase(ahits.begin(), ahits.begin() + idx + 1);
-  std::cout << "num hits in this event... " << evt_hits->size() << "\n";
-  
-  //there = false;
-  k = 0;
-  std::cout << "idx.. " << idx << "\n";
-  
-  for(const auto& m : michel_idxs)
-    std::cout << "the distance between me and michels is "
-	      << distance(c->_ahits[m].hit,c->_ahits[c->_ordered_pts[idx]].hit) << "\n";
-
-  // for(const auto& m : cluster_hits)
-  //   std::cout << "the distance between cluster_hits and michels is "
-  // 	      << distance(m,c->_ahits[c->_ordered_pts[idx]].hit) << "\n";
   
   
-  int counter = 0;
-  int total_view_hits = 0;
+  there = false
   for(const auto& ehit : *evt_hits) {   // loop over all the hits
     if(ehit.View() == 2){ // look at Y plane only
-      total_view_hits++;
-      //for(const auto& ahitz : cluster_hits) { //loop over all cluster hits that are not michels;
-      for(const auto& a : cluster_hits) { //loop over all cluster hits that are not michels;
-	auto ahitz = c->_ahits[a].hit;
+      for(const auto& ahitz : cluster_hits) { //loop over all cluster hits that are not michels;
+	//auto ahitz = c->_ahits[a].hit;
 	//if ((ehit < ahitz) == false)  { //whoa does this fail???
-	if ((ehit == ahitz))  { //whoa does this fail???
-	// if(ehit.StartTick() == ahitz.StartTick() &&
-	//    ehit.EndTick()   == ahitz.EndTick()) {
-	  //there = true;
-	  k = 1;
-	  std::cout << "matched " << a << ", ";
-	  counter++;
-	  // std::cout << "kaka the distance is... " 
-	  // 	    << distance(ehit,c->_ahits[c->_ordered_pts[idx]].hit) << "\n";
-	  
-	  if(distance(ehit,c->_ahits[c->_ordered_pts[idx]].hit) == 0)
-	    std::cout << "culprit " << a << std::endl;
-	  
-	  std::cout << std::endl;
+	if (ehit == ahitz)  { //custom hit.h
+	  there = true;
 	  break;
 	}
       }
       
-      if( k == 0 )
-	std::cout << " the distance is... " 
-		  << distance(ehit,c->_ahits[c->_ordered_pts[idx]].hit) << "\n";
-      if( k == 0 && (distance(ehit,c->_ahits[c->_ordered_pts[idx]].hit) <= radius) )
+      if( !there && (distance(ehit,c->_ahits[c->_ordered_pts[idx]].hit) <= radius) )
   	michel_hits.push_back(ehit);
       
-    }//end Y plane
-    //there = false;
-    k =0;
+    } //end Y plane
+    there = false;
   } //end all hits
-  std::cout << "counter : " << counter << "\n";
-  std::cout << "total_view_hits : " << total_view_hits << "\n";
-  std::cout << "b" << std::endl;
-  L = radius;
-  //as a check lets loop through the michel hits and check to see that the idx is in there...
   
+  for(const auto& h : michel_hits)
+    E += h.Integral();
   
-  for(const auto& h : michel_hits) {
-    E += h.SummedADC();
-  }
-  
-  
-  // for(const auto& id : michel_idxs) 
-  //   E += c->_ahits[id].hit.Integral();
-  
-  //c->_michel = new Michel(E,L,c->_ahits[c->_ordered_pts[idx]].vec,michel_idxs.size());
-
-  std::cout << "E " << E << std::endl;
-  c->_michel = new Michel(E,L,c->_ahits[c->_ordered_pts[idx]].vec,michel_hits.size());
+  c->_michel = new Michel(E,radius,c->_ahits[c->_ordered_pts[idx]].vec,michel_hits.size());
   
   c->_michel->dump();
 

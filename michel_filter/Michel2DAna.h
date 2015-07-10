@@ -43,7 +43,7 @@ namespace larlite {
   public:
 
     /// Default constructor
-
+    
     Michel2DAna(std::string cp) : 
       _output_tree     (nullptr),
       _cluster_producer(cp)
@@ -59,36 +59,38 @@ namespace larlite {
 
     virtual bool finalize();
 
+    // Setter methods for various reco parameters as per ATLAS coding guidelines
+    void set_min_cluster_size(const int i)    { _min_cluster_size = i; }
+    void set_n_window_size(const int i)       { _n_window_size    = i; }
+    void set_window_cutoff(const Double_t i)  { _window_cutoff    = i; }
+    void set_truncated_shave(const int i)     { _truncated_shave  = i; }
+    
     
   private:
     
-    TTree *_output_tree;
-    
     std::vector<ClusterYPlane*> _clusters; 
-    
     std::string _cluster_producer;
     
-    //vars going into tree
+    //Variables going into tree...
+    TTree *_output_tree;
+    
     Double_t _tX;
     Double_t _tY;
     Double_t _rX;
     Double_t _rY;
 
-    
     std::vector<Double_t> _ahits_X_copy;
     std::vector<Double_t> _ahits_Y_copy;
-
-    std::vector<Double_t>  _charges_copy;
-    std::vector<size_t>    _ordered_pts_copy;
-    std::vector<Double_t>  _mean_charges_copy;
-    std::vector<Double_t>  _dqds_copy;
-    std::vector<Double_t>  _s_copy;
+    std::vector<Double_t> _charges_copy;
+    std::vector<size_t>   _ordered_pts_copy;
+    std::vector<Double_t> _mean_charges_copy;
+    std::vector<Double_t> _dqds_copy;
+    std::vector<Double_t> _s_copy;
 
     Double_t _startX;
     Double_t _startY;
     Double_t _endX;
     Double_t _endY;
-
     
     Double_t _michel_E;
     Double_t _michel_L;
@@ -97,14 +99,23 @@ namespace larlite {
     Double_t _d_m_h;
     
     Int_t _evt = 0;
-    //reco object
+
+    //THE Reco object
     Reco2D* r2d;
     
-    //geo
+    //Geo variables
     Double_t _time2cm;
     Double_t _wire2cm;
     
-    //Methods
+    //Python setters with various variables
+    int      _min_cluster_size = 25;
+    int      _n_window_size    = 25;
+    Double_t _window_cutoff    = 0.25;
+    int      _truncated_shave  = 2;
+    
+    
+    
+    //General Methods
     bool convert_2d(const event_hit     *evt_hits,
 		    const event_cluster *evt_clusters,
 		    const event_ass     *evt_ass_data);

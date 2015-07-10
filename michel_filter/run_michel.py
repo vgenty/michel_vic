@@ -23,15 +23,21 @@ my_proc.enable_filter(True)
 
 the_filter = fmwk.MichelFilter()
 the_ana    = fmwk.Michel2DAna("fuzzycluster");
-#the_ana    = fmwk.Michel2DCosmics("fuzzycluster");
+
+#~~tune-able parameters
+# the_ana.set_min_cluster_size(25)   
+# the_ana.set_n_window_size(25)      
+# the_ana.set_window_cutoff(0.25) 
+# the_ana.set_truncated_shave(2)    
 
 my_proc.add_process(the_filter)
 my_proc.add_process(the_ana)
 
-# Let's run it.
+#~~Let's run it.
 my_proc.run();
+
+#~~Or process single event
 # my_proc.process_event(302)
 # the_ana.finalize()
-# done!
 
 sys.exit(0)
