@@ -23,7 +23,12 @@
 #include "Analysis/ana_base.h"
 #include "DataFormat/event_ass.h"
 #include "LArUtil/GeometryUtilities.h"
+#include "LArUtil/DetectorProperties.h"
 #include "DataFormat/mcshower.h"
+#include "DataFormat/simch.h"
+#include "DataFormat/shower.h" // not sure if needed
+
+#include "MCComp/MCMatchAlg.h"
 
 //ROOT
 #include "TTree.h"
@@ -67,6 +72,9 @@ namespace larlite {
     
     
   private:
+   
+    
+    ::btutil::MCMatchAlg fBTAlg;
     
     std::vector<ClusterYPlane*> _clusters; 
     std::string _cluster_producer;
@@ -95,9 +103,28 @@ namespace larlite {
     Double_t _michel_E;
     Double_t _michel_L;
     Double_t _true_michel_E;
+    Double_t _simch_shower_michel_E;
+    Double_t _simch_notshower_michel_E;
 
     Double_t _d_m_h;
     
+    //simchannel
+    
+    Double_t _simch_michel_true_shower_E     ;
+    Double_t _simch_michel_false_shower_E   ;
+    
+    Double_t _simch_plane_true_shower_E     ;
+    Double_t _simch_plane_false_shower_E    ;
+    
+    Double_t _simch_ordered_true_shower_E   ;
+    Double_t _simch_ordered_false_shower_E  ;
+    
+    Double_t _simch_cluster_true_shower_E   ;
+    Double_t _simch_cluster_false_shower_E  ;
+    
+    
+    
+
     Int_t _evt = 0;
 
     //THE Reco object
@@ -106,6 +133,7 @@ namespace larlite {
     //Geo variables
     Double_t _time2cm;
     Double_t _wire2cm;
+    Double_t _ne2ADC;
     
     //Python setters with various variables
     int      _min_cluster_size = 25;
@@ -124,6 +152,11 @@ namespace larlite {
 			      const event_mcshower* evt_mcshower);
     
     void check_cluster_boundaries();
+    
+    
+    std::pair<Double_t,Double_t> get_summed_mcshower_other(const ::btutil::MCBTAlg& aho,
+							   const std::vector<larlite::hit>& hits);
+    
     void clear_all();
   };
 }

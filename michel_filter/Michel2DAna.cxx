@@ -7,8 +7,9 @@ namespace larlite {
  
   bool Michel2DAna::initialize() {
     
-    _wire2cm   = ::larutil::GeometryUtilities::GetME()->WireToCm();
-    _time2cm   = ::larutil::GeometryUtilities::GetME()->TimeToCm();    
+    _wire2cm   = ::larutil::GeometryUtilities::GetME() ->WireToCm();
+    _time2cm   = ::larutil::GeometryUtilities::GetME() ->TimeToCm();    
+    _ne2ADC    = ::larutil::DetectorProperties::GetME()->ElectronsToADC();
     
     _output_tree = new TTree("out_tree","aho_tree");
 
@@ -34,6 +35,17 @@ namespace larlite {
     _output_tree->Branch("d_michel_hit"   , &_d_m_h         , "d_michel_hit/D");
     _output_tree->Branch("_true_michel_E" , &_true_michel_E , "_true_michel_E/D");
 
+
+    _output_tree->Branch("_simch_michel_true_shower_E",&_simch_michel_true_shower_E,"_simch_michel_true_shower_E/D");
+    _output_tree->Branch("_simch_michel_false_shower_E",&_simch_michel_false_shower_E,"_simch_michel_false_shower_E/D");
+    _output_tree->Branch("_simch_plane_true_shower_E",&_simch_plane_true_shower_E,"_simch_plane_true_shower_E/D");
+    _output_tree->Branch("_simch_plane_false_shower_E",&_simch_plane_false_shower_E,"_simch_plane_false_shower_E/D");
+    _output_tree->Branch("_simch_ordered_true_shower_E",&_simch_ordered_true_shower_E,"_simch_ordered_true_shower_E/D");
+    _output_tree->Branch("_simch_ordered_false_shower_E",&_simch_ordered_false_shower_E,"_simch_ordered_false_shower_E/D");
+    _output_tree->Branch("_simch_cluster_true_shower_E",&_simch_cluster_true_shower_E,"_simch_cluster_true_shower_E/D");
+    _output_tree->Branch("_simch_cluster_false_shower_E",&_simch_cluster_false_shower_E,"_simch_cluster_false_shower_E/D");
+    
+    // _simch_shower_michel_E
     return true;
     
   }
@@ -43,7 +55,14 @@ namespace larlite {
     
     //True
     auto evt_mcshower = storage->get_data<event_mcshower>("mcreco");
+    auto evt_simch    = storage->get_data<event_simch>("largeant");
+    if(!evt_simch || !(evt_simch->size())) {
+      print(msg::kERROR,__FUNCTION__,"SimChannel data product not found!");
+      return false;
+    }
     
+
+
     //Reco
     auto evt_hits     = storage->get_data<event_hit>    ("gaushit");
     auto evt_clusters = storage->get_data<event_cluster>(_cluster_producer);
@@ -150,6 +169,95 @@ namespace larlite {
     
     r2d->tag_michel(c,the_vtx,forward,evt_hits);
 
+    /////////COMPARE TO MC////////////////
+    
+    std::cout << "comparing the aho to MC\n";
+    std::cout << "creating the g4_tackids...\n";
+    //From shower quality 
+    auto _mc_energy_min = 0;
+    auto _mc_energy_max = 65; // ?? MeV ??
+   
+    std::vector<std::vector<unsigned int> > g4_trackid_v;
+    std::vector<unsigned int> mc_index_v;
+    g4_trackid_v.reserve(evt_mcshower->size());
+    
+    for(size_t mc_index=0; mc_index<evt_mcshower->size(); ++mc_index) {
+	auto const& mcs = (*evt_mcshower)[mc_index];
+      
+      if(mcs.MotherPdgCode() == 13 &&
+	 mcs.Process() == "muMinusCaptureAtRest" &&
+	 mcs.Charge(2) > 5.0){
+	 
+	
+	double energy = mcs.DetProfile().E();
+      
+	std::vector<unsigned int> id_v;
+	id_v.reserve(mcs.DaughterTrackID().size());
+      
+	if( _mc_energy_min < energy && energy < _mc_energy_max ) {
+	  for(auto const& id : mcs.DaughterTrackID()) {
+	    if(id == mcs.TrackID()) continue;
+	    id_v.push_back(id);
+	  }
+	  id_v.push_back(mcs.TrackID());
+	  g4_trackid_v.push_back(id_v);
+	  mc_index_v.push_back(mc_index);
+	}
+      
+      }
+    }
+    std::cout << "doing ass\n";
+    
+    event_hit* ev_hit = nullptr;
+    auto const& ass_hit_v = storage->find_one_ass(evt_clusters->id(),ev_hit,evt_clusters->name());
+    
+    std::cout << "Building MC map... \n";
+    
+    if(!fBTAlg.BuildMap(g4_trackid_v, *evt_simch, *ev_hit, ass_hit_v)) {
+      print(msg::kERROR,__FUNCTION__,"Failed to build back-tracking map for MC...");
+      return false;
+    }
+    auto aho = fBTAlg.BTAlg();
+    
+
+    // for(const auto& ii : g4_trackid_v) {
+    //   std::cout << " g4_track_id: { ";
+    //   for(const auto& kk : ii) {
+    // 	std::cout << " : " << kk << " " ;
+    //   }
+    //   std::cout << " }";
+    // }
+    auto reco_michel_hits  = get_summed_mcshower_other(aho,c->_michel->_hits);
+    
+    std::vector<larlite::hit> plane2hits;
+    for(const auto& h : *evt_hits)
+      if(h.View() == 2)
+	plane2hits.push_back(h);
+    auto all_hits = get_summed_mcshower_other(aho,plane2hits);
+    
+    std::vector<larlite::hit> ordered_cluster_hits;
+    for(const auto& idx : c->_ordered_pts)
+      ordered_cluster_hits.push_back(c->_ahits[idx].hit);
+    auto ordered_hits = get_summed_mcshower_other(aho,ordered_cluster_hits);
+    
+    std::vector<larlite::hit> all_cluster_hits;
+    for(const auto& h : c->_ahits)
+      all_cluster_hits.push_back(h.hit);
+    auto cluster_hits = get_summed_mcshower_other(aho,all_cluster_hits);
+    
+    _simch_michel_true_shower_E     = reco_michel_hits.first;
+    _simch_michel_false_shower_E    = reco_michel_hits.second;
+    
+    _simch_plane_true_shower_E      = all_hits.first;
+    _simch_plane_false_shower_E     = all_hits.second;
+    
+    _simch_ordered_true_shower_E    = ordered_hits.first;
+    _simch_ordered_false_shower_E   = ordered_hits.second;
+    
+    _simch_cluster_true_shower_E    = cluster_hits.first;
+    _simch_cluster_false_shower_E   = cluster_hits.second;
+
+    
     ///////////////////////////////////////////
     ////////////WRITE OUT TO TTREE////////////
     /////////////////////////////////////////
@@ -331,7 +439,30 @@ namespace larlite {
     return true;
     
   }
+  
+  std::pair<Double_t,Double_t> Michel2DAna::get_summed_mcshower_other(const ::btutil::MCBTAlg& aho,
+								      const std::vector<larlite::hit>& hits) {
+    Double_t baka1 = 0.0;
+    Double_t baka2 = 0.0;
+
+    //for(size_t u = 0; u < c->_ordered_pts.size(); ++u) {
+    for(const auto& h : hits) {
+      //auto h = c->_ahits[c->_ordered_pts[u]].hit;
+      ::btutil::WireRange_t wire_hit(h.Channel(),h.StartTick(),h.EndTick());
+      baka1 = aho.MCQ(wire_hit)[0] * _ne2ADC;
+      baka2 = aho.MCQ(wire_hit)[1] * _ne2ADC;
+      
+      //std::cout << "(" << baka1 << "," << baka2 << ")\n";
+    }
+    
+    return std::make_pair(baka1,baka2); //first is MCShower, //second is other!
+    
+  }
+  
+  
+  
 }
+
 
 
 #endif

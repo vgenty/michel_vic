@@ -17,6 +17,7 @@
 #include <iostream>
 
 #include "TVector2.h"
+#include "DataFormat/hit.h"
 
 /**
    \class Michel
@@ -28,19 +29,24 @@ class Michel{
 public:
 
   /// Default constructor
-  Michel(Double_t c, Double_t l, TVector2* s, Int_t nh) :
-    _charge(c),
-    _length(l),
-    _start (*s),
+  Michel(Double_t c, Double_t l, 
+	 TVector2* s, std::vector<larlite::hit> h,
+	 Int_t nh) :
+    _charge (c),
+    _length (l),
+    _start  (*s),
+    _hits   (h),
     _num_hits(nh)
   {}
   
   /// Default destructor
   ~Michel(){}
   
-  
+  std::vector<larlite::hit> _hits;
+
   Double_t _charge;
   Double_t _length;
+  
   TVector2 _start;
   Int_t    _num_hits;
   

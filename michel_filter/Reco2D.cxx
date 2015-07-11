@@ -225,22 +225,24 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   std::vector<size_t>       michel_idxs;
   std::vector<larlite::hit> michel_hits;
   
-  if(forward)  {
-    if(i >= idx) {
-      radius += c->_ds[i];
-      michel_idxs.push_back(c->_ordered_pts[i]);
+  for(size_t i = 0; i < c->_ordered_pts.size(); ++i) {
+    if(forward)  {
+      if(i >= idx) {
+	radius += c->_ds[i];
+	michel_idxs.push_back(c->_ordered_pts[i]);
+      }
     }
-  }
-  else {
-    if( i <= idx ) {
-      radius += c->_ds[i];
-      michel_idxs.push_back(c->_ordered_pts[i]);
+    else {
+      if( i <= idx ) {
+	radius += c->_ds[i];
+	michel_idxs.push_back(c->_ordered_pts[i]);
+      }
     }
   }
   
   bool there = false;
   
-  std::vector<size_t> cluster_hits;
+  std::vector<larlite::hit> cluster_hits;
   
   for(size_t i = 0; i < c->_ahits.size(); ++i) {
     for(size_t j = 0; j < michel_idxs.size(); ++j) {
@@ -256,7 +258,7 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   }
   
   
-  there = false
+  there = false;
   for(const auto& ehit : *evt_hits) {   // loop over all the hits
     if(ehit.View() == 2){ // look at Y plane only
       for(const auto& ahitz : cluster_hits) { //loop over all cluster hits that are not michels;
@@ -278,7 +280,8 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   for(const auto& h : michel_hits)
     E += h.Integral();
   
-  c->_michel = new Michel(E,radius,c->_ahits[c->_ordered_pts[idx]].vec,michel_hits.size());
+  c->_michel = new Michel(E,radius,c->_ahits[c->_ordered_pts[idx]].vec,
+			  michel_hits,michel_hits.size());
   
   c->_michel->dump();
 

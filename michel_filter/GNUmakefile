@@ -13,6 +13,10 @@ OBJECTS = $(SOURCES:.cxx=.o)
 # include options for this package
 INCFLAGS  = -I.                       #Include itself
 INCFLAGS += $(shell larlite-config --includes)
+INCFLAGS += $(shell recotool-config --includes)
+
+# various
+LDFLAGS += -L$(LARLITE_LIBDIR) -lRecoTool_MCComp
 
 # platform-specific options
 OSNAME          = $(shell uname -s)
