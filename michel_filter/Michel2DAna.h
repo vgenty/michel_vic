@@ -112,6 +112,9 @@ namespace larlite {
     Double_t _mcQ_frac;
     Double_t _MeV_scale;
     Double_t _true_michel_Det;
+
+    Double_t _Q_tot_p2;
+    Double_t _Q_u_p2;
     //simchannel
     
     Double_t _simch_michel_true_shower_E     ;

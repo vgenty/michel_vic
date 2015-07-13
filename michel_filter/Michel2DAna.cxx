@@ -41,8 +41,10 @@ namespace larlite {
     _output_tree->Branch("_mcQ_frac", &_mcQ_frac, "_mcQ_frac/D");
       _output_tree->Branch("_MeV_scale", &_MeV_scale, "_MeV_scale/D");
       _output_tree->Branch("_true_michel_Det", &_true_michel_Det, "_true_michel_Det");
-   
-      
+
+
+          _output_tree->Branch("_Q_tot_p2" , &_Q_tot_p2 , "_Q_tot_p2/D");
+	  _output_tree->Branch("_Q_u_p2" , &_Q_u_p2 , "_Q_u_p2/D");
 
     _output_tree->Branch("_simch_michel_true_shower_E",&_simch_michel_true_shower_E,"_simch_michel_true_shower_E/D");
     _output_tree->Branch("_simch_michel_false_shower_E",&_simch_michel_false_shower_E,"_simch_michel_false_shower_E/D");
@@ -176,7 +178,12 @@ namespace larlite {
     auto thit = c->_ahits[c->_ordered_pts[the_vtx]];    //get hit of the reco vtx point
     
     r2d->tag_michel(c,the_vtx,forward,evt_hits);
+    r2d->tag_muon(c,the_vtx,forward,evt_hits);
 
+    _Q_u_p2 = c-> _muon-> _charge;
+
+    //double plane_charge
+    
     /////////COMPARE TO MC////////////////
     
     std::cout << "comparing the aho to MC\n";
@@ -236,11 +243,19 @@ namespace larlite {
     //   std::cout << " }";
     // }
     auto reco_michel_hits  = get_summed_mcshower_other(aho,c->_michel->_hits);
+
+    double plane_charge = 0.0;
+    
     
     std::vector<larlite::hit> plane2hits;
-    for(const auto& h : *evt_hits)
-      if(h.View() == 2)
+    for(const auto& h : *evt_hits) {
+      if(h.View() == 2) {
 	plane2hits.push_back(h);
+	plane_charge += h.Integral();
+      }
+    }
+    _Q_tot_p2 = plane_charge;
+    
     auto all_hits = get_summed_mcshower_other(aho,plane2hits);
     
     std::vector<larlite::hit> ordered_cluster_hits;
@@ -476,6 +491,8 @@ namespace larlite {
     return std::make_pair(baka1,baka2); //first is MCShower, //second is other!
     
   }
+
+  
   
   
   

@@ -24,8 +24,9 @@
 //ROOT
 #include "TVector2.h"
 
-//vic
+//particles
 #include "Michel.h"
+#include "Muon.h"
 
 /**
    \class ClusterYPlane
@@ -33,13 +34,7 @@
    doxygen documentation!
  */
 
-
 typedef size_t HitIdx_t;
-
-struct ahit {
-  larlite::hit hit;
-  TVector2 *vec;
-};
 
 
 class ClusterYPlane{
@@ -82,6 +77,7 @@ public:
   
   //Michel
   Michel *_michel;
+  Muon * _muon;
   
   //Operator methods
   ClusterYPlane operator+(const ClusterYPlane* other);
