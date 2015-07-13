@@ -108,6 +108,7 @@ namespace larlite {
 
     Double_t _d_m_h;
     
+    Double_t _reco_Q_o_mc_Q;
     //simchannel
     
     Double_t _simch_michel_true_shower_E     ;

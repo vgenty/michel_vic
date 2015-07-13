@@ -34,7 +34,7 @@ namespace larlite {
     _output_tree->Branch("_michel_L"      , &_michel_L      , "_michel_L/D");
     _output_tree->Branch("d_michel_hit"   , &_d_m_h         , "d_michel_hit/D");
     _output_tree->Branch("_true_michel_E" , &_true_michel_E , "_true_michel_E/D");
-
+    _output_tree->Branch("_reco_Q_o_mc_Q" , &_reco_Q_o_mc_Q , "_reco_Q_o_mc_Q/D");
 
     _output_tree->Branch("_simch_michel_true_shower_E",&_simch_michel_true_shower_E,"_simch_michel_true_shower_E/D");
     _output_tree->Branch("_simch_michel_false_shower_E",&_simch_michel_false_shower_E,"_simch_michel_false_shower_E/D");
@@ -88,7 +88,7 @@ namespace larlite {
 	return ret;
       };
     
-
+    
     std::vector<Double_t> truncated_mean;
     std::vector<Double_t> truncated_dqds;
     
@@ -288,6 +288,9 @@ namespace larlite {
     _d_m_h = c->_michel_dist;
     _michel_E = c->_michel->_charge;
     _michel_L = c->_michel->_length;
+    
+    _reco_Q_o_mc_Q = 0.0;
+    _reco_Q_o_mc_Q = _michel_E / _simch_michel_true_shower_E;
     
     _output_tree->Fill();
     
