@@ -43,13 +43,13 @@ namespace larlite {
       
       if(mcs.MotherPdgCode() == 13 &&
 	 mcs.Process() == "muMinusCaptureAtRest" &&
-	 //mcs.DetProfile().E()/mcs.Start().E() > 0.95
-	 mcs.Charge(2) > 5.0){
-	kept_evts++;
-	//std::cout<<"michel filter returning true!"<<std::endl;
-	return true;
+	 mcs.DetProfile().E()/mcs.Start().E() > 0.95) {
+	 //mcs.Charge(2) > 5.0){
+	 kept_evts++;
+	 //std::cout<<"michel filter returning true!"<<std::endl;
+	 return true;
       }
-
+      
     }
     
     //std::cout<<"michel filter returning false!"<<std::endl;
