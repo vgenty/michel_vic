@@ -35,6 +35,14 @@ namespace larlite {
     _output_tree->Branch("d_michel_hit"   , &_d_m_h         , "d_michel_hit/D");
     _output_tree->Branch("_true_michel_E" , &_true_michel_E , "_true_michel_E/D");
     _output_tree->Branch("_reco_Q_o_mc_Q" , &_reco_Q_o_mc_Q , "_reco_Q_o_mc_Q/D");
+    //   Double_t _mcQ_frac;
+    // Double_t _MeV_scale;
+
+    _output_tree->Branch("_mcQ_frac", &_mcQ_frac, "_mcQ_frac/D");
+      _output_tree->Branch("_MeV_scale", &_MeV_scale, "_MeV_scale/D");
+      _output_tree->Branch("_true_michel_Det", &_true_michel_Det, "_true_michel_Det");
+   
+      
 
     _output_tree->Branch("_simch_michel_true_shower_E",&_simch_michel_true_shower_E,"_simch_michel_true_shower_E/D");
     _output_tree->Branch("_simch_michel_false_shower_E",&_simch_michel_false_shower_E,"_simch_michel_false_shower_E/D");
@@ -290,7 +298,13 @@ namespace larlite {
     _michel_L = c->_michel->_length;
     
     _reco_Q_o_mc_Q = 0.0;
-    _reco_Q_o_mc_Q = _michel_E / _simch_michel_true_shower_E;
+    _reco_Q_o_mc_Q = _michel_E / _simch_plane_true_shower_E;
+
+
+  
+      _mcQ_frac = _simch_plane_true_shower_E/(_simch_plane_false_shower_E + _simch_plane_true_shower_E);
+      _MeV_scale = _mcQ_frac * _true_michel_Det;
+
     
     _output_tree->Fill();
     
@@ -420,7 +434,8 @@ namespace larlite {
       if (shower.Process() == "muMinusCaptureAtRest" &&
 	  shower.Charge(2) > 2.0 )	  {
 	true_start = shower.Start().Position();
-	_true_michel_E = shower.Charge(2);
+	_true_michel_E   = shower.Charge(2);
+	_true_michel_Det = shower.DetProfile().E();
 	bb = true; 
       }
     }
