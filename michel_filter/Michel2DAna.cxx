@@ -39,9 +39,7 @@ namespace larlite {
     
     _output_tree->Branch("_mcQ_frac", &_mcQ_frac, "_mcQ_frac/D");
     _output_tree->Branch("_MeV_scale", &_MeV_scale, "_MeV_scale/D");
-    _output_tree->Branch("_true_michel_Det", &_true_michel_Det, "_true_michel_Det");
-   
-      
+    _output_tree->Branch("_true_michel_Det", &_true_michel_Det, "_true_michel_Det/D");
 
     _output_tree->Branch("_simch_michel_true_shower_E",&_simch_michel_true_shower_E,"_simch_michel_true_shower_E/D");
     _output_tree->Branch("_simch_michel_false_shower_E",&_simch_michel_false_shower_E,"_simch_michel_false_shower_E/D");
@@ -303,9 +301,9 @@ namespace larlite {
 
 
   
-      _mcQ_frac = _simch_plane_true_shower_E/(_simch_plane_false_shower_E + _simch_plane_true_shower_E);
-      _MeV_scale = _mcQ_frac * _true_michel_Det;
-
+    _mcQ_frac = _simch_plane_true_shower_E/(_simch_plane_false_shower_E + _simch_plane_true_shower_E);
+    _MeV_scale = _mcQ_frac * _true_michel_Det;
+    
     
     _output_tree->Fill();
     
