@@ -247,7 +247,6 @@ namespace larlite {
 
     double plane_charge = 0.0;
     
-    
     std::vector<larlite::hit> plane2hits;
     for(const auto& h : *evt_hits) {
       if(h.View() == 2) {
@@ -255,6 +254,7 @@ namespace larlite {
 	plane_charge += h.Integral();
       }
     }
+    
     _Q_tot_p2 = plane_charge;
     
     auto all_hits = get_summed_mcshower_other(aho,plane2hits);

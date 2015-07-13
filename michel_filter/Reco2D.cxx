@@ -214,11 +214,11 @@ size_t Reco2D::find_min(const std::vector<Double_t>& data) {
 }
 
 
-void Reco2D::tag_muon(ClusterYPlane*& c, //for now this DOES have 1 michel b/c of filter
-			size_t idx,        // of chosen in michel in orderd_pts
-			bool forward,      //higher/lower in orderedpts
-			const larlite::event_hit *evt_hits) {
-
+void Reco2D::tag_muon(ClusterYPlane*& c,  
+		      size_t idx,        
+		      bool forward,      
+		      const larlite::event_hit *evt_hits) {
+  
   std::vector<ahit> muon_hits;
    std::vector<double> distance;
 
@@ -236,11 +236,11 @@ void Reco2D::tag_muon(ClusterYPlane*& c, //for now this DOES have 1 michel b/c o
      for (int i = 0; i < c->_ordered_pts.size();i++){
        if (i > idx){
 	 muon_hits.push_back(c->_ahits[c->_ordered_pts[i]]);
-	  distance.push_back(c->_s[i]);
+	 distance.push_back(c->_s[i]);
        }
      }
    }
-
+   
    c-> _muon= new Muon(muon_hits, distance);
    
 }

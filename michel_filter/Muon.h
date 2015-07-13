@@ -41,12 +41,12 @@ public:
 
      _length = sum;
 
-     sum = 0.0;
+     double sum2 = 0.0;
      std::for_each(h.begin(), h.end(), [&] (ahit myhit){
-	sum = myhit.hit.Integral();
+	 sum2 += myhit.hit.Integral();
        });
 
-     _charge = sum;
+     _charge = sum2;
 
      if (h[0].hit.Integral() <  h[h.size()-1].hit.Integral()){
        _start  = *h[0].vec;
