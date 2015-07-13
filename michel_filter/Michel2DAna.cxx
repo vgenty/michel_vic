@@ -35,16 +35,20 @@ namespace larlite {
     _output_tree->Branch("d_michel_hit"   , &_d_m_h         , "d_michel_hit/D");
     _output_tree->Branch("_true_michel_E" , &_true_michel_E , "_true_michel_E/D");
     _output_tree->Branch("_reco_Q_o_mc_Q" , &_reco_Q_o_mc_Q , "_reco_Q_o_mc_Q/D");
-    //   Double_t _mcQ_frac;
-    // Double_t _MeV_scale;
-
+    
+    
     _output_tree->Branch("_mcQ_frac", &_mcQ_frac, "_mcQ_frac/D");
+<<<<<<< HEAD
       _output_tree->Branch("_MeV_scale", &_MeV_scale, "_MeV_scale/D");
       _output_tree->Branch("_true_michel_Det", &_true_michel_Det, "_true_michel_Det");
 
 
           _output_tree->Branch("_Q_tot_p2" , &_Q_tot_p2 , "_Q_tot_p2/D");
 	  _output_tree->Branch("_Q_u_p2" , &_Q_u_p2 , "_Q_u_p2/D");
+=======
+    _output_tree->Branch("_MeV_scale", &_MeV_scale, "_MeV_scale/D");
+    _output_tree->Branch("_true_michel_Det", &_true_michel_Det, "_true_michel_Det/D");
+>>>>>>> e00b09eb01e77a5dcc8f166ff52f5c1700a60a5f
 
     _output_tree->Branch("_simch_michel_true_shower_E",&_simch_michel_true_shower_E,"_simch_michel_true_shower_E/D");
     _output_tree->Branch("_simch_michel_false_shower_E",&_simch_michel_false_shower_E,"_simch_michel_false_shower_E/D");
@@ -201,8 +205,7 @@ namespace larlite {
       
       if(mcs.MotherPdgCode() == 13 &&
 	 mcs.Process() == "muMinusCaptureAtRest" &&
-	 mcs.Charge(2) > 5.0){
-	 
+	 mcs.DetProfile().E()/mcs.Start().E() > 0.95) {
 	
 	double energy = mcs.DetProfile().E();
       
@@ -221,6 +224,9 @@ namespace larlite {
       
       }
     }
+    if(g4_trackid_v.size() == 0)
+      return false;
+
     std::cout << "doing ass\n";
     
     event_hit* ev_hit = nullptr;
@@ -317,9 +323,9 @@ namespace larlite {
 
 
   
-      _mcQ_frac = _simch_plane_true_shower_E/(_simch_plane_false_shower_E + _simch_plane_true_shower_E);
-      _MeV_scale = _mcQ_frac * _true_michel_Det;
-
+    _mcQ_frac = _simch_plane_true_shower_E/(_simch_plane_false_shower_E + _simch_plane_true_shower_E);
+    _MeV_scale = _mcQ_frac * _true_michel_Det;
+    
     
     _output_tree->Fill();
     
@@ -478,12 +484,14 @@ namespace larlite {
     Double_t baka1 = 0.0;
     Double_t baka2 = 0.0;
 
+    
+    //std::cout << "in get_summed... " << std::endl;
     //for(size_t u = 0; u < c->_ordered_pts.size(); ++u) {
     for(const auto& h : hits) {
       //auto h = c->_ahits[c->_ordered_pts[u]].hit;
       ::btutil::WireRange_t wire_hit(h.Channel(),h.StartTick(),h.EndTick());
-      baka1 = aho.MCQ(wire_hit)[0] * _ne2ADC;
-      baka2 = aho.MCQ(wire_hit)[1] * _ne2ADC;
+      baka1 += aho.MCQ(wire_hit)[0] * _ne2ADC;
+      baka2 += aho.MCQ(wire_hit)[1] * _ne2ADC;
       
       //std::cout << "(" << baka1 << "," << baka2 << ")\n";
     }
