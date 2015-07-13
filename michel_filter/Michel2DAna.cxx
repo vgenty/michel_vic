@@ -38,17 +38,12 @@ namespace larlite {
     
     
     _output_tree->Branch("_mcQ_frac", &_mcQ_frac, "_mcQ_frac/D");
-<<<<<<< HEAD
-      _output_tree->Branch("_MeV_scale", &_MeV_scale, "_MeV_scale/D");
-      _output_tree->Branch("_true_michel_Det", &_true_michel_Det, "_true_michel_Det");
 
-
-          _output_tree->Branch("_Q_tot_p2" , &_Q_tot_p2 , "_Q_tot_p2/D");
-	  _output_tree->Branch("_Q_u_p2" , &_Q_u_p2 , "_Q_u_p2/D");
-=======
+    _output_tree->Branch("_Q_tot_p2" , &_Q_tot_p2 , "_Q_tot_p2/D");
+    _output_tree->Branch("_Q_u_p2" , &_Q_u_p2 , "_Q_u_p2/D");
     _output_tree->Branch("_MeV_scale", &_MeV_scale, "_MeV_scale/D");
     _output_tree->Branch("_true_michel_Det", &_true_michel_Det, "_true_michel_Det/D");
->>>>>>> e00b09eb01e77a5dcc8f166ff52f5c1700a60a5f
+
 
     _output_tree->Branch("_simch_michel_true_shower_E",&_simch_michel_true_shower_E,"_simch_michel_true_shower_E/D");
     _output_tree->Branch("_simch_michel_false_shower_E",&_simch_michel_false_shower_E,"_simch_michel_false_shower_E/D");
