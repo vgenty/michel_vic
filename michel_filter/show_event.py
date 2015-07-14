@@ -114,6 +114,10 @@ def graph(event):
     rn.fill_graph(truecharge,dd)
     truecharge.Draw("ALP")
     setaxis(truecharge,"s [cm]","Charge [ADC]")
+
+    
+    c1.cd(6)
+    
     allhits = rr.TGraph()
     shohits = rr.TGraph()
     
@@ -136,7 +140,7 @@ def graph(event):
     ppp.Add(allhits)
     ppp.Add(shohits)
 
-    
+    setaxis(ppp,"Z","X")
     ppp.Draw("AP")
 
 
