@@ -114,6 +114,30 @@ def graph(event):
     rn.fill_graph(truecharge,dd)
     truecharge.Draw("ALP")
     setaxis(truecharge,"s [cm]","Charge [ADC]")
+    allhits = rr.TGraph()
+    shohits = rr.TGraph()
+    
+    ppp= rr.TMultiGraph()
+
+    zzz = np.array([[rec['_ALL_hits_p2_X'][evt_num][k],rec['_ALL_hits_p2_Y'][evt_num][k]] 
+                    for k in xrange(len(rec['_ALL_hits_p2_X'][evt_num]))])
+    qqq = np.array([[rec['_large_frac_shower_hits_X'][evt_num][k],rec['_large_frac_shower_hits_Y'][evt_num][k]] 
+                    for k in xrange(len(rec['_large_frac_shower_hits_X'][evt_num]))])
+    
+    
+    rn.fill_graph(allhits,zzz)
+    rn.fill_graph(shohits,qqq)
+    
+    shohits.SetMarkerColor(2)
+
+    allhits.SetMarkerStyle(20)
+    shohits.SetMarkerStyle(20)
+    
+    ppp.Add(allhits)
+    ppp.Add(shohits)
+
+    
+    ppp.Draw("AP")
 
 
     c1.Update()
