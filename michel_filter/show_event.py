@@ -140,8 +140,8 @@ def graph(event):
     ppp.Add(allhits)
     ppp.Add(shohits)
 
-    setaxis(ppp,"Z","X")
     ppp.Draw("AP")
+    setaxis(ppp,"Z","X")
 
 
     c1.Update()
