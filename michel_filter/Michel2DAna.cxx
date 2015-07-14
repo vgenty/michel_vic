@@ -168,26 +168,48 @@ namespace larlite {
     ddiirr
       = (double)mean_michel_vtx.first > (double)(c->_ordered_pts.size()/2.0);
 
-    Double_t lower =0;
-    Double_t higher =0;
+    Double_t part1 = 0;
+    Double_t part2 = 0;
+    
+    Double_t p1 = 0;
+    Double_t p2 = 0;
 
     for (size_t i = 0; i< c->_ordered_pts.size(); i++){
-      if (i < real_michel_vtx){
-	lower += c->_ahits[c->_ordered_pts[i]].hit.Integral();
-      }
-
-      else{
-	higher += c->_ahits[c->_ordered_pts[i]].hit.Integral();
-      }
+      if (i < real_michel_vtx)      p1++;
+      else if (i > real_michel_vtx) p2++;
     }
 
-    if (higher<lower){
+    
+    if(p1 > 10 && p2 > 10) {
+      
+      for (size_t i = real_michel_vtx - 10
+	     ; i < real_michel_vtx + 10; i++){
+	if (i < real_michel_vtx){
+	part1 += c->_ahits[c->_ordered_pts[i]].hit.Integral();
+	}
+	
+	else if (i > real_michel_vtx) {
+	  part2 += c->_ahits[c->_ordered_pts[i]].hit.Integral();
+	}
+      }
+    } else {
+
+      for (size_t i = 0; i< c->_ordered_pts.size(); i++){
+	if      (i < real_michel_vtx)
+	  part1 += c->_ahits[c->_ordered_pts[i]].hit.Integral();
+	else if (i > real_michel_vtx)
+	  part2 += c->_ahits[c->_ordered_pts[i]].hit.Integral();
+      }
+    }
+    
+    if (part1 > part2) {
       ddiirr = true;
+    } else {
+      ddiirr = false; 
     }
-
-    else{
-      ddiirr = false;
-    }
+    
+    std::cout << " \npart1 : " << part1 << " part2: " << part2 << "\n";
+    std::cout << " \np1 : " << p1 << " p2: " << p2 << "\n";
     
     if(ddiirr) {
       the_vtx = real_michel_vtx + 1;

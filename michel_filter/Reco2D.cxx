@@ -326,7 +326,8 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   
   std::vector<larlite::hit> cluster_hits;
   
-  for(size_t i = 0; i < c->_ahits.size(); ++i) {
+  //for(size_t i = 0; i < c->_ahits.size(); ++i) { //vic 07142015
+  for(size_t i = 0; i < c->_ordered_pts.size(); ++i) {
     for(size_t j = 0; j < michel_idxs.size(); ++j) {
       if( i == michel_idxs[j] ) {
 	there = true;
