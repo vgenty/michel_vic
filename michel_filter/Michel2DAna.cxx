@@ -317,7 +317,7 @@ namespace larlite {
     _reco_Q_o_mc_Q = _michel_E / _simch_plane_true_shower_E;
 
 
-  
+    
     _mcQ_frac = _simch_michel_true_shower_E/( _simch_plane_true_shower_E);
     _MeV_scale = _mcQ_frac * _true_michel_Det;
     

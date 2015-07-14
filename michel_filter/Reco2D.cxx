@@ -220,10 +220,10 @@ void Reco2D::tag_muon(ClusterYPlane*& c,
 		      size_t idx,        
 		      bool forward,      
 		      const larlite::event_hit *evt_hits) {
-  
+  //kas771
   std::vector<ahit> muon_hits;
-   std::vector<double> distance;
-
+  std::vector<double> distance;
+   
    if (forward == true){
      for (int i = 0; i < c->_ordered_pts.size();i++){
        if (i < idx){
@@ -278,7 +278,7 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
     else {
       if( i <= idx ) {
 	michel_idxs.push_back(c->_ordered_pts[i]);
-
+	
 	if(i < c->_ordered_pts.size() - 1) radius += c->_ds[i];
 	else radius += 0.3;
 	std::cout << " i " << c->_ordered_pts[i] << " " ;
@@ -286,9 +286,9 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
     }
     //std::cout << "radius : " << radius << " c->_ds[i] : " << c->_ds[i] << "\n";
   }
-  	std::cout << " }\n";
+  std::cout << " }\n";
   if(radius < 0.3) radius = 0.3;
-
+  
   // //remove duplicate hits...............
   // int w = 0;
   // //auto _ahits_copy = c->ahits();
@@ -322,40 +322,36 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   // }
   
   bool there = false;
-  int k = 0;
-  //std::vector<larlite::hit> cluster_hits;
-  std::vector<size_t> cluster_hits;
-
+  
+  std::vector<larlite::hit> cluster_hits;
+  
   for(size_t i = 0; i < c->_ahits.size(); ++i) {
     for(size_t j = 0; j < michel_idxs.size(); ++j) {
       if( i == michel_idxs[j] ) {
 	there = true;
-	k = 1;
 	break;
       }						
     }
-    if(!there or k == 0)  {
-      cluster_hits.push_back(i);
+    if(!there)  {
+      cluster_hits.push_back(c->_ahits[i].hit);
     }
-
     there = false;
-    k = 0;
   }
   
-  int f = 0;
-  int fdupe = 0;
-
-  for(const auto& ahit1 : c->_ahits) {
-    for(const auto& ahit2 : c->_ahits) {
-      if(ahit1.hit == ahit2.hit) {
-	f++;
-      }
-    }
-    if( f > 1 )
-      fdupe++;
-    f = 0;
-  }
-  std::cout << "fdupes: " << fdupe << "\n";
+  // int f = 0;
+  // int fdupe = 0;
+  
+  // for(const auto& ahit1 : c->_ahits) {
+  //   for(const auto& ahit2 : c->_ahits) {
+  //     if(ahit1.hit == ahit2.hit) {
+  // 	f++;
+  //     }
+  //   }
+  //   if( f > 1 )
+  //     fdupe++;
+  //   f = 0;
+  // }
+  // std::cout << "fdupes: " << fdupe << "\n";
   
   //std::cout << "}\n";
   
@@ -385,15 +381,15 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   //     break;
   //   called = 0;
   // }
-
+  
 
 
   std::cout << "cluster hits . size() " << cluster_hits.size() << "\n";
   std::cout << "michel_idx   . size() " << michel_idxs.size() << "\n";
   
-  if(radius < 0.3) radius = 0.3;
+  //if(radius < 0.3) radius = 0.3;
   
-  there = false;
+  //there = false;
   
   // if(michel_idxs.size() == 1)
   //   std::cout << " before any farther ~ dist to idx is ~ " << distance(c->_ahits[michel_idxs[0]].hit,
@@ -419,26 +415,25 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   ////////check for dupes between cluster_hits and itself...
 
 
-  std::vector<size_t>::iterator a1;
+  std::vector<larlite::hit>::iterator a1;
   std::cout << "...checking if michel in cluster_hits..\n";
-  //counter =0;
-  int w = 0;
-  bool dup = true;
-  int ndupes = 0;
-  //for(const auto& eh : cluster_hits) {
+  
+  int  w      = 0;
+  bool dup    = true;
+  int  ndupes = 0;
+  
   while(1) {
     for(a1 = cluster_hits.begin(); a1 != cluster_hits.end(); ++a1) {
-      auto eh = c->_ahits[*a1].hit;
       for(int i = 0 ; i < michel_idxs.size(); ++i) { //loop over all cluster hits that are not michels;
-	if(eh == c->_ahits[michel_idxs[i]].hit) {
+	if(*a1 == c->_ahits[michel_idxs[i]].hit) {
 	  w++;
 	  break;  
 	}
       }
       if(w > 0)
 	break;
+      w = 0;
     }
-     
     if(w > 0) {
       cluster_hits.erase(a1);
       w = 0;
@@ -449,14 +444,14 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
      
     if(!dup)
       break;
-     
+    
     dup = false;
   }
-
+  
   std::cout << "encountered : " << ndupes << "\n";
 
 
-  std::vector<size_t>::iterator a2, a3;
+  std::vector<larlite::hit>::iterator a2, a3;
   std::cout << "...checking if cluster_hits in cluster_hits..\n";
   w = 0;
   dup = false;
@@ -464,10 +459,8 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   
   while(1) {
     for(a2 = cluster_hits.begin(); a2 != cluster_hits.end(); ++a2) {
-      auto eh2 = c->_ahits[*a2].hit;
       for(a3 = cluster_hits.begin(); a3 != cluster_hits.end(); ++a3) {
-	auto eh3 = c->_ahits[*a3].hit;
-	if(eh2 == eh3) {
+	if(*a2 == *a3) {
 	  w++;
 	}
 	if(w > 1)
@@ -495,12 +488,12 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   
   for(const auto& ehit : *evt_hits) {   // loop over all the hits
     if(ehit.View() == 2){ // look at Y plane only
-      for(const auto& eh : cluster_hits) { //loop over all cluster hits that are not michels;
-	auto ahitz = c->_ahits[eh].hit;
-	//if (ehit == ahitz)  { //custom hit.h
-	if (ehit.Channel()   == ahitz.Channel() &&
-	    ehit.StartTick() == ahitz.StartTick() &&
-	    ehit.EndTick()   == ahitz.EndTick()  )  { //custom hit.h
+      for(const auto& ahitz : cluster_hits) { //loop over all cluster hits that are not michels;
+	//auto ahitz = c->_ahits[eh].hit;
+	if (ehit == ahitz)  { //custom hit.h
+	  // if (ehit.Channel()   == ahitz.Channel() &&
+	  //     ehit.StartTick() == ahitz.StartTick() &&
+	  //     ehit.EndTick()   == ahitz.EndTick()  )  { //custom hit.h
 	  there = true;
 	  break;
 	}
@@ -518,16 +511,13 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
     E += h.Integral();
 
   std::cout << "michel_hits.size() : " << michel_hits.size() << std::endl;
-  if(michel_hits.size() == 1) {
-    std::cout << "this is true... size = 1\n";
-    E = michel_hits[0].Integral();
-  }
+  
   
   c->_michel = new Michel(E,radius,c->_ahits[c->_ordered_pts[idx]].vec,
 			  michel_hits,michel_hits.size());
   
   c->_michel->dump();
-
+  
 }
 
 
