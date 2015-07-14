@@ -69,7 +69,7 @@ namespace larlite {
     void set_n_window_size(const int i)       { _n_window_size    = i; }
     void set_window_cutoff(const Double_t i)  { _window_cutoff    = i; }
     void set_truncated_shave(const int i)     { _truncated_shave  = i; }
-    
+    void set_min_rad(const Double_t i) {_min_michel_rad = i;}
     
   private:
    
@@ -153,6 +153,10 @@ namespace larlite {
     int      _n_window_size    = 25;
     Double_t _window_cutoff    = 0.25;
     int      _truncated_shave  = 2;
+
+    Double_t _min_michel_rad = 0.3;
+
+   
     
     
     

@@ -55,7 +55,8 @@ public:
   void tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c of filter
 		  size_t idx,      // of chosen in michel in orderd_pts
 		  bool forward,    //higher/lower in orderedpts
-		  const larlite::event_hit *evt_hits); //all the hits
+		  const larlite::event_hit *evt_hits,  //all the hits
+		  Double_t _min_rad);
 
   void tag_muon(ClusterYPlane*& c, //for now this DOES have 1 michel b/c of filter
 		  size_t idx,      // of chosen in michel in orderd_pts

@@ -209,7 +209,7 @@ namespace larlite {
     
     auto thit = c->_ahits[c->_ordered_pts[the_vtx]];    //get hit of the reco vtx point
     
-    r2d->tag_michel(c,the_vtx,forward,evt_hits);
+    r2d->tag_michel(c,the_vtx,forward,evt_hits, _min_michel_rad);
     r2d->tag_muon(c,the_vtx,forward,evt_hits);
 
     _Q_u_p2 = c-> _muon-> _charge;

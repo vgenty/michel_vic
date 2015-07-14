@@ -27,8 +27,9 @@ the_ana    = fmwk.Michel2DAna("fuzzycluster");
 #~~tune-able parameters
 # the_ana.set_min_cluster_size(25)   
 the_ana.set_n_window_size(15)      
-# the_ana.set_window_cutoff(0.25) 
-# the_ana.set_truncated_shave(2)    
+the_ana.set_window_cutoff(0.2) 
+the_ana.set_truncated_shave(3)
+the_ana.set_min_rad(5)
 
 my_proc.add_process(the_filter)
 my_proc.add_process(the_ana)
