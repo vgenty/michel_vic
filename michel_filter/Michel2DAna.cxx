@@ -54,6 +54,13 @@ namespace larlite {
     _output_tree->Branch("_simch_cluster_true_shower_E",&_simch_cluster_true_shower_E,"_simch_cluster_true_shower_E/D");
     _output_tree->Branch("_simch_cluster_false_shower_E",&_simch_cluster_false_shower_E,"_simch_cluster_false_shower_E/D");
     
+    
+    _output_tree->Branch("_large_frac_shower_hits_X", "std::vector<Double_t>" , &_large_frac_shower_hits_X);
+    _output_tree->Branch("_large_frac_shower_hits_Y", "std::vector<Double_t>" , &_large_frac_shower_hits_Y);
+    _output_tree->Branch("_ALL_hits_p2_X", "std::vector<Double_t>" , &_ALL_hits_p2_X);
+    _output_tree->Branch("_ALL_hits_p2_Y", "std::vector<Double_t>" , &_ALL_hits_p2_Y);
+
+
     // _simch_shower_michel_E
     return true;
     
@@ -243,7 +250,7 @@ namespace larlite {
     //   }
     //   std::cout << " }";
     // }
-    auto reco_michel_hits  = get_summed_mcshower_other(aho,c->_michel->_hits);
+    auto reco_michel_hits  = get_summed_mcshower_other(aho,c->_michel->_hits,1);
 
     double plane_charge = 0.0;
     
@@ -252,22 +259,24 @@ namespace larlite {
       if(h.View() == 2) {
 	plane2hits.push_back(h);
 	plane_charge += h.Integral();
+	_ALL_hits_p2_X.push_back(h.WireID().Wire * 0.3);
+	_ALL_hits_p2_Y.push_back(h.PeakTime() * 0.0802814);
       }
     }
     
     _Q_tot_p2 = plane_charge;
     
-    auto all_hits = get_summed_mcshower_other(aho,plane2hits);
+    auto all_hits = get_summed_mcshower_other(aho,plane2hits,1);
     
     std::vector<larlite::hit> ordered_cluster_hits;
     for(const auto& idx : c->_ordered_pts)
       ordered_cluster_hits.push_back(c->_ahits[idx].hit);
-    auto ordered_hits = get_summed_mcshower_other(aho,ordered_cluster_hits);
+    auto ordered_hits = get_summed_mcshower_other(aho,ordered_cluster_hits,0);
     
     std::vector<larlite::hit> all_cluster_hits;
     for(const auto& h : c->_ahits)
       all_cluster_hits.push_back(h.hit);
-    auto cluster_hits = get_summed_mcshower_other(aho,all_cluster_hits);
+    auto cluster_hits = get_summed_mcshower_other(aho,all_cluster_hits,0);
     
     _simch_michel_true_shower_E     = reco_michel_hits.first;
     _simch_michel_false_shower_E    = reco_michel_hits.second;
@@ -334,6 +343,12 @@ namespace larlite {
     
     std::cout << "\n\t == Wrote event: " << _evt << "\n";
     _evt++;
+
+    _large_frac_shower_hits_X.clear();
+    _large_frac_shower_hits_Y.clear();
+    _ALL_hits_p2_X.clear();
+    _ALL_hits_p2_Y.clear();
+
     return true;
   }
   
@@ -475,7 +490,8 @@ namespace larlite {
   }
   
   std::pair<Double_t,Double_t> Michel2DAna::get_summed_mcshower_other(const ::btutil::MCBTAlg& aho,
-								      const std::vector<larlite::hit>& hits) {
+								      const std::vector<larlite::hit>& hits,
+								      bool plane2hits) {
     Double_t baka1 = 0.0;
     Double_t baka2 = 0.0;
 
@@ -483,12 +499,20 @@ namespace larlite {
     //std::cout << "in get_summed... " << std::endl;
     //for(size_t u = 0; u < c->_ordered_pts.size(); ++u) {
     for(const auto& h : hits) {
-      //auto h = c->_ahits[c->_ordered_pts[u]].hit;
       ::btutil::WireRange_t wire_hit(h.Channel(),h.StartTick(),h.EndTick());
       baka1 += aho.MCQ(wire_hit)[0] * _ne2ADC;
       baka2 += aho.MCQ(wire_hit)[1] * _ne2ADC;
-      
-      //std::cout << "(" << baka1 << "," << baka2 << ")\n";
+    }
+    
+
+    if(plane2hits) {
+      for(const auto& h : hits) {
+	::btutil::WireRange_t wire_hit(h.Channel(),h.StartTick(),h.EndTick());
+	if(aho.MCQFrac(wire_hit)[0] > 0.5) {
+	  _large_frac_shower_hits_X.push_back(h.WireID().Wire * 0.3);
+	  _large_frac_shower_hits_Y.push_back(h.PeakTime()  * 0.0802814);
+	}
+      }
     }
     
     return std::make_pair(baka1,baka2); //first is MCShower, //second is other!
