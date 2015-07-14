@@ -163,7 +163,33 @@ namespace larlite {
     
     //maybe what is better is to count the number of points before or after...    
     bool forward;
-    if((double)mean_michel_vtx.first > (double)(c->_ordered_pts.size()/2.0)) {
+    bool ddiirr;
+
+    ddiirr
+      = (double)mean_michel_vtx.first > (double)(c->_ordered_pts.size()/2.0);
+
+    Double_t lower =0;
+    Double_t higher =0;
+
+    for (size_t i = 0; i< c->_ordered_pts.size(); i++){
+      if (i < real_michel_vtx){
+	lower += c->_ahits[c->_ordered_pts[i]].hit.Integral();
+      }
+
+      else{
+	higher += c->_ahits[c->_ordered_pts[i]].hit.Integral();
+      }
+    }
+
+    if (higher<lower){
+      ddiirr = true;
+    }
+
+    else{
+      ddiirr = false;
+    }
+    
+    if(ddiirr) {
       the_vtx = real_michel_vtx + 1;
       forward = true;
     } else {
