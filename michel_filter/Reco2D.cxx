@@ -448,43 +448,43 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
     dup = false;
   }
   
-  std::cout << "encountered : " << ndupes << "\n";
+  // std::cout << "encountered : " << ndupes << "\n";
 
 
-  std::vector<larlite::hit>::iterator a2, a3;
-  std::cout << "...checking if cluster_hits in cluster_hits..\n";
-  w = 0;
-  dup = false;
-  int ndupes2 = 0;
+  // std::vector<larlite::hit>::iterator a2, a3;
+  // std::cout << "...checking if cluster_hits in cluster_hits..\n";
+  // w = 0;
+  // dup = false;
+  // int ndupes2 = 0;
   
-  while(1) {
-    for(a2 = cluster_hits.begin(); a2 != cluster_hits.end(); ++a2) {
-      for(a3 = cluster_hits.begin(); a3 != cluster_hits.end(); ++a3) {
-	if(*a2 == *a3) {
-	  w++;
-	}
-	if(w > 1)
-	  break;  
-      }
-      if(w > 1)
-	break;
-      w = 0;
-    }
-    if(w > 1) {
-      cluster_hits.erase(a2);
-      w = 0;
-      dup = true;
-      ndupes2++;
-    }
-    w = 0;
+  // while(1) {
+  //   for(a2 = cluster_hits.begin(); a2 != cluster_hits.end(); ++a2) {
+  //     for(a3 = cluster_hits.begin(); a3 != cluster_hits.end(); ++a3) {
+  // 	if(*a2 == *a3) {
+  // 	  w++;
+  // 	}
+  // 	if(w > 1)
+  // 	  break;  
+  //     }
+  //     if(w > 1)
+  // 	break;
+  //     w = 0;
+  //   }
+  //   if(w > 1) {
+  //     cluster_hits.erase(a2);
+  //     w = 0;
+  //     dup = true;
+  //     ndupes2++;
+  //   }
+  //   w = 0;
     
-    if(!dup)
-      break;
+  //   if(!dup)
+  //     break;
     
-    dup = false;
-  }
+  //   dup = false;
+  // }
   
-  std::cout << "encountered : " << ndupes + ndupes2<< "\n";
+  // std::cout << "encountered : " << ndupes + ndupes2<< "\n";
   
   for(const auto& ehit : *evt_hits) {   // loop over all the hits
     if(ehit.View() == 2){ // look at Y plane only
