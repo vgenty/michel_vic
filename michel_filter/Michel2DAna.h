@@ -115,6 +115,12 @@ namespace larlite {
 
     Double_t _Q_tot_p2;
     Double_t _Q_u_p2;
+
+    std::vector<Double_t> _large_frac_shower_hits_X;
+    std::vector<Double_t> _large_frac_shower_hits_Y;
+    std::vector<Double_t> _ALL_hits_p2_X;
+    std::vector<Double_t> _ALL_hits_p2_Y;
+    
     //simchannel
     
     Double_t _simch_michel_true_shower_E     ;
@@ -162,7 +168,8 @@ namespace larlite {
     
     
     std::pair<Double_t,Double_t> get_summed_mcshower_other(const ::btutil::MCBTAlg& aho,
-							   const std::vector<larlite::hit>& hits);
+							   const std::vector<larlite::hit>& hits,
+							   bool plane2hits);
     
     void clear_all();
   };
