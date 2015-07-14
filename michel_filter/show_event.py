@@ -11,9 +11,6 @@ looks_minos()
 rr.gStyle.SetPalette(1)
 rr.gStyle.SetOptStat(1111)
 
-event = 0
-current = event
-
 def graph(event):
     event = int(event)
     evt_num = event
@@ -126,10 +123,13 @@ def graph(event):
 
     sys.stdin.readline()
 
+
+event = 0
+current = event
 while True:
     print "Which event? (enter a number to choose or return to move to next event)"
     print "give me -1 to quit, + to move forward and - to move back"
-    event = 9999999999999
+    current = event
     event = raw_input()
     
     if event  == '+':

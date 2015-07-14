@@ -34,7 +34,7 @@ my_proc.add_process(the_filter)
 my_proc.add_process(the_ana)
 
 #~~Let's run it.
-my_proc.run(1, 500);
+my_proc.run();
 
 #~~Or process single event
 # my_proc.process_event(302)
