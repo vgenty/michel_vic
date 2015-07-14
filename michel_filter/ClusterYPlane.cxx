@@ -151,6 +151,7 @@ std::vector<HitIdx_t> ClusterYPlane::do_ordering(const size_t start_idx) {
 	   itr != all_pts.end(); ++itr) {
        zz = distance(_ahits[the_order[cnt]].vec,_ahits[*itr].vec);
        
+       //       if(zz < closest && zz < 0.3*20) { //hard cutoff here to avoid delta ray
        if(zz < closest && zz < 0.3*20) { //hard cutoff here to avoid delta ray
 	 idxholder = itr;
 	 closest   = zz;
