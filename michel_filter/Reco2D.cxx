@@ -765,4 +765,136 @@ std::vector<int> Reco2D::chi_max_pos(ClusterYPlane *c,int num_maxs){
     return the_maxs;
 }
 
+//this one is to find all the local maximums above a pedestal value
+//takes the cluster, whether forward or back, a window size for calculation, and an rms cutoff value
+
+const std::vector<Double_t> Reco2D::chi_max_pos(ClusterYPlane *c, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold) const{
+  std::vector<Double_t> chi2 = c-> _chi2;
+  
+  //double mean = PedEstimate(chi2,forward, window, cutoff).first;
+  // double rms = PedEstimate(chi2,forward, window, cutoff).second;
+
+  std::vector<Double_t> peaks = Reconstruct(chi2, forward, window, cutoff, rise_edge, fall_edge, threshold);
+  return peaks;
+}
+
+ const size_t  Reco2D::find_peak(const std::vector<Double_t>& data, int istart, int iend) const
+  {
+    auto the_max = double{0.0};
+    size_t cl = 4096;
+    
+    for(size_t i = istart; i < iend; ++i) {
+      if(data[i] > the_max) { the_max = data[i]; cl = i; }
+    }
+    
+    return cl;
+  }
+
+    const std::vector<Double_t> Reco2D::Reconstruct( const std::vector<Double_t>& chi2, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold) const
+  {
+    std::vector<Double_t> result;
+    
+    auto ped_info = PedEstimate(chi2,forward, window, cutoff);
+    
+    bool found_pulse = false; 
+    size_t t = 0;
+    
+    while (  t < chi2.size() ) {
+      if(chi2[t] > (ped_info.first  + rise_edge * ped_info.second)  && 
+	chi2[t] > threshold + ped_info.first &&
+	 !found_pulse)
+	found_pulse = true;
+      
+      if(found_pulse) {
+        size_t  t_end = t;
+
+	while(1) {
+	  if(t_end == chi2.size() - 1)
+	    break;
+	  
+	  if( chi2[t_end] <= (ped_info.first + fall_edge * ped_info.second) &&
+	      (chi2[t_end] <= threshold + ped_info.first))
+	    break;
+	  else 
+	    ++t_end;
+	}
+
+	result.push_back(find_peak(chi2, t, t_end));	
+	
+	while(t < t_end) { //secretly increases t...
+	  ++t;
+	}
+	
+      }
+      ++t;
+      found_pulse = false;
+    }
+    
+    return result;
+  }
+
+
+
+const std::pair<float,float> Reco2D::PedEstimate(const std::vector<Double_t>& chi2, bool start, int window, float cutoff) const{
+    float mean = 0;
+    float rms = 0;
+    int n = chi2.size();
+    int k = 0;
+ 
+    //number of points to consider in calculation;
+    // int window = 10;
+
+    bool below = false;
+
+    //need minimum number to calculate
+    if (n >= window) {
+      if (start == true){
+	while (below == false && k+window < n){
+	  std::cout << k+window << std::endl;
+	 
+	  rms = getrms(chi2, k, k+window, window).second;
+	  mean = getrms(chi2, k, k+window, window).first;
+	  if (rms < cutoff){
+	    below = true;
+	  }
+	  k++;
+	}
+      }
+
+      else{
+	k = n-1;
+	while (below == false && k - window > 0){
+	  rms = getrms(chi2, k-window, k, window).second;
+	  mean = getrms(chi2, k-window, k, window).first;
+	  if (rms < cutoff){
+	    below = true;
+	  }
+	  k--;
+	}
+      }
+    }
+   
+    
+    //returns <mean, rms>, or 0,0 if nothing in vector or bad index or not below cutoff
+    return std::pair<float,float>(mean,rms);
+  }
+
+  const std::pair<float,float> Reco2D::getrms (const std::vector<Double_t>& chi2, int k, int m, int window) const{
+    float mean = 0;
+    float rms = 0;
+    for (int i  = k; i < m; i++){
+      mean += chi2.at(i);
+    }
+
+    mean = mean/window;
+
+    for (int i= k; i < m; i++){
+      float diff = chi2.at(i)-mean;
+      rms += diff*diff;
+    }
+    rms = sqrt(rms/window);
+    return  std::pair<float,float>(mean,rms);
+}
+
+
 #endif

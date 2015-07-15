@@ -64,6 +64,8 @@ namespace larlite {
     _output_tree->Branch("_ALL_hits_p2_X", "std::vector<Double_t>" , &_ALL_hits_p2_X);
     _output_tree->Branch("_ALL_hits_p2_Y", "std::vector<Double_t>" , &_ALL_hits_p2_Y);
 
+    _output_tree->Branch("_the_chi_max_peak", "std::vector<Double_t>", &_the_chi_max_peak);
+
 
     // _simch_shower_michel_E
     return true;
@@ -303,6 +305,8 @@ namespace larlite {
     r2d->tag_michel(c,the_vtx,forward,evt_hits, _min_michel_rad);
     r2d->tag_muon(c,the_vtx,forward,evt_hits);
 
+
+    auto j= r2d-> chi_max_pos(c, 3);
     _Q_u_p2 = c-> _muon-> _charge;
 
     //double plane_charge
@@ -346,7 +350,7 @@ namespace larlite {
     if(g4_trackid_v.size() == 0)
       return false;
 
-    std::cout << "doing ass\n";
+    std::cout << "vic stop putting rude things in the code, I have to see this too\n";
     
     event_hit* ev_hit = nullptr;
     auto const& ass_hit_v = storage->find_one_ass(evt_clusters->id(),ev_hit,evt_clusters->name());
@@ -446,6 +450,10 @@ namespace larlite {
     
     _mcQ_frac = _simch_michel_true_shower_E/( _simch_plane_true_shower_E);
     _MeV_scale = _mcQ_frac * _true_michel_Det;
+
+    
+    std::vector<Double_t> the_chi_max_peaks = r2d->chi_max_pos(c, forward, 10, 0.5, 5, 5, 0);
+    _the_chi_max_peak = the_chi_max_peaks;
     
     
     _chi2_copy = c->_chi2;
@@ -466,6 +474,9 @@ namespace larlite {
     _large_frac_shower_hits_Y.clear();
     _ALL_hits_p2_X.clear();
     _ALL_hits_p2_Y.clear();
+
+
+    
 
     return true;
   }

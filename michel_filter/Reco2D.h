@@ -111,6 +111,18 @@ public:
   inline Double_t calc_mean(std::vector<Double_t> &data);
   inline Double_t distance(const larlite::hit& a, const larlite::hit& b);
 
+ const std::pair<float,float> PedEstimate(const std::vector<Double_t>& chi2, bool start, int window, float cutoff) const;
+
+ const  std::pair<float,float> getrms (const std::vector<Double_t>& chi2, int k, int m, int window) const;
+
+  const std::vector<Double_t> Reconstruct( const std::vector<Double_t>& chi2, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold) const;
+
+  const size_t  find_peak(const std::vector<Double_t>& data, int istart, int iend) const;
+
+ const std::vector<Double_t> chi_max_pos(ClusterYPlane *c, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold) const;
+
+  
+
 
   };
 
