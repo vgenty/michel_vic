@@ -354,8 +354,7 @@ namespace larlite {
     _mcQ_frac = _simch_michel_true_shower_E/( _simch_plane_true_shower_E);
     _MeV_scale = _mcQ_frac * _true_michel_Det;
 
-    
-    std::vector<Double_t> the_chi_max_peaks = r2d->chi_max_pos(c, forward, 10, 0.5, 5, 5, 0);
+    std::vector<Double_t> the_chi_max_peaks = r2d->chi_max_pos(c, forward, 10, 0.5, _rise, _fall, _thresh);
     _the_chi_max_peak = the_chi_max_peaks;
     
     
