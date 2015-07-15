@@ -387,6 +387,33 @@ size_t Reco2D::find_max(const std::vector<Double_t>& data) {
   return candidate_loc;
 }
 
+size_t Reco2D::find_max(const std::vector<Double_t>& data, const std::vector<int> ref) {
+
+  auto the_max = 0.0;
+  size_t candidate_loc = 9999;
+
+  bool found = false;
+  int f = 0;
+  for(size_t i = 0; i < data.size(); ++i) {
+    if( f < ref.size()) {
+      for (const auto& idx: ref){
+	if (i == idx){
+	  found = true;
+	  f++;
+	  break;
+	}
+      }
+    }
+    
+    if(!found && data[i] > the_max) {
+      the_max = data[i]; candidate_loc = i;
+    }
+    found = false;
+  }
+   
+  return candidate_loc;
+}
+
 size_t Reco2D::find_min(const std::vector<Double_t>& data) {
   
   //get lowest dqds
@@ -720,6 +747,22 @@ inline Double_t Reco2D::distance(const larlite::hit& a, const larlite::hit& b) {
   auto y2 = b.PeakTime()    * 0.0802814; 
   
   return sqrt((x1-y1)*(x1-y1) + (x2-y2)*(x2-y2));
+}
+
+std::vector<int> Reco2D::chi_max_pos(ClusterYPlane *c,int num_maxs){
+  std::vector<int> the_maxs;
+
+  int count = 0;
+  while(count< num_maxs){
+    the_maxs.push_back(find_max(c-> _chi2, the_maxs));
+    count++;
+  }
+  
+  std::cout << the_maxs.at(0) << std::endl;
+   std::cout << the_maxs.at(1) << std::endl;
+    std::cout << the_maxs.at(2) << std::endl;
+
+    return the_maxs;
 }
 
 #endif

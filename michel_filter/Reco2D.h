@@ -88,6 +88,10 @@ public:
 		     size_t mean_michel_vtx);
 
   size_t find_max(const std::vector<Double_t>& data);
+  size_t find_max(const std::vector<Double_t>& data,const std::vector<int> ref);
+
+  std::vector<int> chi_max_pos(ClusterYPlane *c,int num_maxs);
+
   size_t find_min(const std::vector<Double_t>& data);
   void tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c of filter
 		  size_t idx,      // of chosen in michel in orderd_pts
