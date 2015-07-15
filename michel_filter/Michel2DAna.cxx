@@ -26,11 +26,14 @@ namespace larlite {
     _output_tree->Branch("mean_charges", "std::vector<Double_t>" , &_mean_charges_copy);
     _output_tree->Branch("dqds"        , "std::vector<Double_t>" , &_dqds_copy);
     _output_tree->Branch("s"           , "std::vector<Double_t>" , &_s_copy);
+    _output_tree->Branch("_chi2_copy"           , "std::vector<Double_t>" , &_chi2_copy);
+    
+    
     _output_tree->Branch("startX"      , &_startX, "startX/D");
     _output_tree->Branch("startY"      , &_startY, "startY/D");
     _output_tree->Branch("endX"        , &_endX,   "endX/D"  );
     _output_tree->Branch("endY"        , &_endY,   "startX/D");
-
+    
     _output_tree->Branch("_michel_E"      , &_michel_E      , "_michel_E/D");
     _output_tree->Branch("_michel_L"      , &_michel_L      , "_michel_L/D");
     _output_tree->Branch("d_michel_hit"   , &_d_m_h         , "d_michel_hit/D");
@@ -294,6 +297,9 @@ namespace larlite {
     
     auto thit = c->_ahits[c->_ordered_pts[the_vtx]];    //get hit of the reco vtx point
     
+    r2d->do_chi(c,15);
+    
+    
     r2d->tag_michel(c,the_vtx,forward,evt_hits, _min_michel_rad);
     r2d->tag_muon(c,the_vtx,forward,evt_hits);
 
@@ -442,6 +448,7 @@ namespace larlite {
     _MeV_scale = _mcQ_frac * _true_michel_Det;
     
     
+    _chi2_copy = c->_chi2;
     _output_tree->Fill();
     
     // don't delete these heap objects ever!!!!

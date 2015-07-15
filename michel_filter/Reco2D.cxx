@@ -3,6 +3,165 @@
 
 #include "Reco2D.h"
 
+// Double_t Reco2D::fit_function(float x,Double_t *par) { return par[0]+par[1]*x; }
+
+// //void Reco2D::calc_chi_square(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag)
+// Double_t Reco2D::chi_square();
+// {
+//   double chisq = 0;
+//   for (int i=0;i<_iNum; i++) {
+//     double delta  = (_y[i]-fit_function(_x[i],par))/_errory[i];
+//     chisq += delta*delta;
+//   }
+//   f = chisq;
+//   return;
+// }
+
+void Reco2D::do_chi(ClusterYPlane*& c, //probably void right just so c is updated
+		    Int_t window_size)
+{
+ 
+  std::vector<Double_t> chi;
+  
+  
+  //prepare MINUIT
+  // TMinuit *ptMinuit = new TMinuit(2);  //initialize TMinuit with a maximum of 2 params
+  // ptMinuit->SetPrintLevel(-1);
+
+  // Double_t arglist[10];
+  // arglist[0] = -1;
+  // Int_t ierflg = 0;
+
+  //go here to find the command you want to use...
+  //http://cern-tex.web.cern.ch/cern-tex/minuit/node18.html
+
+  // ptMinuit->Command("SET PRINT", arglist, 1);
+  // static Double_t vstart[2] = {1, 1};
+  // static Double_t step[2]   = {0.1 , 0.1};
+  // ptMinuit->mnparm(0, "a1", vstart[0], step[0],0,0,ierflg);
+  // ptMinuit->mnparm(1, "a2", vstart[1], step[1],0,0,ierflg);
+
+
+  //pointer to member function fucked me here :-(
+  //  ptMinuit->SetFCN(calc_chi_square);
+  
+  // void (Reco2D::*func)(Int_t&, Double_t*, Double_t&, Double_t*, Int_t);
+  // func = &Reco2D::calc_chi_square;
+  
+  // ptMinuit->SetFCN(func);
+  
+  //https://root.cern.ch/root/roottalk/roottalk04/1099.html
+  //ptMinuit->SetFCN(&_chifit->calc_chi_square);
+
+  
+  // auto func1 = std::bind(&Reco2D::calc_chi_square, this);
+  // ptMinuit->SetFCN(func1);
+  
+  // auto fff = std::mem_fn(&Reco2D::calc_chi_square);
+  // ptMinuit->SetFCN(fff);
+  
+  
+  
+
+  // arglist[0] = 500;
+  // arglist[1] = 1.;
+
+  //get windows of ordered_pts
+
+  
+  
+  // TFitter minuit(2);
+  // minuit.SetFCN(calc_chi_square);
+  // static Double_t vstart[2] = {1, 1};
+  // static Double_t step[2]   = {0.1 , 0.1};
+  // minuit.SetParameter(0, "a1", vstart[0], step[0],0,0,ierflg);
+  // minuit.SetParameter(1, "a2", vstart[1], step[1],0,0,ierflg);
+
+  // ROOT::Math::Minimizer* min = 
+  //   ROOT::Math::Factory::CreateMinimizer("Minuit", "Migrad");  
+  // min->SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
+  // min->SetMaxIterations(10000);  // for GSL
+  // min->SetTolerance(0.001);
+  // min->SetPrintLevel(-1);  
+
+  //ROOT::Fit::Fitter::MinuitFCN_t fcn
+  //ROOT::Math::Functor f(&,2);
+
+  // static Double_t vstart[2] = {1, 1};
+  // static Double_t step[2]   = {0.1 , 0.1};
+  // min->SetVariable(0, "a1", vstart[0], step[0],0,0);
+  // min->SetVariable(1, "a2", vstart[1], step[1],0,0);
+
+  
+  //fuck me I give up
+  TGraphErrors *graph;
+  TF1 *tf;
+
+  auto chi_data = get_windows(c->_ordered_pts,window_size);
+  
+  for(const auto& cd : chi_data) {
+    
+    const unsigned int SIZE = cd.size();
+
+    if(SIZE == 1) {
+      chi.push_back(0.0);
+      continue;
+    }
+    
+    Double_t x[SIZE];
+    Double_t y[SIZE];
+    Double_t xerr[SIZE];
+    Double_t yerr[SIZE];
+
+    
+    // std::cout << "{";
+    // for(const auto& b2: cd) {
+    //   std::cout << b2 << ",";
+    // }
+    // std::cout << "}\n";
+    
+    for(unsigned int i = 0; i < SIZE; ++i) {
+      x[i]    = c->_ahits[cd[i]].vec->X();
+      y[i]    = c->_ahits[cd[i]].vec->Y();
+      xerr[i] = 0.3;
+      yerr[i] = 1.0;
+    }
+    
+    // _iNum = SIZE; //should be reference?
+    // _x = x; 
+    // _y = y; 
+    // _errory = yerr;
+
+    
+    graph = new TGraphErrors(SIZE,x,y,xerr,yerr);
+    tf    = new TF1("aho","[0] + [1]*x");
+    tf->SetParameter(0,1);
+    tf->SetParameter(1,1);
+    graph->Fit(tf,"F 0 N Q");
+    // Now ready for minimization step, then get chi
+    //ptMinuit->mnexcm("MIGRAD", arglist,2,ierflg);
+    //minuit.ExecuteCommand("MIGRAD",0,0)
+
+    // Double_t amin,edm,errdef;
+    // Int_t nvpar,nparx,icstat;    
+    // ptMinuit->mnstat(amin,edm,errdef,nvpar,nparx,icstat);
+    //minuit.GetStats(amin,edm,errdef,nvpar,nparx,icstat);
+
+    
+    double amin = tf->GetChisquare()/(SIZE - 1);
+    chi.push_back(amin);
+    //std::cout << "SIZE: " << SIZE << " chi: " << amin/(SIZE - 1) << "\n";
+    
+    delete graph;
+    delete tf;
+    //ptMinuit->mnrset(1);
+    //minuit.GetMinuit->mnrset(1);
+  }
+
+  c->_chi2 = chi;
+  //delete ptMinuit;
+} 
+
 unsigned int Reco2D::nCk( unsigned int n, unsigned int k )
 {
   if (k > n) return 0;
@@ -27,7 +186,7 @@ Double_t Reco2D::coeff(Double_t k, Double_t N) {
 Double_t Reco2D::smooth_derive(const std::vector<Double_t> f,
 			       const std::vector<Double_t> x,
 			       Int_t N) {
- 
+  
   // N should def be odd.
   auto M   = int{(N - 1)/2};
   auto tot = double{0.0};
@@ -37,10 +196,38 @@ Double_t Reco2D::smooth_derive(const std::vector<Double_t> f,
   
   return tot;
   
+}
+
+std::vector<std::vector<size_t> > Reco2D::get_windows(const std::vector<size_t>& the_thing, int window_size)
+{
+  
+  std::vector<std::vector<size_t> > data;
+  std::vector<size_t> inner;
+  
+  auto w = window_size + 2;
+  w = (unsigned int)((w - 1)/2);
+  auto num = the_thing.size();
+  
+  for(int i = 1; i <= num; ++i) {
+    if(i < w) {
+      for(int j = 0; j < 2 * (i%w) - 1; ++j)
+	inner.push_back(the_thing[j]);
+    }else if (i > num - w + 1){
+      for(int j = num - 2*((num - i)%w)-1 ; j < num; ++j)
+	inner.push_back(the_thing[j]);
+    }else{
+      for(int j = i - w; j < i + w - 1; ++j)
+	inner.push_back(the_thing[j]);
+    }
+    data.push_back(inner);
+    inner.clear();
+  }
+
+  return data;
   
 }
 
-//This should definitely become a templated function but for now lets get moving who cares
+//This should definitely become a templated function but for now lets get moving who caresb
 //I just realized we could use TSpectrum::SmoothMarkov as well...
 //you can also use TSpectrum to estimate the the pointwise background, which may be useful (as a reminder~)
 std::vector<Double_t> Reco2D::windowed_means(int window_size, Double_t p_above, Double_t p_below,
@@ -54,31 +241,32 @@ std::vector<Double_t> Reco2D::windowed_means(int window_size, Double_t p_above, 
   //     	std::cout << e << " ";
   //     std::cout <<" }\n";
   //   };
-
+  
   auto w = window_size + 2;
   w = (unsigned int)((w - 1)/2);
   
   auto num = order.size();
+ 
   std::vector<Double_t> mean_window;
   std::vector<Double_t> means;
   
   auto charge = [](const ahit& h){ return h.hit.Integral(); };
-     
+  
   for(int i = 1; i <= num; ++i) {
     if(i < w) {
       //std::cout << "    a    \n";
       for(int j = 0; j < 2 * (i%w) - 1; ++j)
-	means.push_back(charge(data[order[j]]));
+  	means.push_back(charge(data[order[j]]));
     }else if (i > num - w + 1){
       //std::cout << "    b    \n";
       for(int j = num - 2*((num - i)%w)-1 ; j < num; ++j)
-	means.push_back(charge(data[order[j]]));
+  	means.push_back(charge(data[order[j]]));
     }    else{
       //std::cout << "    c    \n";
       for(int j = i - w; j < i + w - 1; ++j)
-	means.push_back(charge(data[order[j]]));
-      
+  	means.push_back(charge(data[order[j]]));
     }
+    
     
     if(means.size() > 3) cut(means,p_above,1);
     

@@ -7,11 +7,12 @@ from methods        import *
 import ROOT as rr
 import root_numpy as rn
 
-looks_minos()
-rr.gStyle.SetPalette(1)
-rr.gStyle.SetOptStat(1111)
-
 def graph(event):
+
+    looks_minos()
+    rr.gStyle.SetPalette(1)
+    #rr.gStyle.SetOptStat(1111)
+
     event = int(event)
     evt_num = event
     f    = rr.TFile.Open("output.root","READ")
@@ -24,7 +25,7 @@ def graph(event):
 
     c1 = rr.TCanvas()
     c1 = rr.TCanvas("c1")
-    c1.Divide(3,2)
+    c1.Divide(3,3)
 
     c1.cd(1)
 
@@ -144,12 +145,38 @@ def graph(event):
     setaxis(ppp,"Z","X")
 
 
+    
+    c1.cd(7)
+    
+    
+    xmin = np.amin(order[:,0]) - 10.0
+    xmax = np.amax(order[:,0]) + 10.0
+    ymin = np.amin(order[:,1]) - 10.0
+    ymax = np.amax(order[:,1]) + 10.0
+    
+    nbinsx = int(np.ceil((xmax-xmin)/0.3))
+    nbinsy = int(np.ceil((ymax-ymin)/0.08))
+
+    th2 = rr.TH2D("baka",";;",nbinsx,xmin,xmax,nbinsy,ymin,ymax)
+    th2.SetTitle(";Wire [cm]; Time [cm]")
+    for i in xrange(len(order)) :
+        th2.Fill(order[i][0],order[i][1],rec['_chi2_copy'][evt_num][i])
+    
+    th2.Draw("COLZ")
+    
     c1.Update()
     c1.Modified()
+
+    
+    
+    
     # Xs = np.array([[rec['reco_X'][i],rec['true_X'][i]] for i in xrange(rec['reco_X'].size)])
     # Ys = np.array([[rec['reco_Y'][i],rec['true_Y'][i]] for i in xrange(rec['reco_Y'].size)])
 
-    sys.stdin.readline()
+
+    raw_input('')
+
+    #sys.stdin.readline()
 
 
 event = 0

@@ -21,19 +21,56 @@
 //Vic
 #include "ClusterYPlane.h"
 
-class Reco2D{
+#include "ChiFit.h"
 
+#include "TMinuit.h"
+#include "TFitter.h"
+#include "TF1.h"
+#include "TGraphErrors.h"
+
+// void mywrapper(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag){
+//   Reco2D::myfittingfunction(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+// }
+
+class Reco2D{
+  
 public:
 
-  Reco2D(){}
+
+  Reco2D(){ _chifit = &ChiFit::getInstance();  }
 
   ~Reco2D(){}
+
+
+  ChiFit *_chifit;
+  Int_t _iNum;
+  Double_t *_x;
+  Double_t *_y;
+  Double_t *_errory;
+
+  Double_t fit_function(float x,Double_t *par);
   
+  void calc_chi_square(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
+
+
+
   //everything is public really would just like to hold reco methods here...
+  
+  
+  //for fitting TMinuit requires globally scoped BS
+  //end TMINUIT
+
+
+  void do_chi(ClusterYPlane*& c,
+	      Int_t window_size);
   
   Double_t coeff(Double_t k, Double_t N);
   unsigned int nCk( unsigned int n, unsigned int k );
   
+  //why is template dying?
+  //template<typename T>
+  std::vector<std::vector<size_t> > get_windows(const std::vector<size_t>& the_thing, int window_size);
+
   std::vector<Double_t> windowed_means(int window_size, Double_t p_above, Double_t p_below,
 				       const std::vector<ahit>    & data,
 				       const std::vector<HitIdx_t>& order);
@@ -63,7 +100,6 @@ public:
 		  bool forward,    //higher/lower in orderedpts
 		  const larlite::event_hit *evt_hits); //all the hits
 
-  
   //inline methods
   inline void cut(std::vector<Double_t>& data,
 		  double frac, bool above);
@@ -71,7 +107,8 @@ public:
   inline Double_t calc_mean(std::vector<Double_t> &data);
   inline Double_t distance(const larlite::hit& a, const larlite::hit& b);
 
-};
+
+  };
 
 #endif
 /** @} */ // end of doxygen group 

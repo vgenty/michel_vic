@@ -94,6 +94,7 @@ namespace larlite {
     std::vector<Double_t> _mean_charges_copy;
     std::vector<Double_t> _dqds_copy;
     std::vector<Double_t> _s_copy;
+    std::vector<Double_t> _chi2_copy;
 
     Double_t _startX;
     Double_t _startY;

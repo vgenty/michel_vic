@@ -73,7 +73,7 @@ public:
   std::vector<HitIdx_t>  _ordered_pts;
   std::vector<Double_t>  _ds;
   std::vector<Double_t>  _s;
-
+  std::vector<Double_t>  _chi2;
   
   //Michel
   Michel *_michel;

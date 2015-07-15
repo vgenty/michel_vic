@@ -31,3 +31,4 @@ LDFLAGS += $(shell larlite-config --libs)
 include $(LARLITE_BASEDIR)/Makefile/GNUmakefile.CORE
 
 
+LDFLAGS += -lMinuit
