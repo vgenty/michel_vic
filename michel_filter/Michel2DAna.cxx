@@ -376,15 +376,7 @@ namespace larlite {
     _large_frac_shower_hits_Y.clear();
     _ALL_hits_p2_X.clear();
     _ALL_hits_p2_Y.clear();
-   
  
-    std::cout << "window curoff number: " << win << "\n";
-    std::cout << "window curoff number: " << win << "\n";
-    std::cout << "window curoff number: " << win << "\n";
-
-
-    
-
     return true;
     
 }
