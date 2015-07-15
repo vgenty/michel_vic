@@ -139,6 +139,7 @@ namespace larlite {
     std::vector<Double_t> _large_frac_shower_hits_Y;
     std::vector<Double_t> _ALL_hits_p2_X;
     std::vector<Double_t> _ALL_hits_p2_Y;
+    std::vector<Double_t> _the_chi_max_peak;
     
     //simchannel
     
