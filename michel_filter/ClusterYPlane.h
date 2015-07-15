@@ -36,17 +36,21 @@
 
 typedef size_t HitIdx_t;
 
-
 class ClusterYPlane{
 
 public:
 
   /// ctors
+  
   ClusterYPlane(std::vector<larlite::hit>     in_hits,
-		larlite::cluster              in_cluster);  
+		std::vector<larlite::cluster> in_clusters,
+		const Double_t near_X, const Double_t near_Y,
+		const Double_t d_cut);
+  
   ClusterYPlane(std::vector<larlite::hit>     in_hits,
-		std::vector<larlite::cluster> in_clusters);  
-
+		larlite::cluster              in_cluster,
+		const Double_t near_X, const Double_t near_Y,
+		const Double_t d_cut);
   
   /// Default destructor
   virtual ~ClusterYPlane(){}
@@ -70,6 +74,10 @@ public:
   ahit _start;
   ahit _end;
   
+  Double_t _nX;
+  Double_t _nY;
+  Double_t _d_cutoff;
+
   std::vector<HitIdx_t>  _ordered_pts;
   std::vector<Double_t>  _ds;
   std::vector<Double_t>  _s;

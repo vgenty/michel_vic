@@ -65,20 +65,32 @@ namespace larlite {
     virtual bool finalize();
 
     // Setter methods for various reco parameters as per ATLAS coding guidelines
-    void set_min_cluster_size(const int i)    { _min_cluster_size = i; }
+    void set_min_merge_cluster_size(const int i)    { _min_cluster_size = i; }
+    void set_min_proto_cluster_size(const Int_t i)   { _min_proto_cluster = i;}
     void set_n_window_size(const int i)       { _n_window_size    = i; }
     void set_window_cutoff(const Double_t i)  { _window_cutoff    = i; }
     void set_truncated_shave(const int i)     { _truncated_shave  = i; }
-    void set_min_rad(const Double_t i) {_min_michel_rad = i;}
-    
+    void set_min_rad(const Double_t i)        { _min_michel_rad   = i; }
+
+    void set_near_X(const Double_t i)         { _nearX = i; }
+    void set_near_Y(const Double_t i)         { _nearY = i; }
+    void set_d_cutoff(const Double_t i)       { _d_cutoff = i;}
+
   private:
    
     
+    Int_t win = 0;
     ::btutil::MCMatchAlg fBTAlg;
     
     std::vector<ClusterYPlane*> _clusters; 
     std::string _cluster_producer;
     
+    
+    Double_t _nearX = 0;
+    Double_t _nearY = 0;
+    Double_t _d_cutoff = 0;
+    Int_t    _min_proto_cluster = 4;
+
     //Variables going into tree...
     TTree *_output_tree;
     
@@ -95,7 +107,13 @@ namespace larlite {
     std::vector<Double_t> _dqds_copy;
     std::vector<Double_t> _s_copy;
     std::vector<Double_t> _chi2_copy;
-
+    
+    
+    //0715
+    Double_t _num_hits;
+    Double_t _num_wires;
+    Double_t _num_hits_p_wire;
+    
     Double_t _startX;
     Double_t _startY;
     Double_t _endX;
@@ -156,7 +174,11 @@ namespace larlite {
     int      _truncated_shave  = 2;
 
     Double_t _min_michel_rad = 0.3;
-
+    
+    bool determine_forward(bool& ddiirr, 
+			   size_t mean_michel_vtx,
+			   size_t real_michel_vtx,
+			   const ClusterYPlane* c);
    
     
     

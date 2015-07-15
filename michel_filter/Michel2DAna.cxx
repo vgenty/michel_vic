@@ -48,7 +48,14 @@ namespace larlite {
     _output_tree->Branch("_MeV_scale", &_MeV_scale, "_MeV_scale/D");
     _output_tree->Branch("_true_michel_Det", &_true_michel_Det, "_true_michel_Det/D");
 
-
+    
+    // Double_t _num_hits;
+    // Double_t _num_wires;
+    // Double_t _num_hits_p_wire;
+    _output_tree->Branch("_num_hits" , &_num_hits , "_num_hits/D");
+    _output_tree->Branch("_num_wires", &_num_wires, "_num_wires/D");
+    _output_tree->Branch("_num_hits_p_wire", &_num_hits_p_wire, "_num_hits_p_wire/D");
+    
     _output_tree->Branch("_simch_michel_true_shower_E",&_simch_michel_true_shower_E,"_simch_michel_true_shower_E/D");
     _output_tree->Branch("_simch_michel_false_shower_E",&_simch_michel_false_shower_E,"_simch_michel_false_shower_E/D");
     _output_tree->Branch("_simch_plane_true_shower_E",&_simch_plane_true_shower_E,"_simch_plane_true_shower_E/D");
@@ -152,131 +159,13 @@ namespace larlite {
     
     auto the_vtx = size_t{0}; //reco vtx
 
-    // bool forward;
-    // if(mean_michel_vtx.first < mean_michel_vtx.second) {
-    //   the_vtx = real_michel_vtx + 1;
-    //   forward = true;
-    // }
-    // else {
-    //   std::cout << " michel was behind me... " << std::endl;
-    //   the_vtx = real_michel_vtx - 1;
-    //   forward = false;
-    // }
-    // std::cout << "mean_michel_vtx  " << mean_michel_vtx.first << std::endl;
-    // std::cout << "real_michel_vtx  " << real_michel_vtx << std::endl;
-    
-    //maybe what is better is to count the number of points before or after...    
     bool forward;
     bool ddiirr;
-
-    ddiirr
-      = (double)mean_michel_vtx.first > (double)(c->_ordered_pts.size()/2.0);
-
-    Double_t part1 = 0;
-    Double_t part2 = 0;
+    if(!determine_forward(ddiirr,mean_michel_vtx.first,
+			  real_michel_vtx, c))
+      return false;
     
-    Double_t p1 = 0;
-    Double_t p2 = 0;
-
-    for (size_t i = 0; i< c->_ordered_pts.size(); i++){
-      if (i < real_michel_vtx)      p1++;
-      else if (i > real_michel_vtx) p2++;
-    }
-    
-    for (size_t i = 0; i< c->_ordered_pts.size(); i++){
-      if      (i < real_michel_vtx)
-	part1 += c->_ahits[c->_ordered_pts[i]].hit.Integral();
-      else if (i > real_michel_vtx)
-	part2 += c->_ahits[c->_ordered_pts[i]].hit.Integral();    
-    }
-    
-    
-    Double_t n_cutoff = 2;
-    Double_t c_cutoff = 1.15;
-    Int_t    w_cutoff = 10;
-
-    std::cout << "\tp1/p2 : " << std::setprecision(15) << p1/p2 << " \n";
-    std::cout << "\tpart1/part2 : " << std::setprecision(15) << part1/part2 << " \n";
-    
-    ////FIRST////
-    if( p1/p2 > n_cutoff || p1/p2 < 1/n_cutoff) {
-      
-      if (part1 > part2) {
-	ddiirr = true;
-      } else {
-	ddiirr = false; 
-      }
-      std::cout << "n_cutoff...\n";
-    }
-    
-    ////SECOND/////
-    else if (part1/part2 > c_cutoff || part1/part2 < 1/c_cutoff) {
-      
-      if (part1 > part2) {
-	ddiirr = true;
-      } else {
-	ddiirr = false; 
-      }
-      std::cout << "c_cutoff...\n";
-    }
-    ////THIRD/////
-    
-    
-    else if(p1 > w_cutoff && p2 > w_cutoff) {
-      
-      part1 = 0.0;
-      part2 = 0.0;
-      
-      for (size_t i = real_michel_vtx - w_cutoff; i < real_michel_vtx + w_cutoff; i++){
-    	if (i < real_michel_vtx)
-    	  part1 += c->_ahits[c->_ordered_pts[i]].hit.Integral();
-    	else if (i > real_michel_vtx) 
-    	  part2 += c->_ahits[c->_ordered_pts[i]].hit.Integral();
-	
-      }
-      
-      if (part1 > part2) {
-	ddiirr = true;
-      } else {
-	ddiirr = false; 
-      }
-      
-      std::cout << "window_cutoff...\n";
-      
-    }
-    
-    
-    ////FOURTH/////
-    else {
-
-      std::cout << "\n~~~~~~~~~~~!!!!!!!!!!!! WE FAIL !!!!!~~~~~~~~~~~~\n";
-      ddiirr = false;
-      
-      
-    }
-    
-    
-    // else if(p1 > 10 && p2 > 10) {
-      
-    //   for (size_t i = real_michel_vtx - 10; i < real_michel_vtx + 10; i++){
-    // 	if (i < real_michel_vtx)
-    // 	  part1 += c->_ahits[c->_ordered_pts[i]].hit.Integral();
-    // 	else if (i > real_michel_vtx) 
-    // 	  part2 += c->_ahits[c->_ordered_pts[i]].hit.Integral();
-	
-    //   }
-    //}
-
-    ///////THIRD///////
-    // else if (part1 > part2) {
-    //   ddiirr = true;
-    // } else {
-    //   ddiirr = false; 
-    // }
-    
-    std::cout << " \npart1 : " << part1 << " part2: " << part2 << "\n";
-    std::cout << " \np1 : " << p1 << " p2: " << p2 << "\n";
-    
+       
     if(ddiirr) {
       the_vtx = real_michel_vtx + 1;
       forward = true;
@@ -369,7 +258,21 @@ namespace larlite {
     // }
     auto reco_michel_hits  = get_summed_mcshower_other(aho,c->_michel->_hits,1);
 
-    double plane_charge = 0.0;
+
+    
+    //NUMBER OF HITS P WIRE :)
+    std::map<Double_t,bool> wires;
+    
+    for(const auto& p : c->_ordered_pts)
+      wires[c->_ahits[p].vec->X()] = true;
+    
+    _num_hits = c->_ordered_pts.size();
+    _num_wires = wires.size();
+     
+    _num_hits_p_wire = _num_hits/_num_wires;;
+
+    
+     double plane_charge = 0.0;
     
     std::vector<larlite::hit> plane2hits;
     for(const auto& h : *evt_hits) {
@@ -466,12 +369,17 @@ namespace larlite {
     _large_frac_shower_hits_Y.clear();
     _ALL_hits_p2_X.clear();
     _ALL_hits_p2_Y.clear();
+   
+ 
+    std::cout << "window curoff number: " << win << "\n";
+    std::cout << "window curoff number: " << win << "\n";
+    std::cout << "window curoff number: " << win << "\n";
 
     return true;
-  }
+    
+}
   
   bool Michel2DAna::finalize() {
-    
     _output_tree->Write();
     
     return true;
@@ -498,14 +406,16 @@ namespace larlite {
 	
 	std::vector<hit> the_hits; the_hits.resize(hit_indicies.size());
 	
-	if(the_hits.size() < 4) // control the minimum size of clusters, user should set this...
+	if(the_hits.size() < _min_proto_cluster) // control the minimum size of clusters, user should set this...
 	  continue;
 	
 	for(unsigned int i = 0; i < the_hits.size(); ++i)
 	  the_hits[i] = evt_hits->at(hit_indicies[i]);
 	
 	_clusters.push_back(new ClusterYPlane(the_hits,
-					      evt_clusters->at(out_cnt)));
+					      evt_clusters->at(out_cnt),
+					      _nearX,_nearY,
+					      _d_cutoff));
 	in_cnt++;
       }
       
@@ -637,7 +547,109 @@ namespace larlite {
     
   }
 
-  
+  bool Michel2DAna::determine_forward(bool& ddiirr, 
+				      size_t mean_michel_vtx,
+				      size_t real_michel_vtx,
+				      const ClusterYPlane* c) {
+    
+    
+    
+    ddiirr
+      = (double)mean_michel_vtx > (double)(c->_ordered_pts.size()/2.0);
+    
+    Double_t part1 = 0;
+    Double_t part2 = 0;
+    
+    Double_t p1 = 0;
+    Double_t p2 = 0;
+
+    for (size_t i = 0; i< c->_ordered_pts.size(); i++){
+      if (i < real_michel_vtx)      p1++;
+      else if (i > real_michel_vtx) p2++;
+    }
+    
+    for (size_t i = 0; i< c->_ordered_pts.size(); i++){
+      if      (i < real_michel_vtx)
+	part1 += c->_ahits[c->_ordered_pts[i]].hit.Integral();
+      else if (i > real_michel_vtx)
+	part2 += c->_ahits[c->_ordered_pts[i]].hit.Integral();    
+    }
+    
+
+    
+    std::cout << " \npart1 : " << part1 << " part2: " << part2 << "\n";
+    std::cout << " \np1 : " << p1 << " p2: " << p2 << "\n";
+    
+    
+    Double_t n_cutoff = 2;
+    Double_t c_cutoff = 1.15;
+    Int_t    w_cutoff = 10;
+
+    std::cout << "\tp1/p2 : " << std::setprecision(15) << p1/p2 << " \n";
+    std::cout << "\tpart1/part2 : " << std::setprecision(15) << part1/part2 << " \n";
+    
+    ////FIRST////
+    if( p1/p2 > n_cutoff || p1/p2 < 1/n_cutoff) {
+      
+      if (part1 > part2) {
+	ddiirr = true;
+      } else {
+	ddiirr = false; 
+      }
+      std::cout << "n_cutoff...\n";
+    }
+    
+    ////SECOND/////
+    else if (part1/part2 > c_cutoff || part1/part2 < 1/c_cutoff) {
+      
+      if (part1 > part2) {
+	ddiirr = true;
+      } else {
+	ddiirr = false; 
+      }
+      std::cout << "c_cutoff...\n";
+    }
+    ////THIRD/////
+    
+    
+    else if(p1 > w_cutoff && p2 > w_cutoff) {
+      
+      part1 = 0.0;
+      part2 = 0.0;
+      
+      for (size_t i = real_michel_vtx - w_cutoff; i < real_michel_vtx + w_cutoff; i++){
+    	if (i < real_michel_vtx)
+    	  part1 += c->_ahits[c->_ordered_pts[i]].hit.Integral();
+    	else if (i > real_michel_vtx) 
+    	  part2 += c->_ahits[c->_ordered_pts[i]].hit.Integral();
+	
+      }
+      
+      if (part1 > part2) {
+	ddiirr = true;
+      } else {
+	ddiirr = false; 
+      }
+      
+      std::cout << "window_cutoff...\n";
+      win++;
+      return false;
+    }
+    
+    
+    ////FOURTH/////
+    else {
+      
+      std::cout << "\n~~~~~~~~~~~!!!!!!!!!!!! WE FAIL !!!!!~~~~~~~~~~~~\n";
+      ddiirr = false;
+
+      return false;
+      
+    }
+
+    
+    return true;
+  }
   
   
   

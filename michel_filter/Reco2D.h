@@ -51,18 +51,16 @@ public:
   Double_t fit_function(float x,Double_t *par);
   
   void calc_chi_square(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
-
-
-
-  //everything is public really would just like to hold reco methods here...
   
+  //everything is public really would just like to hold reco methods here...
   
   //for fitting TMinuit requires globally scoped BS
   //end TMINUIT
-
-
+  
+  
   void do_chi(ClusterYPlane*& c,
 	      Int_t window_size);
+  std::vector<int> chi_max_pos(ClusterYPlane *c,int num_maxs);
   
   Double_t coeff(Double_t k, Double_t N);
   unsigned int nCk( unsigned int n, unsigned int k );
@@ -90,7 +88,7 @@ public:
   size_t find_max(const std::vector<Double_t>& data);
   size_t find_max(const std::vector<Double_t>& data,const std::vector<int> ref);
 
-  std::vector<int> chi_max_pos(ClusterYPlane *c,int num_maxs);
+
 
   size_t find_min(const std::vector<Double_t>& data);
   void tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c of filter
@@ -110,8 +108,8 @@ public:
   
   inline Double_t calc_mean(std::vector<Double_t> &data);
   inline Double_t distance(const larlite::hit& a, const larlite::hit& b);
-
-
+  
+  
   };
 
 #endif

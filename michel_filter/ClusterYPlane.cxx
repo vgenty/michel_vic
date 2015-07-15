@@ -9,6 +9,10 @@ ClusterYPlane::ClusterYPlane(const ClusterYPlane& other)
   _ahits    = other._ahits;
   _clusters = other._clusters;
   
+  _nX       = other._nX; //set local nears wire
+  _nX       = other._nY; //set local nears time
+  _d_cutoff = other._d_cutoff; 
+
   //quickly sort the hits based on x location
   sort_hits();
   
@@ -25,8 +29,15 @@ ClusterYPlane::ClusterYPlane(const ClusterYPlane& other)
 
 
 ClusterYPlane::ClusterYPlane(std::vector<larlite::hit>     in_hits,
-			     std::vector<larlite::cluster> in_clusters)
+			     std::vector<larlite::cluster> in_clusters,
+			     const Double_t near_X, const Double_t near_Y,
+			     const Double_t d_cut)
 {
+  
+  //necessary params
+  _nX = near_X;
+  _nY = near_Y;
+  _d_cutoff = d_cut;
 
   _clusters = in_clusters;
   _ahits.resize(in_hits.size());
@@ -57,8 +68,14 @@ ClusterYPlane::ClusterYPlane(std::vector<larlite::hit>     in_hits,
 }
 
 ClusterYPlane::ClusterYPlane(std::vector<larlite::hit>     in_hits,
-			     larlite::cluster              in_cluster)
+			     larlite::cluster              in_cluster,
+			     const Double_t near_X, const Double_t near_Y,
+			     const Double_t d_cut)
 { 
+  //necessary params
+  _nX = near_X;
+  _nY = near_Y;
+  _d_cutoff = d_cut;
   
   _clusters.push_back(in_cluster);
   _ahits.resize(in_hits.size());
@@ -152,7 +169,7 @@ std::vector<HitIdx_t> ClusterYPlane::do_ordering(const size_t start_idx) {
        zz = distance(_ahits[the_order[cnt]].vec,_ahits[*itr].vec);
        
        //       if(zz < closest && zz < 0.3*20) { //hard cutoff here to avoid delta ray
-       if(zz < closest && zz < 0.3*20) { //hard cutoff here to avoid delta ray
+       if(zz < closest && zz < _d_cutoff) { //hard cutoff here to avoid delta ray
 	 idxholder = itr;
 	 closest   = zz;
 	 j = 1;
@@ -204,7 +221,7 @@ ClusterYPlane ClusterYPlane::operator+(const ClusterYPlane* other) {
   for(auto const& c : other->_clusters)
     send_clusters.push_back(c);
   
-  ClusterYPlane merged(send_hits,send_clusters);
+  ClusterYPlane merged(send_hits,send_clusters,_nX,_nY,_d_cutoff);
   // std::cout << "found a baby ... \n";
   // baby.dump();
   return merged;
@@ -223,8 +240,8 @@ bool ClusterYPlane::touching(const ClusterYPlane* other) {
 
 bool ClusterYPlane::near(const TVector2* a, const TVector2* b) {
   
-  if(abs(a->X() - b->X()) < 1.0 &&
-     abs(a->Y() - b->Y()) < 3.75) //hard cutoff, user should set not me :(
+  if(abs(a->X() - b->X()) < _nX &&
+     abs(a->Y() - b->Y()) < _nY) //hard cutoff, user should set not me :(
     return true;
   return false;
   
@@ -246,6 +263,8 @@ size_t ClusterYPlane::find_closest_hit(const TVector2* point) {
 }
 
 int ClusterYPlane::match(const TVector2* michel_loc) {
+  
+  ///in cosmics
   if(_has_michel)
     return 2; //2 I already have a michel...
   

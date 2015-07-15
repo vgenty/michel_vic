@@ -153,7 +153,7 @@ namespace larlite {
 	  the_hits[i] = evt_hits->at(hit_indicies[i]);
 	
 	_clusters.push_back(new ClusterYPlane(the_hits,
-					      evt_clusters->at(out_cnt)));
+					      evt_clusters->at(out_cnt),1.0,3.76,0.3*20));
 	
 	in_cnt++;
       }
