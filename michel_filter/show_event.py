@@ -167,16 +167,29 @@ def graph(event):
     
     c1.cd(8)
     
-    chiS = rr.TGraph()
+    ccc      = rr.TMultiGraph()
+    chipeaks = rr.TGraph()
+    chiS     = rr.TGraph()
+    
     chhh = np.array([[rec['s'][evt_num][k],rec['_chi2_copy'][evt_num][k]] 
                      for k in xrange(rec['s'][evt_num].size)])
+    we = 0;
+    for peak in rec['_the_chi_max_peak'][evt_num] :
+        chipeaks.SetPoint(we,chhh[peak][0],chhh[peak][1])
+        we += 1
+        
     
     rn.fill_graph(chiS,chhh)
-    chiS.Draw("ALP")
-    setaxis(chiS,"s [cm]","Chi2/NDF")
-
-    chiS.Draw("ALP")
+    chipeaks.SetMarkerColor(4)
+    #chipeaks.SetMarkerSize(2)
+    chipeaks.SetMarkerStyle(20)
+        
+    ccc.Add(chiS)
+    ccc.Add(chipeaks)
+    ccc.Draw("AP")
     
+    setaxis(ccc,"s [cm]","Chi2/NDF")
+
     # Xs = np.array([[rec['reco_X'][i],rec['true_X'][i]] for i in xrange(rec['reco_X'].size)])
     # Ys = np.array([[rec['reco_Y'][i],rec['true_Y'][i]] for i in xrange(rec['reco_Y'].size)])
 
