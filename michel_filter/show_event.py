@@ -25,7 +25,7 @@ def graph(event):
 
     c1 = rr.TCanvas()
     c1 = rr.TCanvas("c1")
-    c1.Divide(3,3)
+    c1.Divide(4,2)
 
     c1.cd(1)
 
@@ -99,8 +99,8 @@ def graph(event):
 
     c1.cd(4)
     tdqds  = rr.TGraph()
-    dqds   =  np.array([[rec['s'][evt_num][k],rec['dqds'][evt_num][k]] 
-                        for k in xrange(rec['dqds'][evt_num].size)])
+    dqds   = np.array([[rec['s'][evt_num][k],rec['dqds'][evt_num][k]] 
+                       for k in xrange(rec['dqds'][evt_num].size)])
     rn.fill_graph(tdqds,dqds)
     tdqds.Draw("ALP")
     setaxis(tdqds,"s [cm]","dQ/ds [ADC/cm]")
@@ -164,16 +164,27 @@ def graph(event):
     
     th2.Draw("COLZ")
     
-    c1.Update()
-    c1.Modified()
+    
+    c1.cd(8)
+    
+    chiS = rr.TGraph()
+    chhh = np.array([[rec['s'][evt_num][k],rec['_chi2_copy'][evt_num][k]] 
+                     for k in xrange(rec['s'][evt_num].size)])
+    
+    rn.fill_graph(chiS,chhh)
+    chiS.Draw("ALP")
+    setaxis(chiS,"s [cm]","Chi2/NDF")
 
-    
-    
+    chiS.Draw("ALP")
     
     # Xs = np.array([[rec['reco_X'][i],rec['true_X'][i]] for i in xrange(rec['reco_X'].size)])
     # Ys = np.array([[rec['reco_Y'][i],rec['true_Y'][i]] for i in xrange(rec['reco_Y'].size)])
 
+    
+    c1.Update()
+    c1.Modified()
 
+    
     raw_input('')
 
     #sys.stdin.readline()

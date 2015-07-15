@@ -112,7 +112,7 @@ void Reco2D::do_chi(ClusterYPlane*& c, //probably void right just so c is update
     Double_t y[SIZE];
     Double_t xerr[SIZE];
     Double_t yerr[SIZE];
-
+    
     
     // std::cout << "{";
     // for(const auto& b2: cd) {
