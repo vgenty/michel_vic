@@ -60,7 +60,7 @@ public:
   
   void do_chi(ClusterYPlane*& c,
 	      Int_t window_size);
-  std::vector<size_t> chi_max_pos(const ClusterYPlane *c,const int num_maxs);
+  std::vector<int> chi_max_pos(const ClusterYPlane *c,const int num_maxs);
   
   Double_t coeff(Double_t k, Double_t N);
   unsigned int nCk( unsigned int n, unsigned int k );
@@ -86,7 +86,7 @@ public:
 		     size_t mean_michel_vtx);
 
   size_t find_max(const std::vector<Double_t>& data);
-  size_t find_max(const std::vector<Double_t>& data,const std::vector<size_t> ref);
+  int find_max(const std::vector<Double_t>& data,const std::vector<int> ref);
 
 
 
@@ -113,11 +113,11 @@ public:
 
   const  std::pair<float,float> getrms (const std::vector<Double_t>& chi2, int k, int m, int window) const;
   
-  const std::vector<size_t> Reconstruct( const std::vector<Double_t>& chi2, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold) const;
+  const std::vector<int> Reconstruct( const std::vector<Double_t>& chi2, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold) const;
   
-  const size_t find_peak(const std::vector<Double_t>& data, int istart, int iend) const;
+  const int find_peak(const std::vector<Double_t>& data, int istart, int iend) const;
 
- const std::vector<size_t> chi_max_pos(ClusterYPlane *c, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold) const;
+ const std::vector<int> chi_max_pos(ClusterYPlane *c, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold) const;
 
   };
 

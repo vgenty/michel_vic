@@ -77,6 +77,8 @@ namespace larlite {
 
     _output_tree->Branch("_the_chi_max_peak", "std::vector<Double_t>", &_the_chi_max_peak);
 
+    _output_tree->Branch("_num_chi_max_peaks",  &_num_chi_max_peaks, "_num_chi_max_peaks/I");
+
 
     // _simch_shower_michel_E
     return true;
@@ -357,9 +359,19 @@ namespace larlite {
     
     _mcQ_frac = _simch_michel_true_shower_E/( _simch_plane_true_shower_E);
     _MeV_scale = _mcQ_frac * _true_michel_Det;
-
+    
+   
     auto the_chi_max_peaks = r2d->chi_max_pos(c, forward, 10, 0.5, _rise, _fall, _thresh);
+    
+    //std::cout<<"have vector of max chi peaks\n" <<std::endl;
+    /*
+    printvec(the_chi_max_peaks);
+    
     _the_chi_max_peak = the_chi_max_peaks;
+
+    _num_chi_max_peaks = the_chi_max_peaks.size();
+    */
+   
     
     
     _chi2_copy = c->_chi2;
@@ -390,6 +402,16 @@ namespace larlite {
     _output_tree->Write();
     
     return true;
+  }
+
+  void Michel2DAna::printvec(std::vector<int> v){
+    std::string mystring("{ ");
+    for (int i = 0; i <v.size(); i++){
+      mystring.append(std::to_string(v.at(i)));
+      mystring.append(", ");
+    }
+    mystring.append("}");
+    std::cout<< mystring << std::endl;
   }
   
   bool Michel2DAna::convert_2d(const event_hit     *evt_hits,

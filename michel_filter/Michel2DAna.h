@@ -148,7 +148,7 @@ namespace larlite {
     std::vector<Double_t> _large_frac_shower_hits_Y;
     std::vector<Double_t> _ALL_hits_p2_X;
     std::vector<Double_t> _ALL_hits_p2_Y;
-    std::vector<size_t> _the_chi_max_peak;
+    std::vector<int> _the_chi_max_peak;
 
     Double_t _lifetime_correction;
     
@@ -165,6 +165,8 @@ namespace larlite {
     
     Double_t _simch_cluster_true_shower_E   ;
     Double_t _simch_cluster_false_shower_E  ;
+
+    int _num_chi_max_peaks;
     
     
     
@@ -196,6 +198,9 @@ namespace larlite {
     
     
     //General Methods
+
+    void printvec(std::vector<int> v);
+      
     bool convert_2d(const event_hit     *evt_hits,
 		    const event_cluster *evt_clusters,
 		    const event_ass     *evt_ass_data);

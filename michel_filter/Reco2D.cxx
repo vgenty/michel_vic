@@ -387,7 +387,7 @@ size_t Reco2D::find_max(const std::vector<Double_t>& data) {
   return candidate_loc;
 }
 
-size_t Reco2D::find_max(const std::vector<Double_t>& data, const std::vector<size_t> ref) {
+int Reco2D::find_max(const std::vector<Double_t>& data, const std::vector<int> ref) {
 
   auto the_max = 0.0;
   size_t candidate_loc = 9999;
@@ -749,8 +749,8 @@ inline Double_t Reco2D::distance(const larlite::hit& a, const larlite::hit& b) {
   return sqrt((x1-y1)*(x1-y1) + (x2-y2)*(x2-y2));
 }
 
-std::vector<size_t> Reco2D::chi_max_pos(const ClusterYPlane *c,const int num_maxs){
-  std::vector<size_t> the_maxs;
+std::vector<int> Reco2D::chi_max_pos(const ClusterYPlane *c,const int num_maxs){
+  std::vector<int> the_maxs;
   
   int count = 0;
   while(count< num_maxs){
@@ -764,7 +764,7 @@ std::vector<size_t> Reco2D::chi_max_pos(const ClusterYPlane *c,const int num_max
 //this one is to find all the local maximums above a pedestal value
 //takes the cluster, whether forward or back, a window size for calculation, and an rms cutoff value
 
-const std::vector<size_t> Reco2D::chi_max_pos(ClusterYPlane *c, bool forward, int window, 
+const std::vector<int> Reco2D::chi_max_pos(ClusterYPlane *c, bool forward, int window, 
 						float cutoff, float rise_edge, float fall_edge, float threshold) const{ 
   auto peaks = Reconstruct(c->_chi2, forward, window, cutoff, rise_edge, fall_edge, threshold);
   return peaks;
@@ -776,22 +776,22 @@ const std::vector<size_t> Reco2D::chi_max_pos(ClusterYPlane *c, bool forward, in
 //   return peaks;
 // }
 
- const size_t  Reco2D::find_peak(const std::vector<Double_t>& data, int istart, int iend) const
+ const int  Reco2D::find_peak(const std::vector<Double_t>& data, int istart, int iend) const
   {
     auto the_max = double{0.0};
-    size_t cl = 4096;
+    int cl = 4096;
     
-    for(size_t i = istart; i < iend; ++i) {
+    for(int i = istart; i < iend; ++i) {
       if(data[i] > the_max) { the_max = data[i]; cl = i; }
     }
     
     return cl;
   }
 
-const std::vector<size_t> Reco2D::Reconstruct( const std::vector<Double_t>& chi2, bool forward, 
+const std::vector<int> Reco2D::Reconstruct( const std::vector<Double_t>& chi2, bool forward, 
 						 int window, float cutoff, float rise_edge, float fall_edge, float threshold) const
   {
-    std::vector<size_t> result;
+    std::vector<int> result;
     
     auto ped_info = PedEstimate(chi2,forward, window, cutoff);
     
