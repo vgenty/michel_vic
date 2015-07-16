@@ -1,0 +1,339 @@
+import numpy as np
+import sys
+
+from looks          import *
+from methods        import *
+
+import ROOT as rr
+import root_numpy as rn
+
+def graph(event):
+
+    looks_minos()
+    rr.gStyle.SetPalette(1)
+    #rr.gStyle.SetOptStat(1111)
+
+    event = int(event)
+    evt_num = event
+    f    = rr.TFile.Open("output.root","READ")
+    tree = f.Get("out_tree")
+
+    rec  = rn.tree2rec(tree)
+
+    c9 = rr.TCanvas() #1
+    c10 = rr.TCanvas() #2
+    c11 = rr.TCanvas() #3
+    c12 = rr.TCanvas()  #4
+
+    tgX = rr.TGraph()
+    tgY = rr.TGraph()
+
+    thX = rr.TH1D("thX",";;",250,-100,100)
+    thY = rr.TH1D("thY",";;",250,-100,100)
+
+    Xs = np.array([[rec['reco_X'][i],rec['true_X'][i]] for i in xrange(rec['reco_X'].size)])
+    Ys = np.array([[rec['reco_Y'][i],rec['true_Y'][i]] for i in xrange(rec['reco_Y'].size)])
+
+    rn.fill_graph(tgX,Xs)
+    rn.fill_graph(tgY,Ys)
+    rn.fill_hist(thX,rec['reco_X'] - rec['true_X'])
+    rn.fill_hist(thY,rec['reco_Y'] - rec['true_Y'])
+
+
+    c9.cd()
+    tgX.SetMarkerStyle(20)
+    tgX.Draw("AP")
+    setaxis(tgX,"Reco Z [cm]", "True Z [cm]")
+    c9.Update()
+    c9.Modified()
+
+    c10.cd()
+    tgY.SetMarkerStyle(20)
+    tgY.Draw("AP")
+    setaxis(tgY,"Reco X [cm]", "True X [cm]")
+    c10.Update()
+    c10.Modified()
+
+    c11.cd()
+
+    thX.Draw()
+    setaxis(thX,"Reco - True Z [cm]","Count")
+    c11.Update()
+    c11.Modified()
+
+    c12.cd()
+    thY.Draw()
+    setaxis(thY,"Reco - True X [cm]","Count")
+    c12.Update()
+    c12.Modified()
+
+    c1 = rr.TCanvas()
+    c1 = rr.TCanvas("c1")
+   # c1.Divide(4,2)
+
+    c1.cd()
+
+    tmg    = rr.TMultiGraph()
+    tcc    = rr.TGraph()
+    ttrue  = rr.TGraph()
+    treco  = rr.TGraph()
+
+    ahits = np.array([[rec['ahits_X'][evt_num][i],rec['ahits_Y'][evt_num][i]] 
+                      for i in xrange(rec['ahits_X'][evt_num].size)])
+
+    rn.fill_graph(tcc,ahits)
+
+    ttrue.SetPoint(0,Xs[evt_num][1],Ys[evt_num][1])
+    treco.SetPoint(0,Xs[evt_num][0],Ys[evt_num][0])
+
+    ttrue.SetMarkerStyle(34)
+    ttrue.SetMarkerSize(2)
+    ttrue.SetMarkerColor(30)
+
+    treco.SetMarkerStyle(23)
+    treco.SetMarkerSize(2)
+    treco.SetMarkerColor(40)
+
+    tmg.Add(tcc)
+    tmg.Add(ttrue)
+    tmg.Add(treco)
+
+    tmg.Draw("AP")
+    setaxis(tmg,"Wire [cm]","Time [cm]")
+
+        
+    c1.Update()
+    c1.Modified()
+
+    c3 = rr.TCanvas()
+    c3 = rr.TCanvas("c3")
+    c3.cd()
+
+    tmgs = rr.TMultiGraph()
+    ordered = rr.TGraph()
+    tstart  = rr.TGraph()
+    tend    = rr.TGraph()
+
+    order = np.array([[rec['ahits_X'][evt_num][k],rec['ahits_Y'][evt_num][k]] 
+                      for k in rec['ordered_pts'][evt_num]])
+
+    ordered.SetMarkerSize(0)
+    rn.fill_graph(ordered,order)
+    tstart.SetPoint(0,rec['startX'][evt_num],rec['startY'][evt_num])
+    tend.SetPoint  (0,rec['endX'][evt_num]  ,rec['endY'][evt_num])
+
+    tstart.SetMarkerStyle(29)
+    tstart.SetMarkerSize(2)
+    tstart.SetMarkerColor(6)
+
+    tend.SetMarkerStyle(20)
+    tend.SetMarkerSize(2)
+    tend.SetMarkerColor(7)
+
+    tmgs.Add(ordered)
+    tmgs.Add(tstart)
+    tmgs.Add(tend)
+
+    tmgs.Draw("ALP")
+    setaxis(tmgs,"Wire [cm]","Time [cm]")
+
+        
+    c3.Update()
+    c3.Modified()
+    
+    c2 = rr.TCanvas()
+    c2 = rr.TCanvas("c2")
+    c2.cd()
+
+    mcharges = rr.TMultiGraph()
+    meancharge = rr.TGraph()
+    meanchargepeaks = rr.TGraph()
+
+    thecharge =  np.array([[rec['s'][evt_num][k],rec['mean_charges'][evt_num][k]] 
+                           for k in xrange(rec['mean_charges'][evt_num].size)])
+    rn.fill_graph(meancharge,thecharge)
+    
+    we = 0;
+    for peak in rec['_the_tmean_max_peak'][evt_num] :
+        meanchargepeaks.SetPoint(we,thecharge[peak][0],thecharge[peak][1])
+        we += 1
+        
+    mcharges.Add(meancharge)
+    mcharges.Add(meanchargepeaks)
+
+    mcharges.Draw("ALP")
+    setaxis(mcharges,"s [cm]","Truncated Q [ADC]")
+
+    c2.Update()
+    c2.Modified()
+
+   
+    c4 = rr.TCanvas()
+    c4 = rr.TCanvas("c4")
+    c4.cd()
+    
+    tdqds  = rr.TGraph()
+    dqds   = np.array([[rec['s'][evt_num][k],rec['dqds'][evt_num][k]] 
+                       for k in xrange(rec['dqds'][evt_num].size)])
+    rn.fill_graph(tdqds,dqds)
+    tdqds.Draw("ALP")
+    setaxis(tdqds,"s [cm]","Truncated dQ/ds [ADC/cm]")
+
+    c4.Update()
+    c4.Modified()
+
+  
+    c5 = rr.TCanvas()
+    c5 = rr.TCanvas("c5")
+    c5.cd()
+    
+    truecharge = rr.TGraph()
+
+    cc = [rec['charges'][evt_num][k] for k in rec['ordered_pts'][evt_num]]
+    #ss = [rec['s'][evt_num][k] for k in xrange(['ordered_pts'][evt_num].size)]
+
+    dd = np.array([[rec['s'][evt_num][i],cc[i]] for i in xrange(len(cc))])
+    rn.fill_graph(truecharge,dd)
+    truecharge.Draw("ALP")
+    setaxis(truecharge,"s [cm]","Q [ADC]")
+
+    c5.Update()
+    c5.Modified()
+
+    c6 = rr.TCanvas()
+    c6 = rr.TCanvas("c6")
+    c6.cd()
+    
+    allhits = rr.TGraph()
+    shohits = rr.TGraph()
+    
+    ppp= rr.TMultiGraph()
+
+    zzz = np.array([[rec['_ALL_hits_p2_X'][evt_num][k],rec['_ALL_hits_p2_Y'][evt_num][k]] 
+                    for k in xrange(len(rec['_ALL_hits_p2_X'][evt_num]))])
+    qqq = np.array([[rec['_large_frac_shower_hits_X'][evt_num][k],rec['_large_frac_shower_hits_Y'][evt_num][k]] 
+                    for k in xrange(len(rec['_large_frac_shower_hits_X'][evt_num]))])
+    
+    
+    rn.fill_graph(allhits,zzz)
+    rn.fill_graph(shohits,qqq)
+    
+    shohits.SetMarkerColor(2)
+
+    allhits.SetMarkerStyle(20)
+    shohits.SetMarkerStyle(20)
+    
+    ppp.Add(allhits)
+    ppp.Add(shohits)
+
+    ppp.Draw("AP")
+    setaxis(ppp,"Wire [cm]","Time [cm]")
+
+    c6.Update()
+    c6.Modified()
+    
+   
+    c7 = rr.TCanvas()
+    c7 = rr.TCanvas("c7")
+    c7.cd()
+    
+    
+    xmin = np.amin(order[:,0]) - 10.0
+    xmax = np.amax(order[:,0]) + 10.0
+    ymin = np.amin(order[:,1]) - 10.0
+    ymax = np.amax(order[:,1]) + 10.0
+    
+    nbinsx = int(np.ceil((xmax-xmin)/0.3))
+    nbinsy = int(np.ceil((ymax-ymin)/0.08))
+
+    th2 = rr.TH2D("baka",";;",nbinsx,xmin,xmax,nbinsy,ymin,ymax)
+    th2.SetTitle(";Wire [cm]; Time [cm]")
+    for i in xrange(len(order)) :
+        th2.Fill(order[i][0],order[i][1],rec['_chi2_copy'][evt_num][i])
+    
+    th2.Draw("COLZ")
+
+    c7.Update()
+    c7.Modified()
+    
+    c8 = rr.TCanvas()
+    c8 = rr.TCanvas("c8")
+    c8.cd()
+    
+    ccc      = rr.TMultiGraph()
+    chipeaks = rr.TGraph()
+    chiS     = rr.TGraph()
+    
+    chhh = np.array([[rec['s'][evt_num][k],rec['_chi2_copy'][evt_num][k]] 
+                     for k in xrange(rec['s'][evt_num].size)])
+    we = 0;
+    for peak in rec['_the_chi_max_peak'][evt_num] :
+        chipeaks.SetPoint(we,chhh[peak][0],chhh[peak][1])
+        we += 1
+        
+    
+    rn.fill_graph(chiS,chhh)
+    chipeaks.SetMarkerColor(4)
+    #chipeaks.SetMarkerSize(2)
+    chipeaks.SetMarkerStyle(20)
+        
+    ccc.Add(chiS)
+    ccc.Add(chipeaks)
+    ccc.Draw("AP")
+    
+    setaxis(ccc,"s [cm]","#chi^{2}/NDF")
+
+    # Xs = np.array([[rec['reco_X'][i],rec['true_X'][i]] for i in xrange(rec['reco_X'].size)])
+    # Ys = np.array([[rec['reco_Y'][i],rec['true_Y'][i]] for i in xrange(rec['reco_Y'].size)])
+
+    
+    c8.Update()
+    c8.Modified()
+
+    
+    raw_input('')
+
+    #sys.stdin.readline()
+
+
+event = 0
+current = event
+while True:
+    print "Which event? (enter a number to choose or return to move to next event)"
+    print "give me -1 to quit, + to move forward and - to move back"
+    current = event
+    event = raw_input()
+    
+    if event  == '+':
+        print "vic says poo"
+        current += 1
+        event = current
+
+        print "you gave me event: " + str(event)
+       # current = event;
+       # print current
+        graph(event)
+
+    if event == '-':
+        current -= 1
+        event = current
+
+        print "you gave me event: " + str(event)
+       # current = event;
+           # print current
+        graph(event)
+        
+    else:
+        event = int(event)
+        if event == -1 :
+            break;
+
+
+        if event >= 0 :
+            print "you gave me event: " + str(event)
+            graph(event)
+        
+
+
+
+
