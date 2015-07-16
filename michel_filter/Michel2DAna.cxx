@@ -26,7 +26,7 @@ namespace larlite {
     _output_tree->Branch("mean_charges", "std::vector<Double_t>" , &_mean_charges_copy);
     _output_tree->Branch("dqds"        , "std::vector<Double_t>" , &_dqds_copy);
     _output_tree->Branch("s"           , "std::vector<Double_t>" , &_s_copy);
-    _output_tree->Branch("_chi2_copy"           , "std::vector<Double_t>" , &_chi2_copy);
+    _output_tree->Branch("_chi2_copy"  , "std::vector<size_t>" , &_chi2_copy);
     
     
     _output_tree->Branch("startX"      , &_startX, "startX/D");
@@ -47,6 +47,10 @@ namespace larlite {
     _output_tree->Branch("_Q_u_p2" , &_Q_u_p2 , "_Q_u_p2/D");
     _output_tree->Branch("_MeV_scale", &_MeV_scale, "_MeV_scale/D");
     _output_tree->Branch("_true_michel_Det", &_true_michel_Det, "_true_michel_Det/D");
+
+    
+    _output_tree->Branch("_lifetime_correction", &_lifetime_correction, "_lifetime_correction/D");
+    
 
     
     // Double_t _num_hits;
@@ -150,6 +154,10 @@ namespace larlite {
     
     for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
     
+    c->_t_means = truncated_mean;
+    c->_t_dqds  = truncated_dqds;
+    
+    
     auto mean_michel_vtx = r2d->DetEVtx(truncated_mean,
 					truncated_dqds); //should return index of highest charge
     
@@ -161,6 +169,8 @@ namespace larlite {
     
     auto the_vtx = size_t{0}; //reco vtx
 
+    
+    
     bool forward;
     bool ddiirr;
     if(!determine_forward(ddiirr,mean_michel_vtx.first,
@@ -189,12 +199,9 @@ namespace larlite {
     auto thit = c->_ahits[c->_ordered_pts[the_vtx]];    //get hit of the reco vtx point
     
     r2d->do_chi(c,15);
-    
-    
     r2d->tag_michel(c,the_vtx,forward,evt_hits, _min_michel_rad);
     r2d->tag_muon(c,the_vtx,forward,evt_hits);
-
-
+    
     auto j= r2d-> chi_max_pos(c, 3);
     _Q_u_p2 = c-> _muon-> _charge;
 
@@ -246,13 +253,12 @@ namespace larlite {
     
     std::cout << "Building MC map... \n";
     
-    if(!fBTAlg.BuildMap(g4_trackid_v, *evt_simch, *ev_hit, ass_hit_v)) {
-      print(msg::kERROR,__FUNCTION__,"Failed to build back-tracking map for MC...");
-      return false;
-    }
+    try { fBTAlg.BuildMap(g4_trackid_v, *evt_simch, *ev_hit, ass_hit_v); }
+    catch(larutil::LArUtilException) { return false; }
+
     auto aho = fBTAlg.BTAlg();
     
-
+    std::cout << "a\n";
     // for(const auto& ii : g4_trackid_v) {
     //   std::cout << " g4_track_id: { ";
     //   for(const auto& kk : ii) {
@@ -261,8 +267,6 @@ namespace larlite {
     //   std::cout << " }";
     // }
     auto reco_michel_hits  = get_summed_mcshower_other(aho,c->_michel->_hits,1);
-
-
     
     //NUMBER OF HITS P WIRE :)
     std::map<Double_t,bool> wires;
@@ -354,7 +358,7 @@ namespace larlite {
     _mcQ_frac = _simch_michel_true_shower_E/( _simch_plane_true_shower_E);
     _MeV_scale = _mcQ_frac * _true_michel_Det;
 
-    std::vector<Double_t> the_chi_max_peaks = r2d->chi_max_pos(c, forward, 10, 0.5, _rise, _fall, _thresh);
+    auto the_chi_max_peaks = r2d->chi_max_pos(c, forward, 10, 0.5, _rise, _fall, _thresh);
     _the_chi_max_peak = the_chi_max_peaks;
     
     
@@ -367,6 +371,7 @@ namespace larlite {
     // delete evt_mcshower;
     // delete evt_ass_data;
 
+    
     delete proj_start;
     
     std::cout << "\n\t == Wrote event: " << _evt << "\n";
@@ -497,6 +502,8 @@ namespace larlite {
 	true_start = shower.Start().Position();
 	_true_michel_E   = shower.Charge(2);
 	_true_michel_Det = shower.DetProfile().E();
+	auto t = shower.DetProfile().X()/160.0;
+	_lifetime_correction = exp(t/3.0);
 	bb = true; 
       }
     }
@@ -586,7 +593,9 @@ namespace larlite {
     Double_t n_cutoff = 2;
     Double_t c_cutoff = 1.15;
     Int_t    w_cutoff = 10;
-
+    
+    if(p1 == 0 || p2 == 0)
+      return false;
     std::cout << "\tp1/p2 : " << std::setprecision(15) << p1/p2 << " \n";
     std::cout << "\tpart1/part2 : " << std::setprecision(15) << part1/part2 << " \n";
     

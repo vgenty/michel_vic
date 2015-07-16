@@ -78,11 +78,14 @@ public:
   Double_t _nY;
   Double_t _d_cutoff;
 
+  //all of these ordered
   std::vector<HitIdx_t>  _ordered_pts;
   std::vector<Double_t>  _ds;
   std::vector<Double_t>  _s;
   std::vector<Double_t>  _chi2;
-  
+  std::vector<Double_t>  _t_means;
+  std::vector<Double_t>  _t_dqds;
+
   //Michel
   Michel *_michel;
   Muon * _muon;

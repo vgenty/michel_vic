@@ -60,14 +60,14 @@ public:
   
   void do_chi(ClusterYPlane*& c,
 	      Int_t window_size);
-  std::vector<int> chi_max_pos(ClusterYPlane *c,int num_maxs);
+  std::vector<size_t> chi_max_pos(const ClusterYPlane *c,const int num_maxs);
   
   Double_t coeff(Double_t k, Double_t N);
   unsigned int nCk( unsigned int n, unsigned int k );
   
   //why is template dying?
-  //template<typename T>
-  std::vector<std::vector<size_t> > get_windows(const std::vector<size_t>& the_thing, int window_size);
+  template<typename T>
+  std::vector<std::vector<T> > get_windows(const std::vector<T>& the_thing, int window_size);
 
   std::vector<Double_t> windowed_means(int window_size, Double_t p_above, Double_t p_below,
 				       const std::vector<ahit>    & data,
@@ -86,7 +86,7 @@ public:
 		     size_t mean_michel_vtx);
 
   size_t find_max(const std::vector<Double_t>& data);
-  size_t find_max(const std::vector<Double_t>& data,const std::vector<int> ref);
+  size_t find_max(const std::vector<Double_t>& data,const std::vector<size_t> ref);
 
 
 
@@ -111,13 +111,13 @@ public:
 
  const std::pair<float,float> PedEstimate(const std::vector<Double_t>& chi2, bool start, int window, float cutoff) const;
 
- const  std::pair<float,float> getrms (const std::vector<Double_t>& chi2, int k, int m, int window) const;
+  const  std::pair<float,float> getrms (const std::vector<Double_t>& chi2, int k, int m, int window) const;
+  
+  const std::vector<size_t> Reconstruct( const std::vector<Double_t>& chi2, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold) const;
+  
+  const size_t find_peak(const std::vector<Double_t>& data, int istart, int iend) const;
 
-  const std::vector<Double_t> Reconstruct( const std::vector<Double_t>& chi2, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold) const;
-
-  const size_t  find_peak(const std::vector<Double_t>& data, int istart, int iend) const;
-
- const std::vector<Double_t> chi_max_pos(ClusterYPlane *c, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold) const;
+ const std::vector<size_t> chi_max_pos(ClusterYPlane *c, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold) const;
 
   };
 
