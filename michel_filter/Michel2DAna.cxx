@@ -91,19 +91,16 @@ namespace larlite {
       print(msg::kERROR,__FUNCTION__,"SimChannel data product not found!");
       return false;
     }
-    std::cout << "1\n";   
     //Reco
     auto evt_hits     = storage->get_data<event_hit>    ("gaushit");
     auto evt_clusters = storage->get_data<event_cluster>(_cluster_producer);
     auto evt_ass_data = storage->get_data<event_ass>    (_cluster_producer);
-    std::cout << "2\n";
     
     //Create ClusterYPlane objects, merge joining clusters
     if(!convert_2d(evt_hits,
 		   evt_clusters,
 		   evt_ass_data)) return false;
     
-    std::cout << "3\n";
     //lambda returns cluster with most number of ordered_pts
     auto largest = [](const std::vector<ClusterYPlane*>& _cl)
       {
@@ -117,7 +114,6 @@ namespace larlite {
 	return ret;
       };
     
-    std::cout << "4\n";
     std::vector<Double_t> truncated_mean;
     std::vector<Double_t> truncated_dqds;
 
@@ -156,14 +152,11 @@ namespace larlite {
     
     auto mean_michel_vtx = r2d->DetEVtx(truncated_mean,
 					truncated_dqds); //should return index of highest charge
-    std::cout << "5\n";
-    if(mean_michel_vtx.first == 9999) return false;
-    std::cout << "~~" << mean_michel_vtx.first << "\n";
-    std::cout << "6\n";
+    std::cout << "number is: " << mean_michel_vtx.first << " \n";
+    if(mean_michel_vtx.first == 99999) return false;
     auto real_michel_vtx = r2d->REALDetEVtx(c->_ahits,
 					    c->_ordered_pts,
 					    mean_michel_vtx.first);
-    std::cout << "7\n";
     auto the_vtx = size_t{0}; //reco vtx
     
     
@@ -172,8 +165,7 @@ namespace larlite {
     if(!determine_forward(ddiirr,mean_michel_vtx.first,
 			  real_michel_vtx, c))
       return false;
-    std::cout << "8\n";
-    
+        
     if(ddiirr) {
       the_vtx = real_michel_vtx + 1;
       forward = true;
@@ -184,7 +176,7 @@ namespace larlite {
 	the_vtx = real_michel_vtx;
       forward = false;
     }
-    std::cout << "8\n";
+    
     // Get the closest reconstructed hit to the start of the mcshower
     TVector2 *proj_start = nullptr;
     if(!find_projected_start(proj_start,evt_mcshower)) //this actually updated proj_start pointer

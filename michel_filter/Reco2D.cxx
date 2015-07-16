@@ -314,7 +314,7 @@ std::pair<size_t,size_t> Reco2D::DetEVtx(const std::vector<Double_t>& q,
   if(abs(dqdscandidate_loc - candidate_loc) < 20)
     return std::make_pair(candidate_loc,dqdscandidate_loc);  
   else
-    return std::make_pair(999,999);
+    return std::make_pair(99999,99999);
   
 
 }
