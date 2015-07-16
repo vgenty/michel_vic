@@ -86,16 +86,27 @@ def graph(event):
 
     tmgs.Draw("ALP")
     setaxis(tmgs,"Wire [cm]","Time [cm]")
-
+    
     c1.cd(2)
-
+    
+    mcharges = rr.TMultiGraph()
     meancharge = rr.TGraph()
+    meanchargepeaks = rr.TGraph()
+
     thecharge =  np.array([[rec['s'][evt_num][k],rec['mean_charges'][evt_num][k]] 
                            for k in xrange(rec['mean_charges'][evt_num].size)])
     rn.fill_graph(meancharge,thecharge)
-    meancharge.Draw("ALP")
+    
+    we = 0;
+    for peak in rec['_the_tmean_max_peak'][evt_num] :
+        meanchargepeaks.SetPoint(we,thecharge[peak][0],thecharge[peak][1])
+        we += 1
+        
+    mcharges.Add(meancharge)
+    mcharges.Add(meanchargepeaks)
 
-    setaxis(meancharge,"s [cm]","Q [ADC]")
+    meancharges.Draw("ALP")
+    setaxis(meancharges,"s [cm]","Q [ADC]")
 
     c1.cd(4)
     tdqds  = rr.TGraph()

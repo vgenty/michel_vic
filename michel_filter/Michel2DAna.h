@@ -148,7 +148,13 @@ namespace larlite {
     std::vector<Double_t> _large_frac_shower_hits_Y;
     std::vector<Double_t> _ALL_hits_p2_X;
     std::vector<Double_t> _ALL_hits_p2_Y;
+
     std::vector<int> _the_chi_max_peak;
+    int _num_chi_max_peaks;
+
+    std::vector<int> _the_tmean_max_peak;
+    int _num_tmean_max_peaks;
+
 
     Double_t _lifetime_correction;
     
@@ -165,11 +171,6 @@ namespace larlite {
     
     Double_t _simch_cluster_true_shower_E   ;
     Double_t _simch_cluster_false_shower_E  ;
-
-    int _num_chi_max_peaks;
-    
-    
-    
 
     Int_t _evt = 0;
 

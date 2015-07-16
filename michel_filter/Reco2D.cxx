@@ -23,8 +23,7 @@ void Reco2D::do_chi(ClusterYPlane*& c, //probably void right just so c is update
  
   std::vector<Double_t> chi;
   
-  
-  //prepare MINUIT
+  // prepare MINUIT
   // TMinuit *ptMinuit = new TMinuit(2);  //initialize TMinuit with a maximum of 2 params
   // ptMinuit->SetPrintLevel(-1);
 
@@ -32,8 +31,8 @@ void Reco2D::do_chi(ClusterYPlane*& c, //probably void right just so c is update
   // arglist[0] = -1;
   // Int_t ierflg = 0;
 
-  //go here to find the command you want to use...
-  //http://cern-tex.web.cern.ch/cern-tex/minuit/node18.html
+  // go here to find the command you want to use...
+  // http://cern-tex.web.cern.ch/cern-tex/minuit/node18.html
 
   // ptMinuit->Command("SET PRINT", arglist, 1);
   // static Double_t vstart[2] = {1, 1};
@@ -42,16 +41,16 @@ void Reco2D::do_chi(ClusterYPlane*& c, //probably void right just so c is update
   // ptMinuit->mnparm(1, "a2", vstart[1], step[1],0,0,ierflg);
 
 
-  //pointer to member function fucked me here :-(
-  //  ptMinuit->SetFCN(calc_chi_square);
+  // pointer to member function fucked me here :-(
+  // ptMinuit->SetFCN(calc_chi_square);
   
   // void (Reco2D::*func)(Int_t&, Double_t*, Double_t&, Double_t*, Int_t);
   // func = &Reco2D::calc_chi_square;
   
   // ptMinuit->SetFCN(func);
   
-  //https://root.cern.ch/root/roottalk/roottalk04/1099.html
-  //ptMinuit->SetFCN(&_chifit->calc_chi_square);
+  // https://root.cern.ch/root/roottalk/roottalk04/1099.html
+  // ptMinuit->SetFCN(&_chifit->calc_chi_square);
 
   
   // auto func1 = std::bind(&Reco2D::calc_chi_square, this);
@@ -60,13 +59,10 @@ void Reco2D::do_chi(ClusterYPlane*& c, //probably void right just so c is update
   // auto fff = std::mem_fn(&Reco2D::calc_chi_square);
   // ptMinuit->SetFCN(fff);
   
-  
-  
-
   // arglist[0] = 500;
   // arglist[1] = 1.;
 
-  //get windows of ordered_pts
+  // get windows of ordered_pts
 
   
   
@@ -764,9 +760,9 @@ std::vector<int> Reco2D::chi_max_pos(const ClusterYPlane *c,const int num_maxs){
 //this one is to find all the local maximums above a pedestal value
 //takes the cluster, whether forward or back, a window size for calculation, and an rms cutoff value
 
-std::vector<int> Reco2D::chi_max_pos(ClusterYPlane *c, bool forward, int window, 
+std::vector<int> Reco2D::find_max_pos(const std::vector<Double_t>& data, bool forward, int window, 
 				     float cutoff, float rise_edge, float fall_edge, float threshold){ 
-  auto peaks = Reconstruct(c->_chi2, forward, window, cutoff, rise_edge, fall_edge, threshold);
+  auto peaks = Reconstruct(data, forward, window, cutoff, rise_edge, fall_edge, threshold);
   return peaks;
 }
 // const std::vector<size_t> Reco2D::chi_max_pos(ClusterYPlane *c, bool forward, int window, 
@@ -788,19 +784,18 @@ int Reco2D::find_peak(const std::vector<Double_t>& data, int istart, int iend)
     return cl;
   }
 
-std::vector<int> Reco2D::Reconstruct( const std::vector<Double_t>& chi2, bool forward, 
+
+std::vector<int> Reco2D::Reconstruct( const std::vector<Double_t>& data, bool forward, 
 				      int window, float cutoff, float rise_edge, float fall_edge, float threshold)
 {
     std::vector<int> result;
-    std::cout << "e1\n";
-    auto ped_info = PedEstimate(chi2,forward, window, cutoff);
-    std::cout << "e2\n";
+    auto ped_info = PedEstimate(data,forward, window, cutoff);
     bool found_pulse = false; 
     size_t t = 0;
     
-    while (  t < chi2.size() ) {
-      if(chi2[t] > (ped_info.first  + rise_edge * ped_info.second)  && 
-	chi2[t] > threshold + ped_info.first &&
+    while (  t < data.size() ) {
+      if(data[t] > (ped_info.first  + rise_edge * ped_info.second)  && 
+	data[t] > threshold + ped_info.first &&
 	 !found_pulse)
 	found_pulse = true;
       
@@ -808,17 +803,17 @@ std::vector<int> Reco2D::Reconstruct( const std::vector<Double_t>& chi2, bool fo
         size_t  t_end = t;
 
 	while(1) {
-	  if(t_end == chi2.size() - 1)
+	  if(t_end == data.size() - 1)
 	    break;
 	  
-	  if(chi2[t_end] <= (ped_info.first + fall_edge * ped_info.second) &&
-	     (chi2[t_end] <= threshold + ped_info.first))
+	  if(data[t_end] <= (ped_info.first + fall_edge * ped_info.second) &&
+	     (data[t_end] <= threshold + ped_info.first))
 	    break;
 	  else 
 	    ++t_end;
 	}
 	
-	result.push_back(find_peak(chi2, t, t_end));	
+	result.push_back(find_peak(data, t, t_end));	
 	
 	while(t < t_end) ++t; //secretly increases t...
 	
@@ -828,29 +823,24 @@ std::vector<int> Reco2D::Reconstruct( const std::vector<Double_t>& chi2, bool fo
     }
     
     return result;
-  }
+}
 
 
 
-std::pair<float,float> Reco2D::PedEstimate(const std::vector<Double_t>& chi2, bool start, int window, float cutoff) {
+std::pair<float,float> Reco2D::PedEstimate(const std::vector<Double_t>& data, bool start, int window, float cutoff) {
   float mean = 0;
   float rms = 0;
-  int n = chi2.size();
+  int n = data.size();
   int k = 0;
-  std::cout << "e4\n";
   //number of points to consider in calculation;
   //int window = 10;
   
   bool below = false;
-  std::cout << "e4.1 here we go start is :" << start << "\n";
   //need minimum number to calculate
   if (n >= window) {
-    std::cout << "e4.2\n";
     if (start == true){
-      std::cout << "e4.3\n";
       while (below == false && k+window < n){
-	std::cout << "e4.4\n";
-	auto mean_rms = getrms(chi2, k, k+window, window);
+	auto mean_rms = getrms(data, k, k+window, window);
 	mean = mean_rms.first;
 	rms  = mean_rms.second;
 	
@@ -861,16 +851,11 @@ std::pair<float,float> Reco2D::PedEstimate(const std::vector<Double_t>& chi2, bo
       }
     }
     else{
-      std::cout << "e4.21\n";
-      
-      std::cout << "e4.22\n";
       k = n-1;
       while (below == false && k - window > 0){
-	std::cout << "e4.23\n";
-	auto mean_rms =  getrms(chi2, k-window, k, window);
+	auto mean_rms =  getrms(data, k-window, k, window);
 	mean = mean_rms.first;
 	rms  = mean_rms.second;
-	std::cout << "e4.24 aho\n";
 	if (rms < cutoff){
 	  below = true;
 	}
@@ -879,21 +864,19 @@ std::pair<float,float> Reco2D::PedEstimate(const std::vector<Double_t>& chi2, bo
     }
   }
   
-  std::cout << "e6\n";
   //returns <mean, rms>, or 0,0 if nothing in vector or bad index or not below cutoff
-  std::cout << "mean: " << mean << " rms: " << rms <<"\n";
   return std::pair<float,float>(mean,rms);
 }
 
-std::pair<float,float> Reco2D::getrms (const std::vector<Double_t>& chi2, int k, int m, int window) {
+std::pair<float,float> Reco2D::getrms (const std::vector<Double_t>& data, int k, int m, int window) {
   float mean = 0;
   float rms = 0;
-  for (int i  = k; i < m; i++) mean += chi2.at(i);
+  for (int i  = k; i < m; i++) mean += data.at(i);
   
   mean = mean/window;
 
   for (int i= k; i < m; i++){
-    float diff = chi2.at(i) - mean;
+    float diff = data.at(i) - mean;
     rms += diff*diff;
   }
   

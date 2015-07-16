@@ -26,7 +26,7 @@ namespace larlite {
     _output_tree->Branch("mean_charges", "std::vector<Double_t>" , &_mean_charges_copy);
     _output_tree->Branch("dqds"        , "std::vector<Double_t>" , &_dqds_copy);
     _output_tree->Branch("s"           , "std::vector<Double_t>" , &_s_copy);
-    _output_tree->Branch("_chi2_copy"  , "std::vector<size_t>" , &_chi2_copy);
+    _output_tree->Branch("_chi2_copy"  , "std::vector<Double_t>" , &_chi2_copy);
     
     
     _output_tree->Branch("startX"      , &_startX, "startX/D");
@@ -51,11 +51,6 @@ namespace larlite {
     
     _output_tree->Branch("_lifetime_correction", &_lifetime_correction, "_lifetime_correction/D");
     
-
-    
-    // Double_t _num_hits;
-    // Double_t _num_wires;
-    // Double_t _num_hits_p_wire;
     _output_tree->Branch("_num_hits" , &_num_hits , "_num_hits/D");
     _output_tree->Branch("_num_wires", &_num_wires, "_num_wires/D");
     _output_tree->Branch("_num_hits_p_wire", &_num_hits_p_wire, "_num_hits_p_wire/D");
@@ -69,17 +64,18 @@ namespace larlite {
     _output_tree->Branch("_simch_cluster_true_shower_E",&_simch_cluster_true_shower_E,"_simch_cluster_true_shower_E/D");
     _output_tree->Branch("_simch_cluster_false_shower_E",&_simch_cluster_false_shower_E,"_simch_cluster_false_shower_E/D");
     
-    
     _output_tree->Branch("_large_frac_shower_hits_X", "std::vector<Double_t>" , &_large_frac_shower_hits_X);
     _output_tree->Branch("_large_frac_shower_hits_Y", "std::vector<Double_t>" , &_large_frac_shower_hits_Y);
     _output_tree->Branch("_ALL_hits_p2_X", "std::vector<Double_t>" , &_ALL_hits_p2_X);
     _output_tree->Branch("_ALL_hits_p2_Y", "std::vector<Double_t>" , &_ALL_hits_p2_Y);
 
-    _output_tree->Branch("_the_chi_max_peak", "std::vector<Double_t>", &_the_chi_max_peak);
+    _output_tree->Branch("_the_chi_max_peak",    "std::vector<int>", &_the_chi_max_peak);
+    _output_tree->Branch("_num_chi_max_peaks",   &_num_chi_max_peaks, "_num_chi_max_peaks/I");
 
-    _output_tree->Branch("_num_chi_max_peaks",  &_num_chi_max_peaks, "_num_chi_max_peaks/I");
+    _output_tree->Branch("_the_tmean_max_peak", "std::vector<int>", &_the_tmean_max_peak);
+    _output_tree->Branch("_num_tmean_max_peaks", &_num_tmean_max_peaks, "_num_tmean_max_peaks/I");
 
-
+    std::cout << "fuck" << std::endl;
     // _simch_shower_michel_E
     return true;
     
@@ -360,16 +356,16 @@ namespace larlite {
     _mcQ_frac = _simch_michel_true_shower_E/( _simch_plane_true_shower_E);
     _MeV_scale = _mcQ_frac * _true_michel_Det;
     
-    std::cout << "e\n";
-    auto the_chi_max_peaks = r2d->chi_max_pos(c, forward, 10, 0.5, _rise, _fall, _thresh);
-    std::cout << "f\n";
-    //std::cout<<"have vector of max chi peaks\n" <<std::endl;
+
+    auto the_chi_max_peaks   = r2d->find_max_pos(c->_chi2,    forward, 10, 0.5, _rise, _fall, _thresh);
+    auto the_tmean_max_peaks = r2d->find_max_pos(c->_t_means, forward, 10, 0.5, _rise, _fall, 0);
     
     printvec(the_chi_max_peaks);
     
     _the_chi_max_peak = the_chi_max_peaks;
-
     _num_chi_max_peaks = the_chi_max_peaks.size();
+    _the_tmean_max_peak  = the_tmean_max_peaks;
+    _num_tmean_max_peaks = the_tmean_max_peaks.size();
     
    
     

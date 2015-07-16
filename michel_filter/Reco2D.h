@@ -109,15 +109,15 @@ public:
   inline Double_t calc_mean(std::vector<Double_t> &data);
   inline Double_t distance(const larlite::hit& a, const larlite::hit& b);
 
-  std::pair<float,float> PedEstimate(const std::vector<Double_t>& chi2, bool start, int window, float cutoff);
+  std::pair<float,float> PedEstimate(const std::vector<Double_t>& data, bool start, int window, float cutoff);
   
-  std::pair<float,float> getrms (const std::vector<Double_t>& chi2, int k, int m, int window);
+  std::pair<float,float> getrms (const std::vector<Double_t>& data, int k, int m, int window);
   
-  std::vector<int> Reconstruct( const std::vector<Double_t>& chi2, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
+  std::vector<int> Reconstruct( const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
   
   int find_peak(const std::vector<Double_t>& data, int istart, int iend);
   
-  std::vector<int> chi_max_pos(ClusterYPlane *c, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
+  std::vector<int> find_max_pos(const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
 
   };
 
