@@ -28,7 +28,7 @@ the_ana    = fmwk.Michel2DAna("fuzzycluster");
 the_ana.set_min_merge_cluster_size(25)
 the_ana.set_min_proto_cluster_size(4)
 the_ana.set_n_window_size(15)      
-the_ana.set_window_cutoff(0.20)
+the_ana.set_window_cutoff(0.02)
 the_ana.set_truncated_shave(3)
 the_ana.set_min_rad(10)
 the_ana.set_threshold(0.1); #min value to open window
