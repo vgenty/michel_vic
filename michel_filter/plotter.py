@@ -290,6 +290,83 @@ def graph(event):
     c8.Update()
     c8.Modified()
 
+    c13 = rr.TCanvas()
+    c13 = rr.TCanvas("c13")
+    c13.cd()
+
+    #simch_plane
+
+    simch = rr.TH1D("simch", "", 100, 0, 14000)
+    rrr = np.array([rec['_simch_plane_true_shower_E'][k] for k in xrange(rec['_simch_plane_true_shower_E'].size)])
+   
+    rn.fill_hist(simch, rrr)
+    simch.Draw()
+    
+    c13.Update()
+    c13.Modified()
+
+    c14 = rr.TCanvas()
+    c14 = rr.TCanvas("c14")
+    c14.cd()
+
+    lifetime = rr.TH1D("lifetime", "", 100, 0, 1.8)
+
+    sss = np.array([rec['_lifetime_correction'][k] for k in xrange(rec['_lifetime_correction'].size)])
+
+    rn.fill_hist(lifetime, sss)
+    lifetime.Draw()
+
+    c14.Update()
+    c14.Modified()
+
+    c15 = rr.TCanvas()
+    c15 = rr.TCanvas("c15")
+    c15.cd()
+
+    true_michel = rr.TH1D("true_michel", "", 100, 0, 60)
+
+    lll = np.array([rec['_true_michel_Det'][k] for k in xrange(rec['_true_michel_Det'].size)])
+    rn.fill_hist(true_michel, lll)
+    true_michel.Draw()
+
+    c15.Update()
+    c15.Modified()
+
+    
+    c16 = rr.TCanvas()
+    c16 = rr.TCanvas("c16")
+    c16.cd()
+
+    mcQfrac = rr.TH1D("mcQfrac", "", 100, 0, 1.1)
+
+    nnn = np.array([rec['_mcQ_frac'][k] for k in xrange(rec['_mcQ_frac'].size)])
+    rn.fill_hist(mcQfrac, nnn)
+    mcQfrac.Draw()
+
+    c16.Update()
+    c16.Modified()
+
+    c17 = rr.TCanvas()
+    c17 = rr.TCanvas("c17")
+    c17.cd()
+
+    E = rr.TGraph()
+
+   # mmm = np.array([rec['_michel_E'][k] for k in xrange(rec['_michel_E'].size)])
+    mmm = np.array([[rec['_simch_plane_true_shower_E'][i], rec['_michel_E'][i]] for i in xrange(rec['_michel_E'].size)])
+    
+    rn.fill_graph(E, mmm)
+    
+    E.Draw("AP")
+
+    c17.Update()
+    c17.Modified()
+
+    
+    
+    
+    
+
     
     raw_input('')
 
