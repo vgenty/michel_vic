@@ -269,10 +269,10 @@ namespace larlite {
     //   std::cout << " }";
     // }
     auto reco_michel_hits  = get_summed_mcshower_other(aho,c->_michel->_hits,1);
-    
+        std::cout << "b\n";
     //NUMBER OF HITS P WIRE :)
     std::map<Double_t,bool> wires;
-    
+        std::cout << "c\n";
     for(const auto& p : c->_ordered_pts)
       wires[c->_ahits[p].vec->X()] = true;
     
@@ -281,8 +281,8 @@ namespace larlite {
      
     _num_hits_p_wire = _num_hits/_num_wires;;
 
-    
-     double plane_charge = 0.0;
+    std::cout << "d\n";
+    double plane_charge = 0.0;
     
     std::vector<larlite::hit> plane2hits;
     for(const auto& h : *evt_hits) {
@@ -360,9 +360,9 @@ namespace larlite {
     _mcQ_frac = _simch_michel_true_shower_E/( _simch_plane_true_shower_E);
     _MeV_scale = _mcQ_frac * _true_michel_Det;
     
-   
+    std::cout << "e\n";
     auto the_chi_max_peaks = r2d->chi_max_pos(c, forward, 10, 0.5, _rise, _fall, _thresh);
-    
+    std::cout << "f\n";
     //std::cout<<"have vector of max chi peaks\n" <<std::endl;
     /*
     printvec(the_chi_max_peaks);
