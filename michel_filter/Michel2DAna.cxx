@@ -364,13 +364,13 @@ namespace larlite {
     auto the_chi_max_peaks = r2d->chi_max_pos(c, forward, 10, 0.5, _rise, _fall, _thresh);
     std::cout << "f\n";
     //std::cout<<"have vector of max chi peaks\n" <<std::endl;
-    /*
+    
     printvec(the_chi_max_peaks);
     
     _the_chi_max_peak = the_chi_max_peaks;
 
     _num_chi_max_peaks = the_chi_max_peaks.size();
-    */
+    
    
     
     
