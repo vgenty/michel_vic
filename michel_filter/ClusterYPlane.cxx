@@ -28,8 +28,8 @@ ClusterYPlane::ClusterYPlane(const ClusterYPlane& other)
 }
 
 
-ClusterYPlane::ClusterYPlane(std::vector<larlite::hit>     in_hits,
-			     std::vector<larlite::cluster> in_clusters,
+ClusterYPlane::ClusterYPlane(const std::vector<larlite::hit>&     in_hits,
+			     const std::vector<larlite::cluster>& in_clusters,
 			     const Double_t near_X, const Double_t near_Y,
 			     const Double_t d_cut)
 {
@@ -49,7 +49,7 @@ ClusterYPlane::ClusterYPlane(std::vector<larlite::hit>     in_hits,
   for(unsigned int i = 0; i < in_hits.size(); ++i) {
     Double_t a[2]; xy(in_hits[i],a);
     _ahits[i].hit = in_hits[i];
-    _ahits[i].vec = new TVector2(a);
+    _ahits[i].vec = TVector2(a);
   }
   
   //quickly sort the hits based on x location
@@ -67,9 +67,10 @@ ClusterYPlane::ClusterYPlane(std::vector<larlite::hit>     in_hits,
    
 }
 
-ClusterYPlane::ClusterYPlane(std::vector<larlite::hit>     in_hits,
-			     larlite::cluster              in_cluster,
-			     const Double_t near_X, const Double_t near_Y,
+ClusterYPlane::ClusterYPlane(const std::vector<larlite::hit>&     in_hits,
+			     const larlite::cluster&              in_cluster,
+			     const Double_t near_X,
+			     const Double_t near_Y,
 			     const Double_t d_cut)
 { 
   //necessary params
@@ -89,7 +90,7 @@ ClusterYPlane::ClusterYPlane(std::vector<larlite::hit>     in_hits,
   for(unsigned int i = 0; i < in_hits.size(); ++i) {
     Double_t a[2]; xy(in_hits[i],a);
     _ahits[i].hit = in_hits[i];
-    _ahits[i].vec = new TVector2(a);
+    _ahits[i].vec = TVector2(a);
   }
   
   
@@ -150,8 +151,9 @@ std::vector<HitIdx_t> ClusterYPlane::do_ordering(const size_t start_idx) {
   std::vector<HitIdx_t> all_pts(_ahits.size() - 1,0);
   for(size_t b = 0 ; b < all_pts.size(); ++b)
     all_pts[b] = b+1;
+
   std::vector<HitIdx_t> the_order;
-  
+  the_order.reserve(_ahits.size());
   the_order.push_back(start_idx);
 
   bool aho = true;
@@ -162,7 +164,7 @@ std::vector<HitIdx_t> ClusterYPlane::do_ordering(const size_t start_idx) {
   Double_t closest = 9999.9;
   Double_t stot = 0.0;
   
-   while(aho) {
+  while(aho) {
   
      for(std::vector<HitIdx_t>::iterator itr = all_pts.begin();
 	   itr != all_pts.end(); ++itr) {
@@ -194,10 +196,10 @@ std::vector<HitIdx_t> ClusterYPlane::do_ordering(const size_t start_idx) {
    return the_order;
 }
 
-Double_t ClusterYPlane::distance(const TVector2* a,
-				 const TVector2* b) {
+Double_t ClusterYPlane::distance(const TVector2& a,
+				 const TVector2& b) {
   
-  return ((*a - *b).Mod());
+  return ((a - b).Mod());
 }
 
 ClusterYPlane ClusterYPlane::operator+(const ClusterYPlane* other) {
@@ -210,6 +212,9 @@ ClusterYPlane ClusterYPlane::operator+(const ClusterYPlane* other) {
   
   std::vector<larlite::hit>     send_hits;
   std::vector<larlite::cluster> send_clusters;
+
+  send_hits.reserve(this->_ahits.size() + other->_ahits.size());
+  send_clusters.reserve(this->_clusters.size() + other->_clusters.size());
   
   for(auto const& h : this->_ahits)
     send_hits.push_back(h.hit);
@@ -238,16 +243,16 @@ bool ClusterYPlane::touching(const ClusterYPlane* other) {
   return false;
 }
 
-bool ClusterYPlane::near(const TVector2* a, const TVector2* b) {
+bool ClusterYPlane::near(const TVector2& a, const TVector2& b) {
   
-  if(abs(a->X() - b->X()) < _nX &&
-     abs(a->Y() - b->Y()) < _nY) //hard cutoff, user should set not me :(
+  if(abs(a.X() - b.X()) < _nX &&
+     abs(a.Y() - b.Y()) < _nY) //hard cutoff, user should set not me :(
     return true;
   return false;
   
 }
 
-size_t ClusterYPlane::find_closest_hit(const TVector2* point) {
+size_t ClusterYPlane::find_closest_hit(const TVector2& point) {
 
   auto dist = 999.0;
   auto idx  = size_t{0};
@@ -262,7 +267,7 @@ size_t ClusterYPlane::find_closest_hit(const TVector2* point) {
   return idx;
 }
 
-int ClusterYPlane::match(const TVector2* michel_loc) {
+int ClusterYPlane::match(const TVector2& michel_loc) {
   
   ///in cosmics
   if(_has_michel)
@@ -290,8 +295,8 @@ int ClusterYPlane::match(const TVector2* michel_loc) {
 void ClusterYPlane::dump() {
   std::cout << "\t\n==start dump==\n";
   std::cout << "A cluster with " << _ahits.size() << " hits in " << _clusters.size() << "\n";
-  std::cout << "The start point is at (" << _start.vec->X() << "," << _start.vec->Y() << ")\n";
-  std::cout << "The end point is at ("   << _end.vec->X() << ","   << _end.vec->Y()   << ")\n";
+  std::cout << "The start point is at (" << _start.vec.X() << "," << _start.vec.Y() << ")\n";
+  std::cout << "The end point is at ("   << _end.vec.X() << ","   << _end.vec.Y()   << ")\n";
   std::cout << _ordered_pts.size() << " of the hits are ordered and nearby ";
   std::cout << "I may or may not have a michel, do i? " << _has_michel << "\n";
   if(_has_michel) 

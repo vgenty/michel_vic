@@ -47,21 +47,21 @@ namespace larlite {
     
     
     //get the XZ locations of the michels
-    std::vector<TVector2*> proj_starts;
+    std::vector<TVector2> proj_starts;
     
-    if(!find_projected_starts(proj_starts,evt_mcshower))
+    if(!find_projected_starts(proj_starts,*evt_mcshower))
       return false;
     
     std::cout << "found " << proj_starts.size() << " number of michels " << "\n";
 
     for(const auto& p : proj_starts) {
-      _tX.push_back(p->X());
-      _tY.push_back(p->Y());
+      _tX.push_back(p.X());
+      _tY.push_back(p.Y());
     }
     
     //Do clusterwise michel find....
     for(auto& c : _clusters) { //not const we will change them...
-      std::vector<TVector2*>::iterator itr;
+      std::vector<TVector2>::iterator itr;
       bool found = false;
       for(itr = proj_starts.begin(); itr != proj_starts.end(); ++itr) {
     	auto r = c->match(*itr);
@@ -93,10 +93,12 @@ namespace larlite {
     
     std::vector<Double_t> XX;
     std::vector<Double_t> YY;
+    XX.reserve(_clusters.size() * 100);
+    YY.reserve(_clusters.size() * 100);
     for(const auto* c   : _clusters) {
       for(const auto& hit : c->_ahits) {
-	XX.push_back(hit.vec->X());
-	YY.push_back(hit.vec->Y());
+	XX.push_back(hit.vec.X());
+	YY.push_back(hit.vec.Y());
 	//_charges_copy.push_back(hit.hit.Integral());
       }
       _ordered_pts_copy.push_back(c->_ordered_pts);
@@ -107,8 +109,8 @@ namespace larlite {
     }
     std::cout << "\n\t == Wrote event: " << _evt << "\n";
     _output_tree->Fill();
-    for(auto& p : proj_starts)
-      delete p;
+    //for(auto& p : proj_starts)
+    //delete p;
     
     _ahits_X_copy.clear();
     _ahits_Y_copy.clear();
@@ -240,14 +242,18 @@ namespace larlite {
   }
   
   
-  bool Michel2DCosmics::find_projected_starts(std::vector<TVector2*>& p, 
-					      const event_mcshower* evt_mcshower) {
+  bool Michel2DCosmics::find_projected_starts(std::vector<TVector2>& p, 
+					      const event_mcshower& evt_mcshower) {
     
     //std::cout << Form("Afinding the projected start point...\n");
     std::vector<TLorentzVector> true_starts;
     std::vector<Double_t> true_times;
+
+    true_starts.reserve(evt_mcshower.size());
+    true_times.reserve(evt_mcshower.size());
+    
     auto bb = false;
-    for(const auto& shower : *evt_mcshower) {
+    for(const auto& shower : evt_mcshower) {
       if (shower.Process() == "muMinusCaptureAtRest" &&
 	  shower.Charge(2) > 10.0 )	  {
 	true_starts.push_back(shower.Start().Position());
@@ -259,19 +265,16 @@ namespace larlite {
     if(!bb)
       return false;
     
-        
+    p.reserve(true_starts.size());
     for(const auto& starts : true_starts) {
-      TVector3* ttt = new TVector3(starts.Vect());
+      TVector3 ttt(starts.Vect());
       ::larutil::PxPoint pxpoint;
       try{ 
-	pxpoint = ::larutil::GeometryUtilities::GetME()->Get2DPointProjection2(ttt,2);      
+	pxpoint = ::larutil::GeometryUtilities::GetME()->Get2DPointProjection2(&ttt,2);      
       } catch(larutil::LArUtilException) { continue; }
       
+      p.emplace_back(pxpoint.w*0.3, pxpoint.t*0.0802814);
       
-      p.push_back(new TVector2(pxpoint.w*0.3,
-			       pxpoint.t*0.0802814));
-      
-      delete ttt;
     }
     
     if(p.size() == 0)

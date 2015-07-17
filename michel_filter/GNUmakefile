@@ -15,9 +15,6 @@ INCFLAGS  = -I.                       #Include itself
 INCFLAGS += $(shell larlite-config --includes)
 INCFLAGS += $(shell recotool-config --includes)
 
-# various
-LDFLAGS += -L$(LARLITE_LIBDIR) -lRecoTool_MCComp
-
 # platform-specific options
 OSNAME          = $(shell uname -s)
 HOST            = $(shell uname -n)
@@ -28,6 +25,9 @@ include $(LARLITE_BASEDIR)/Makefile/Makefile.${OSNAME}
 
 # call the common GNUmakefile
 LDFLAGS += $(shell larlite-config --libs)
+LDFLAGS += -L$(LARLITE_LIBDIR) -lRecoTool_MCComp
+LDFLAGS += $(shell root-config --libs)
+
 include $(LARLITE_BASEDIR)/Makefile/GNUmakefile.CORE
 
 

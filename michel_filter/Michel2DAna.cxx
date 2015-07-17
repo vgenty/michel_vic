@@ -78,7 +78,13 @@ namespace larlite {
   }
   
   bool Michel2DAna::analyze(storage_manager* storage) {
-    clear_all(); 
+
+    TStopwatch fWatch;
+    fWatch.Start();
+    
+    clear_all();
+    std::cout<<"\033[93m"<<Form("CP 1 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
     
     //True
     auto evt_mcshower = storage->get_data<event_mcshower>("mcreco");
@@ -91,11 +97,17 @@ namespace larlite {
     auto evt_hits     = storage->get_data<event_hit>    ("gaushit");
     auto evt_clusters = storage->get_data<event_cluster>(_cluster_producer);
     auto evt_ass_data = storage->get_data<event_ass>    (_cluster_producer);
+
+    std::cout<<"\033[93m"<<Form("CP 2 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
     
     //Create ClusterYPlane objects, merge joining clusters
     if(!convert_2d(evt_hits,
 		   evt_clusters,
 		   evt_ass_data)) return false;
+
+    std::cout<<"\033[93m"<<Form("CP 3 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
     
     //lambda returns cluster with most number of ordered_pts
     auto largest = [](const std::vector<ClusterYPlane*>& _cl)
@@ -109,6 +121,9 @@ namespace larlite {
 	}
 	return ret;
       };
+
+    std::cout<<"\033[93m"<<Form("CP 4 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
     
     std::vector<Double_t> truncated_mean;
     std::vector<Double_t> truncated_dqds;
@@ -119,8 +134,11 @@ namespace larlite {
       return false;
     
     //do truncated mean
-    truncated_mean = r2d->windowed_means(_n_window_size,_window_cutoff,0,
+    truncated_mean = r2d.windowed_means(_n_window_size,_window_cutoff,0,
 					 c->_ahits, c->_ordered_pts);
+
+    std::cout<<"\033[93m"<<Form("CP 5 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
     
     //cut off the bullshit on the edges of mean
     truncated_mean.erase(truncated_mean.begin(),
@@ -128,7 +146,10 @@ namespace larlite {
     
     truncated_mean.erase(truncated_mean.end() - _truncated_shave,
 			 truncated_mean.end());
-    
+
+    std::cout<<"\033[93m"<<Form("CP 6 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
+
     int s = 3; // must be odd, currently has no setter
     
     for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
@@ -137,7 +158,7 @@ namespace larlite {
     for(int i = s; i < truncated_mean.size() - s + 1; ++i) {
       std::vector<Double_t> f(truncated_mean.begin() + i - s,truncated_mean.begin() + i + s);
       std::vector<Double_t> x(c->_s.begin() + i - s + _truncated_shave,c->_s.begin() + i + s + _truncated_shave);
-      truncated_dqds.push_back(r2d->smooth_derive(f,x,2*s+1));
+      truncated_dqds.push_back(r2d.smooth_derive(f,x,2*s+1));
     }
     
     for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
@@ -146,14 +167,17 @@ namespace larlite {
     c->_t_dqds  = truncated_dqds;
     
     
-    auto mean_michel_vtx = r2d->DetEVtx(truncated_mean,
+    auto mean_michel_vtx = r2d.DetEVtx(truncated_mean,
 					truncated_dqds); //should return index of highest charge
     std::cout << "number is: " << mean_michel_vtx.first << " \n";
     if(mean_michel_vtx.first == 99999) return false;
-    auto real_michel_vtx = r2d->REALDetEVtx(c->_ahits,
+    auto real_michel_vtx = r2d.REALDetEVtx(c->_ahits,
 					    c->_ordered_pts,
 					    mean_michel_vtx.first);
     auto the_vtx = size_t{0}; //reco vtx
+
+    std::cout<<"\033[93m"<<Form("CP 7 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
     
     bool forward;
     bool ddiirr;
@@ -173,24 +197,49 @@ namespace larlite {
     }
     
     std::cout << "\n forward... " << forward << std::endl;
+
+    std::cout<<"\033[93m"<<Form("CP 8 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
     
     // Get the closest reconstructed hit to the start of the mcshower
-    TVector2 *proj_start = nullptr;
+    TVector2 proj_start;
     if(!find_projected_start(proj_start,evt_mcshower)) //this actually updated proj_start pointer
       return false;
 
+    std::cout<<"\033[93m"<<Form("CP 8.1 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
+    
     auto real_michel = c->find_closest_hit(proj_start); //find closest hit to projection
+
+    std::cout<<"\033[93m"<<Form("CP 8.2 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
     
     auto thit = c->_ahits[c->_ordered_pts[the_vtx]];    //get hit of the reco vtx point
+
+    std::cout<<"\033[93m"<<Form("CP 8.3 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
     
-    r2d->do_chi(c,15);
-    r2d->tag_michel(c,the_vtx,forward,evt_hits, _min_michel_rad);
-    r2d->tag_muon(c,the_vtx,forward,evt_hits);
+    r2d.do_chi(c,15);
+    std::cout<<"\033[93m"<<Form("CP 8.4 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
+
+    r2d.tag_michel(c,the_vtx,forward,evt_hits, _min_michel_rad);
+
+    std::cout<<"\033[93m"<<Form("CP 8.5 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
+
+    r2d.tag_muon(c,the_vtx,forward,evt_hits);
+
+    std::cout<<"\033[93m"<<Form("CP 8.6 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
     
-    auto j= r2d-> chi_max_pos(c, 3);
+    auto j= r2d. chi_max_pos(c, 3);
     _Q_u_p2 = c-> _muon-> _charge;
 
     //double plane_charge
+
+    std::cout<<"\033[93m"<<Form("CP 9 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
     
     /////////COMPARE TO MC////////////////
     
@@ -241,7 +290,7 @@ namespace larlite {
     std::map<Double_t,bool> wires;
 
     for(const auto& p : c->_ordered_pts)
-      wires[c->_ahits[p].vec->X()] = true;
+      wires[c->_ahits[p].vec.X()] = true;
     
     _num_hits = c->_ordered_pts.size();
     _num_wires = wires.size();
@@ -286,19 +335,21 @@ namespace larlite {
     _simch_cluster_true_shower_E    = cluster_hits.first;
     _simch_cluster_false_shower_E   = cluster_hits.second;
 
+    std::cout<<"\033[93m"<<Form("CP 10 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
     
     ///////////////////////////////////////////
     ////////////WRITE OUT TO TTREE////////////
     /////////////////////////////////////////
     
-    _tX = c->_ahits[c->_ordered_pts[real_michel]].vec->X();
-    _tY = c->_ahits[c->_ordered_pts[real_michel]].vec->Y();
-    _rX = c->_ahits[c->_ordered_pts[the_vtx]].vec->X();
-    _rY = c->_ahits[c->_ordered_pts[the_vtx]].vec->Y();
+    _tX = c->_ahits[c->_ordered_pts[real_michel]].vec.X();
+    _tY = c->_ahits[c->_ordered_pts[real_michel]].vec.Y();
+    _rX = c->_ahits[c->_ordered_pts[the_vtx]].vec.X();
+    _rY = c->_ahits[c->_ordered_pts[the_vtx]].vec.Y();
 
     for(const auto& hit : c->_ahits) {
-      _ahits_X_copy.push_back(hit.vec->X());
-      _ahits_Y_copy.push_back(hit.vec->Y());
+      _ahits_X_copy.push_back(hit.vec.X());
+      _ahits_Y_copy.push_back(hit.vec.Y());
       _charges_copy.push_back(hit.hit.Integral());
     }
     
@@ -309,10 +360,10 @@ namespace larlite {
     _dqds_copy         = truncated_dqds;
     _s_copy            = c->_s;
 
-    _startX = c->_start.vec->X();
-    _startY = c->_start.vec->Y();
-    _endX = c->_end.vec->X();
-    _endY = c->_end.vec->Y();
+    _startX = c->_start.vec.X();
+    _startY = c->_start.vec.Y();
+    _endX = c->_end.vec.X();
+    _endY = c->_end.vec.Y();
     
     _d_m_h = c->_michel_dist;
     _michel_E = c->_michel->_charge;
@@ -324,8 +375,8 @@ namespace larlite {
     _mcQ_frac = _simch_michel_true_shower_E/( _simch_plane_true_shower_E);
     _MeV_scale = _mcQ_frac * _true_michel_Det;
     
-    auto the_chi_max_peaks   = r2d->find_max_pos(c->_chi2,    forward, 10, 0.5, _rise, _fall, _thresh);
-    auto the_tmean_max_peaks = r2d->find_max_pos(c->_t_means, forward, 10, 0.5, _rise, _fall, 0);
+    auto the_chi_max_peaks   = r2d.find_max_pos(c->_chi2,    forward, 10, 0.5, _rise, _fall, _thresh);
+    auto the_tmean_max_peaks = r2d.find_max_pos(c->_t_means, forward, 10, 0.5, _rise, _fall, 0);
     
     printvec(the_chi_max_peaks);
     
@@ -344,7 +395,7 @@ namespace larlite {
     // delete evt_ass_data;
 
     
-    delete proj_start;
+    //delete proj_start;
     
     std::cout << "\n\t == Wrote event: " << _evt << "\n";
     _evt++;
@@ -393,7 +444,8 @@ namespace larlite {
       
       if (evt_clusters->at(out_cnt).View() == 2) {
 	
-	std::vector<hit> the_hits; the_hits.resize(hit_indicies.size());
+	std::vector<hit> the_hits;
+	the_hits.resize(hit_indicies.size());
 	
 	if(the_hits.size() < _min_proto_cluster) // control the minimum size of clusters, user should set this...
 	  continue;
@@ -473,7 +525,7 @@ namespace larlite {
     _s_copy.clear();
   }
 
-  bool Michel2DAna::find_projected_start(TVector2*& p, 
+  bool Michel2DAna::find_projected_start(TVector2& p, 
 					 const event_mcshower* evt_mcshower) {
     
     TLorentzVector true_start;
@@ -492,18 +544,18 @@ namespace larlite {
     if(!bb)
       return false;
     
-    TVector3 *ttt = new TVector3(true_start.Vect());
+    TVector3 ttt(true_start.Vect());
     
     ::larutil::PxPoint pxpoint;
     
     try{ 
-      pxpoint = ::larutil::GeometryUtilities::GetME()->Get2DPointProjection2(ttt,2);
+      pxpoint = ::larutil::GeometryUtilities::GetME()->Get2DPointProjection2(&ttt,2);
     } catch(larutil::LArUtilException) { return false; }
     
-    p = new TVector2(pxpoint.w * 0.3,
-		     pxpoint.t * 0.0802814);
+    p = TVector2(pxpoint.w * 0.3,
+		 pxpoint.t * 0.0802814);
     
-    delete ttt;
+    ///delete ttt;
     return true;
     
   }

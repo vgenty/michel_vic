@@ -49,13 +49,13 @@ public:
      _charge = sum2;
 
      if (h[0].hit.Integral() <  h[h.size()-1].hit.Integral()){
-       _start  = *h[0].vec;
-       _end = *h[h.size()-1].vec;
+       _start  = h[0].vec;
+       _end = h[h.size()-1].vec;
      }
 
      else{
-        _start  =  *h[h.size()-1].vec;
-	_end = *h[0].vec;
+        _start  =  h[h.size()-1].vec;
+	_end = h[0].vec;
      }
    
   }

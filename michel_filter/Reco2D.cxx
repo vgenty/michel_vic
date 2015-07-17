@@ -17,8 +17,11 @@
 //   return;
 // }
 
+#include <TStopwatch.h>
+
 void Reco2D::do_chi(ClusterYPlane*& c, //probably void right just so c is updated
-		    Int_t window_size)
+		    const Int_t window_size,
+		    size_t ref_index)
 {
  
   std::vector<Double_t> chi;
@@ -90,24 +93,51 @@ void Reco2D::do_chi(ClusterYPlane*& c, //probably void right just so c is update
 
   
   //fuck me I give up
-  TGraphErrors *graph;
-  TF1 *tf;
+  //TGraphErrors *graph;
+  //TF1 *tf;
 
+  TStopwatch fWatch;
+  fWatch.Start();
+  
   auto chi_data = get_windows(c->_ordered_pts,window_size);
+
+  std::cout<<"\033[93m"<<Form("CP 8.4.1 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+  fWatch.Start();
+
+  chi.reserve(chi_data.size());
+  /*
+  double x[window_size] = {0.};
+  double y[window_size] = {0.};
+  double xerr[window_size] = {0.3};
+  double yerr[window_size] = {1.0};
+  TGraphErrors graph(wondow_size,x,y,xerr,yerr);
+  */
+  std::vector<double> x(window_size,0.);
+  std::vector<double> y(window_size,0.);
+  std::vector<double> xerr(window_size,0.3);
+  std::vector<double> yerr(window_size,1.0);
+  TGraphErrors graph(window_size,&x[0],&y[0],&xerr[0],&yerr[0]);
+  TF1 tf("aho","[0] + [1]*x");
   
   for(const auto& cd : chi_data) {
     
     const unsigned int SIZE = cd.size();
 
+    /*
     if(SIZE == 1) {
       chi.push_back(0.0);
       continue;
     }
-    
-    Double_t x[SIZE];
-    Double_t y[SIZE];
-    Double_t xerr[SIZE];
-    Double_t yerr[SIZE];
+    */
+    if(cd.size() != window_size){
+      chi.push_back(0.0);
+      continue;
+    }
+			     
+    //Double_t x[SIZE];
+    //Double_t y[SIZE];
+    //Double_t xerr[SIZE];
+    //Double_t yerr[SIZE];
     
     
     // std::cout << "{";
@@ -116,24 +146,22 @@ void Reco2D::do_chi(ClusterYPlane*& c, //probably void right just so c is update
     // }
     // std::cout << "}\n";
     
-    for(unsigned int i = 0; i < SIZE; ++i) {
-      x[i]    = c->_ahits[cd[i]].vec->X();
-      y[i]    = c->_ahits[cd[i]].vec->Y();
-      xerr[i] = 0.3;
-      yerr[i] = 1.0;
+    for(unsigned int i = 0; i < window_size; ++i) {
+      graph.SetPoint( i,
+		      c->_ahits[cd[i]].vec.X(),
+		      c->_ahits[cd[i]].vec.Y() );
+      //xerr[i] = 0.3;
+      //yerr[i] = 1.0;
     }
     
     // _iNum = SIZE; //should be reference?
     // _x = x; 
     // _y = y; 
     // _errory = yerr;
-
     
-    graph = new TGraphErrors(SIZE,x,y,xerr,yerr);
-    tf    = new TF1("aho","[0] + [1]*x");
-    tf->SetParameter(0,1);
-    tf->SetParameter(1,1);
-    graph->Fit(tf,"F 0 N Q");
+    tf.SetParameter(0,1);
+    tf.SetParameter(1,1);
+    graph.Fit(&tf,"F 0 N Q");
     // Now ready for minimization step, then get chi
     //ptMinuit->mnexcm("MIGRAD", arglist,2,ierflg);
     //minuit.ExecuteCommand("MIGRAD",0,0)
@@ -142,17 +170,19 @@ void Reco2D::do_chi(ClusterYPlane*& c, //probably void right just so c is update
     // Int_t nvpar,nparx,icstat;    
     // ptMinuit->mnstat(amin,edm,errdef,nvpar,nparx,icstat);
     //minuit.GetStats(amin,edm,errdef,nvpar,nparx,icstat);
-
     
-    double amin = tf->GetChisquare()/(SIZE - 1);
+    double amin = tf.GetChisquare()/(window_size - 1);
     chi.push_back(amin);
     //std::cout << "SIZE: " << SIZE << " chi: " << amin/(SIZE - 1) << "\n";
     
-    delete graph;
-    delete tf;
+    //delete graph;
+    //delete tf;
     //ptMinuit->mnrset(1);
     //minuit.GetMinuit->mnrset(1);
   }
+
+  std::cout<<"\033[93m"<<Form("CP 8.4.2 %g",fWatch.RealTime())<<"... "<<chi_data.size()<<" minuit calls...\033[00m"<<std::endl;
+  fWatch.Start();
 
   c->_chi2 = chi;
   //delete ptMinuit;
@@ -195,17 +225,25 @@ Double_t Reco2D::smooth_derive(const std::vector<Double_t> f,
 }
 
 template<typename T>
-std::vector<std::vector<T> > Reco2D::get_windows(const std::vector<T>& the_thing, int window_size)
+std::vector<std::vector<T> > Reco2D::get_windows(const std::vector<T>& the_thing,
+						 const int window_size)
 {
   
   std::vector<std::vector<T> > data;
-  std::vector<T> inner;
-  
+
+  // Decide the range
+  //size_t range = the_thing.size() - vtx_index;
+  //if(vtx_index < range) range = vtx_index;
+			  
   auto w = window_size + 2;
   w = (unsigned int)((w - 1)/2);
   auto num = the_thing.size();
+
+  data.reserve(num);
   
   for(int i = 1; i <= num; ++i) {
+    std::vector<T> inner;
+    inner.reserve(20);
     if(i < w) {
       for(int j = 0; j < 2 * (i%w) - 1; ++j)
 	inner.push_back(the_thing[j]);
@@ -216,8 +254,7 @@ std::vector<std::vector<T> > Reco2D::get_windows(const std::vector<T>& the_thing
       for(int j = i - w; j < i + w - 1; ++j)
 	inner.push_back(the_thing[j]);
     }
-    data.push_back(inner);
-    inner.clear();
+    data.emplace_back(inner);
   }
 
   return data;
@@ -317,8 +354,8 @@ std::pair<size_t,size_t> Reco2D::DetEVtx(const std::vector<Double_t>& q,
 }
 
 
-size_t Reco2D::REALDetEVtx(std::vector<ahit> h,
-			   std::vector<HitIdx_t> o,
+size_t Reco2D::REALDetEVtx(const std::vector<ahit>& h,
+			   const std::vector<HitIdx_t>& o,
 			   size_t mean_michel_vtx) {
    
 
@@ -374,7 +411,8 @@ size_t Reco2D::find_max(const std::vector<Double_t>& data) {
   return candidate_loc;
 }
 
-int Reco2D::find_max(const std::vector<Double_t>& data, const std::vector<int> ref) {
+int Reco2D::find_max(const std::vector<Double_t>& data,
+		     const std::vector<int>& ref) {
 
   auto the_max = 0.0;
   size_t candidate_loc = 9999;
@@ -425,7 +463,9 @@ void Reco2D::tag_muon(ClusterYPlane*& c,
   //kas771
   std::vector<ahit> muon_hits;
   std::vector<double> distance;
-   
+
+  muon_hits.reserve(c->_ordered_pts.size());
+  distance.reserve(c->_ordered_pts.size());
    if (forward == true){
      for (int i = 0; i < c->_ordered_pts.size();i++){
        if (i < idx){
@@ -708,8 +748,10 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   std::cout << "michel_hits.size() : " << michel_hits.size() << std::endl;
   
   
-  c->_michel = new Michel(E,radius,c->_ahits[c->_ordered_pts[idx]].vec,
-			  michel_hits,michel_hits.size());
+  c->_michel = new Michel(E,radius,
+			  c->_ahits[c->_ordered_pts[idx]].vec,
+			  michel_hits,
+			  michel_hits.size());
   
   c->_michel->dump();
   

@@ -42,13 +42,13 @@ public:
 
   /// ctors
   
-  ClusterYPlane(std::vector<larlite::hit>     in_hits,
-		std::vector<larlite::cluster> in_clusters,
+  ClusterYPlane(const std::vector<larlite::hit>&     in_hits,
+		const std::vector<larlite::cluster>& in_clusters,
 		const Double_t near_X, const Double_t near_Y,
 		const Double_t d_cut);
   
-  ClusterYPlane(std::vector<larlite::hit>     in_hits,
-		larlite::cluster              in_cluster,
+  ClusterYPlane(const std::vector<larlite::hit>&     in_hits,
+		const larlite::cluster&              in_cluster,
 		const Double_t near_X, const Double_t near_Y,
 		const Double_t d_cut);
   
@@ -98,23 +98,23 @@ public:
   void dump();
   void calculate_distances();
 
-  Double_t distance(const TVector2* a,
-		    const TVector2* b);
+  Double_t distance(const TVector2& a,
+		    const TVector2& b);
 
   std::vector<HitIdx_t> do_ordering(const size_t start_idx);
 
-  bool near(const TVector2* a, const TVector2* b);
+  bool near(const TVector2& a, const TVector2& b);
   bool touching(const ClusterYPlane* other);
 
-  int match(const TVector2* michel_loc);
-  size_t find_closest_hit(const TVector2* point);
+  int match(const TVector2& michel_loc);
+  size_t find_closest_hit(const TVector2& point);
   
   //Inline Methods
   inline void sort_hits() {
     std::sort(_ahits.begin(), _ahits.end(), 
 	      [](const ahit & a, const ahit & b) -> bool
 	      { 
-		return a.vec->X() < b.vec->X();
+		return a.vec.X() < b.vec.X();
 	      });
   };
   

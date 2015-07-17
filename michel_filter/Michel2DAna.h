@@ -34,6 +34,7 @@
 #include "TTree.h"
 #include "TBranch.h"
 #include "TGraph.h"
+#include <TStopwatch.h>
 
 //Vic's
 #include "Reco2D.h"
@@ -175,7 +176,7 @@ namespace larlite {
     Int_t _evt = 0;
 
     //THE Reco object
-    Reco2D* r2d;
+    Reco2D r2d;
     
     //Geo variables
     Double_t _time2cm;
@@ -206,7 +207,7 @@ namespace larlite {
 		    const event_cluster *evt_clusters,
 		    const event_ass     *evt_ass_data);
     
-    bool find_projected_start(TVector2*& p, 
+    bool find_projected_start(TVector2& p, 
 			      const event_mcshower* evt_mcshower);
     
     void check_cluster_boundaries();

@@ -3,13 +3,9 @@
 
 #include "DataFormat/hit.h"
 #include "TVector2.h"
-
-
-
-
 struct ahit {
   larlite::hit hit;
-  TVector2 *vec;
+  TVector2 vec;
 };
 
 

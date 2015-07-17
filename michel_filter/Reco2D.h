@@ -58,7 +58,8 @@ public:
   //end TMINUIT
     
   void do_chi(ClusterYPlane*& c,
-	      Int_t window_size);
+	      const Int_t window_size,
+	      size_t ref_index=0);
   std::vector<int> chi_max_pos(const ClusterYPlane *c,const int num_maxs);
   
   Double_t coeff(Double_t k, Double_t N);
@@ -66,7 +67,7 @@ public:
   
   //why is template dying?
   template<typename T>
-  std::vector<std::vector<T> > get_windows(const std::vector<T>& the_thing, int window_size);
+  std::vector<std::vector<T> > get_windows(const std::vector<T>& the_thing, const int window_size);
 
   std::vector<Double_t> windowed_means(int window_size, Double_t p_above, Double_t p_below,
 				       const std::vector<ahit>    & data,
@@ -80,12 +81,12 @@ public:
   std::pair<size_t,size_t> DetEVtx(const std::vector<Double_t>& q,
 				   const std::vector<Double_t>& dqds);
   
-  size_t REALDetEVtx(std::vector<ahit> h,
-		     std::vector<HitIdx_t> o,
+  size_t REALDetEVtx(const std::vector<ahit>& h,
+		     const std::vector<HitIdx_t>& o,
 		     size_t mean_michel_vtx);
 
   size_t find_max(const std::vector<Double_t>& data);
-  int find_max(const std::vector<Double_t>& data,const std::vector<int> ref);
+  int find_max(const std::vector<Double_t>& data,const std::vector<int>& ref);
 
 
 

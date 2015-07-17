@@ -67,8 +67,8 @@ namespace larlite {
     
     void check_cluster_boundaries();
     void clear_all();
-    bool find_projected_starts(std::vector<TVector2*>& p, //is this correect??
-			       const event_mcshower* evt_mcshower);
+    bool find_projected_starts(std::vector<TVector2>& p, //is this correect??
+			       const event_mcshower& evt_mcshower);
   
 
     

@@ -30,12 +30,13 @@ public:
 
   /// Default constructor
   Michel(Double_t c, Double_t l, 
-	 TVector2* s, std::vector<larlite::hit> h,
+	 TVector2 s,
+	 const std::vector<larlite::hit>& h,
 	 Int_t nh) :
+    _hits   (h),
     _charge (c),
     _length (l),
-    _start  (*s),
-    _hits   (h),
+    _start  (s),
     _num_hits(nh)
   {}
   
