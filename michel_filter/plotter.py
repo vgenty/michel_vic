@@ -301,6 +301,8 @@ def graph(event):
    
     rn.fill_hist(simch, rrr)
     simch.Draw()
+
+    setaxis(simch ,"True Shower N electrons","count")
     
     c13.Update()
     c13.Modified()
@@ -309,12 +311,13 @@ def graph(event):
     c14 = rr.TCanvas("c14")
     c14.cd()
 
-    lifetime = rr.TH1D("lifetime", "", 100, 0, 1.8)
+    lifetime = rr.TH1D("lifetime", "", 100, 0.9, 1.8)
 
     sss = np.array([rec['_lifetime_correction'][k] for k in xrange(rec['_lifetime_correction'].size)])
 
     rn.fill_hist(lifetime, sss)
     lifetime.Draw()
+    setaxis(lifetime,"exp[t/ #tau]","")
 
     c14.Update()
     c14.Modified()
@@ -327,7 +330,10 @@ def graph(event):
 
     lll = np.array([rec['_true_michel_Det'][k] for k in xrange(rec['_true_michel_Det'].size)])
     rn.fill_hist(true_michel, lll)
+  
+
     true_michel.Draw()
+    setaxis(true_michel, "Energy","")
 
     c15.Update()
     c15.Modified()
@@ -342,6 +348,7 @@ def graph(event):
     nnn = np.array([rec['_mcQ_frac'][k] for k in xrange(rec['_mcQ_frac'].size)])
     rn.fill_hist(mcQfrac, nnn)
     mcQfrac.Draw()
+    setaxis(mcQfrac,"efficiency","")
 
     c16.Update()
     c16.Modified()
@@ -356,6 +363,7 @@ def graph(event):
     mmm = np.array([[rec['_simch_plane_true_shower_E'][i], rec['_michel_E'][i]] for i in xrange(rec['_michel_E'].size)])
     
     rn.fill_graph(E, mmm)
+    setaxis(E,"True Shower N Electrons","Reco Michel Q")
     
     E.Draw("AP")
 
