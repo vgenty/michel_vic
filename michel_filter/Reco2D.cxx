@@ -251,15 +251,12 @@ std::vector<Double_t> Reco2D::windowed_means(int window_size, Double_t p_above, 
   
   for(int i = 1; i <= num; ++i) {
     if(i < w) {
-      //std::cout << "    a    \n";
       for(int j = 0; j < 2 * (i%w) - 1; ++j)
-  	means.push_back(charge(data[order[j]]));
+	means.push_back(charge(data[order[j]]));
     }else if (i > num - w + 1){
-      //std::cout << "    b    \n";
       for(int j = num - 2*((num - i)%w)-1 ; j < num; ++j)
-  	means.push_back(charge(data[order[j]]));
-    }    else{
-      //std::cout << "    c    \n";
+	means.push_back(charge(data[order[j]]));
+    }else{
       for(int j = i - w; j < i + w - 1; ++j)
   	means.push_back(charge(data[order[j]]));
     }
@@ -341,15 +338,9 @@ size_t Reco2D::REALDetEVtx(std::vector<ahit> h,
   
   if(smallest(right,left) < window_size)
     window_size = smallest(right,left);
-  
-  // int w_left  = window_size;
-  // int w_right = window_size;
-  
+
   auto k   = 0.0;
   auto idx = 0;
-  // std::cout << "a\n";
-  // std::cout << "window start" << mean_michel_vtx - window_size;
-  // std::cout << "   window size " << window_size << "\n";
 
   if(window_size == 0)
     window_size++; //this only works because I pop...
@@ -496,7 +487,6 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
 	std::cout << " i " << c->_ordered_pts[i] << " " ;
       }
     }
-    //std::cout << "radius : " << radius << " c->_ds[i] : " << c->_ds[i] << "\n";
   }
   std::cout << " }\n";
   if(radius < _min_rad) radius = _min_rad;
@@ -662,8 +652,6 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   }
   
   // std::cout << "encountered : " << ndupes << "\n";
-
-
   // std::vector<larlite::hit>::iterator a2, a3;
   // std::cout << "...checking if cluster_hits in cluster_hits..\n";
   // w = 0;
@@ -702,17 +690,11 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   for(const auto& ehit : *evt_hits) {   // loop over all the hits
     if(ehit.View() == 2){ // look at Y plane only
       for(const auto& ahitz : cluster_hits) { //loop over all cluster hits that are not michels;
-	//auto ahitz = c->_ahits[eh].hit;
 	if (ehit == ahitz)  { //custom hit.h
-	  // if (ehit.Channel()   == ahitz.Channel() &&
-	  //     ehit.StartTick() == ahitz.StartTick() &&
-	  //     ehit.EndTick()   == ahitz.EndTick()  )  { //custom hit.h
 	  there = true;
 	  break;
 	}
       }
-      // if(!there)
-      // 	std::cout << "not there but distance is..." << distance(ehit,c->_ahits[c->_ordered_pts[idx]].hit) << std::endl;
       if( !there && (distance(ehit,c->_ahits[c->_ordered_pts[idx]].hit) <= radius) )
   	michel_hits.push_back(ehit);
       
@@ -765,12 +747,6 @@ std::vector<int> Reco2D::find_max_pos(const std::vector<Double_t>& data, bool fo
   auto peaks = Reconstruct(data, forward, window, cutoff, rise_edge, fall_edge, threshold);
   return peaks;
 }
-// const std::vector<size_t> Reco2D::chi_max_pos(ClusterYPlane *c, bool forward, int window, 
-// 					      float cutoff, float rise_edge, float fall_edge, float threshold) const{
-  
-//   auto peaks = Reconstruct(c->_chi2, forward, window, cutoff, rise_edge, fall_edge, threshold);
-//   return peaks;
-// }
 
 int Reco2D::find_peak(const std::vector<Double_t>& data, int istart, int iend)
   {

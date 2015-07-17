@@ -103,11 +103,16 @@ def graph(event):
         we += 1
         
     mcharges.Add(meancharge)
-    mcharges.Add(meanchargepeaks)
+    if(meanchargepeaks.GetN() > 0):
+        mcharges.Add(meanchargepeaks)
 
-    meancharges.Draw("ALP")
-    setaxis(meancharges,"s [cm]","Q [ADC]")
+    meanchargepeaks.SetMarkerColor(5)
+    meanchargepeaks.SetMarkerStyle(20)
 
+
+    mcharges.Draw("AP")
+    setaxis(mcharges,"s [cm]","Q [ADC]")
+    
     c1.cd(4)
     tdqds  = rr.TGraph()
     dqds   = np.array([[rec['s'][evt_num][k],rec['dqds'][evt_num][k]] 
@@ -120,8 +125,7 @@ def graph(event):
     truecharge = rr.TGraph()
 
     cc = [rec['charges'][evt_num][k] for k in rec['ordered_pts'][evt_num]]
-    #ss = [rec['s'][evt_num][k] for k in xrange(['ordered_pts'][evt_num].size)]
-
+    
     dd = np.array([[rec['s'][evt_num][i],cc[i]] for i in xrange(len(cc))])
     rn.fill_graph(truecharge,dd)
     truecharge.Draw("ALP")

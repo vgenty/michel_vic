@@ -28,12 +28,12 @@ the_ana    = fmwk.Michel2DAna("fuzzycluster");
 the_ana.set_min_merge_cluster_size(25)
 the_ana.set_min_proto_cluster_size(4)
 the_ana.set_n_window_size(15)      
-the_ana.set_window_cutoff(0.20)
+the_ana.set_window_cutoff(0.25)
 the_ana.set_truncated_shave(3)
 the_ana.set_min_rad(10)
 the_ana.set_threshold(0.1); #min value to open window
-the_ana.set_rise(5); #number sigma above baseline
-the_ana.set_fall(10); #number sigma below baseline
+the_ana.set_rise(5);        #number sigma above baseline
+the_ana.set_fall(10);       #number sigma below baseline
 
 #you absolutely must set these two until Reco2D becomes singelton :(
 nwires = float(4.0)

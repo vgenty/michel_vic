@@ -18,6 +18,10 @@ namespace larlite {
     _output_tree->Branch("true_Y" , &_tY , "tY/D");
     _output_tree->Branch("reco_X" , &_rX , "rX/D");
     _output_tree->Branch("reco_Y" , &_rY , "rY/D"); 
+    _output_tree->Branch("startX"      , &_startX, "startX/D");
+    _output_tree->Branch("startY"      , &_startY, "startY/D");
+    _output_tree->Branch("endX"        , &_endX,   "endX/D"  );
+    _output_tree->Branch("endY"        , &_endY,   "startX/D");
     
     _output_tree->Branch("ahits_X"     , "std::vector<Double_t>" , &_ahits_X_copy);
     _output_tree->Branch("ahits_Y"     , "std::vector<Double_t>" , &_ahits_Y_copy);
@@ -26,13 +30,7 @@ namespace larlite {
     _output_tree->Branch("mean_charges", "std::vector<Double_t>" , &_mean_charges_copy);
     _output_tree->Branch("dqds"        , "std::vector<Double_t>" , &_dqds_copy);
     _output_tree->Branch("s"           , "std::vector<Double_t>" , &_s_copy);
-    _output_tree->Branch("_chi2_copy"  , "std::vector<Double_t>" , &_chi2_copy);
-    
-    
-    _output_tree->Branch("startX"      , &_startX, "startX/D");
-    _output_tree->Branch("startY"      , &_startY, "startY/D");
-    _output_tree->Branch("endX"        , &_endX,   "endX/D"  );
-    _output_tree->Branch("endY"        , &_endY,   "startX/D");
+    _output_tree->Branch("_chi2_copy"  , "std::vector<Double_t>" , &_chi2_copy);    
     
     _output_tree->Branch("_michel_E"      , &_michel_E      , "_michel_E/D");
     _output_tree->Branch("_michel_L"      , &_michel_L      , "_michel_L/D");
@@ -75,8 +73,6 @@ namespace larlite {
     _output_tree->Branch("_the_tmean_max_peak", "std::vector<int>", &_the_tmean_max_peak);
     _output_tree->Branch("_num_tmean_max_peaks", &_num_tmean_max_peaks, "_num_tmean_max_peaks/I");
 
-    std::cout << "fuck" << std::endl;
-    // _simch_shower_michel_E
     return true;
     
   }
@@ -159,13 +155,12 @@ namespace larlite {
 					    mean_michel_vtx.first);
     auto the_vtx = size_t{0}; //reco vtx
     
-    
     bool forward;
     bool ddiirr;
     if(!determine_forward(ddiirr,mean_michel_vtx.first,
 			  real_michel_vtx, c))
       return false;
-        
+    
     if(ddiirr) {
       the_vtx = real_michel_vtx + 1;
       forward = true;
@@ -176,6 +171,8 @@ namespace larlite {
 	the_vtx = real_michel_vtx;
       forward = false;
     }
+    
+    std::cout << "\n forward... " << forward << std::endl;
     
     // Get the closest reconstructed hit to the start of the mcshower
     TVector2 *proj_start = nullptr;
@@ -197,8 +194,6 @@ namespace larlite {
     
     /////////COMPARE TO MC////////////////
     
-    std::cout << "comparing the aho to MC\n";
-    std::cout << "creating the g4_tackids...\n";
     //From shower quality 
     auto _mc_energy_min = 0;
     auto _mc_energy_max = 65; // ?? MeV ??
@@ -209,7 +204,7 @@ namespace larlite {
     
     for(size_t mc_index=0; mc_index<evt_mcshower->size(); ++mc_index) {
 	auto const& mcs = (*evt_mcshower)[mc_index];
-      
+	
       if(mcs.MotherPdgCode() == 13 &&
 	 mcs.Process() == "muMinusCaptureAtRest" &&
 	 mcs.DetProfile().E()/mcs.Start().E() > 0.95) {
@@ -231,34 +226,20 @@ namespace larlite {
       
       }
     }
-    if(g4_trackid_v.size() == 0)
-      return false;
-    std::cout << "7\n";
-    std::cout << "vic stop putting rude things in the code, I have to see this too\n";
-    
+    if(g4_trackid_v.size() == 0) return false;
+        
     event_hit* ev_hit = nullptr;
     auto const& ass_hit_v = storage->find_one_ass(evt_clusters->id(),ev_hit,evt_clusters->name());
-    
-    std::cout << "Building MC map... \n";
     
     try { fBTAlg.BuildMap(g4_trackid_v, *evt_simch, *ev_hit, ass_hit_v); }
     catch(larutil::LArUtilException) { return false; }
 
     auto aho = fBTAlg.BTAlg();
     
-    std::cout << "a\n";
-    // for(const auto& ii : g4_trackid_v) {
-    //   std::cout << " g4_track_id: { ";
-    //   for(const auto& kk : ii) {
-    // 	std::cout << " : " << kk << " " ;
-    //   }
-    //   std::cout << " }";
-    // }
     auto reco_michel_hits  = get_summed_mcshower_other(aho,c->_michel->_hits,1);
-        std::cout << "b\n";
-    //NUMBER OF HITS P WIRE :)
+    
     std::map<Double_t,bool> wires;
-        std::cout << "c\n";
+
     for(const auto& p : c->_ordered_pts)
       wires[c->_ahits[p].vec->X()] = true;
     
@@ -267,7 +248,6 @@ namespace larlite {
      
     _num_hits_p_wire = _num_hits/_num_wires;;
 
-    std::cout << "d\n";
     double plane_charge = 0.0;
     
     std::vector<larlite::hit> plane2hits;
@@ -340,13 +320,10 @@ namespace larlite {
     
     _reco_Q_o_mc_Q = 0.0;
     _reco_Q_o_mc_Q = _michel_E / _simch_plane_true_shower_E;
-
-
     
     _mcQ_frac = _simch_michel_true_shower_E/( _simch_plane_true_shower_E);
     _MeV_scale = _mcQ_frac * _true_michel_Det;
     
-
     auto the_chi_max_peaks   = r2d->find_max_pos(c->_chi2,    forward, 10, 0.5, _rise, _fall, _thresh);
     auto the_tmean_max_peaks = r2d->find_max_pos(c->_t_means, forward, 10, 0.5, _rise, _fall, 0);
     
@@ -356,9 +333,6 @@ namespace larlite {
     _num_chi_max_peaks = the_chi_max_peaks.size();
     _the_tmean_max_peak  = the_tmean_max_peaks;
     _num_tmean_max_peaks = the_tmean_max_peaks.size();
-    
-   
-    
     
     _chi2_copy = c->_chi2;
     _output_tree->Fill();
@@ -374,7 +348,7 @@ namespace larlite {
     
     std::cout << "\n\t == Wrote event: " << _evt << "\n";
     _evt++;
-
+    
     _large_frac_shower_hits_X.clear();
     _large_frac_shower_hits_Y.clear();
     _ALL_hits_p2_X.clear();
@@ -545,8 +519,8 @@ namespace larlite {
     //for(size_t u = 0; u < c->_ordered_pts.size(); ++u) {
     for(const auto& h : hits) {
       ::btutil::WireRange_t wire_hit(h.Channel(),h.StartTick(),h.EndTick());
-      baka1 += aho.MCQ(wire_hit)[0] * _ne2ADC;
-      baka2 += aho.MCQ(wire_hit)[1] * _ne2ADC;
+      baka1 += aho.MCQ(wire_hit)[0]; // * _ne2ADC;
+      baka2 += aho.MCQ(wire_hit)[1]; // * _ne2ADC;
     }
     
 
@@ -579,7 +553,7 @@ namespace larlite {
     
     Double_t p1 = 0;
     Double_t p2 = 0;
-
+    
     for (size_t i = 0; i< c->_ordered_pts.size(); i++){
       if (i < real_michel_vtx)      p1++;
       else if (i > real_michel_vtx) p2++;
@@ -592,20 +566,22 @@ namespace larlite {
 	part2 += c->_ahits[c->_ordered_pts[i]].hit.Integral();    
     }
     
-
     
+    std::cout << " \n";
     std::cout << " \npart1 : " << part1 << " part2: " << part2 << "\n";
     std::cout << " \np1 : " << p1 << " p2: " << p2 << "\n";
-    
-    
+        
     Double_t n_cutoff = 2;
     Double_t c_cutoff = 1.15;
     Int_t    w_cutoff = 10;
     
     if(p1 == 0 || p2 == 0)
       return false;
+    
     std::cout << "\tp1/p2 : " << std::setprecision(15) << p1/p2 << " \n";
     std::cout << "\tpart1/part2 : " << std::setprecision(15) << part1/part2 << " \n";
+    std::cout << " \n";
+    std::cout << " \n";
     
     ////FIRST////
     if( p1/p2 > n_cutoff || p1/p2 < 1/n_cutoff) {
@@ -629,8 +605,6 @@ namespace larlite {
       std::cout << "c_cutoff...\n";
     }
     ////THIRD/////
-    
-    
     else if(p1 > w_cutoff && p2 > w_cutoff) {
       
       part1 = 0.0;
@@ -661,7 +635,7 @@ namespace larlite {
       
       std::cout << "\n~~~~~~~~~~~!!!!!!!!!!!! WE FAIL !!!!!~~~~~~~~~~~~\n";
       ddiirr = false;
-
+      
       return false;
       
     }

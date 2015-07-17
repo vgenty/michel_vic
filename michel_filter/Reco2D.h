@@ -54,10 +54,9 @@ public:
   
   //everything is public really would just like to hold reco methods here...
   
-  //for fitting TMinuit requires globally scoped BS
+  //for fitting TMinuit requires globally scoped bullshit why even bother
   //end TMINUIT
-  
-  
+    
   void do_chi(ClusterYPlane*& c,
 	      Int_t window_size);
   std::vector<int> chi_max_pos(const ClusterYPlane *c,const int num_maxs);
@@ -78,9 +77,9 @@ public:
 			 const std::vector<Double_t> x,
 			 Int_t N);
 			 
-			 
   std::pair<size_t,size_t> DetEVtx(const std::vector<Double_t>& q,
 				   const std::vector<Double_t>& dqds);
+  
   size_t REALDetEVtx(std::vector<ahit> h,
 		     std::vector<HitIdx_t> o,
 		     size_t mean_michel_vtx);
@@ -108,16 +107,17 @@ public:
   
   inline Double_t calc_mean(std::vector<Double_t> &data);
   inline Double_t distance(const larlite::hit& a, const larlite::hit& b);
+  
+    
+  std::vector<int> find_max_pos(const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
+  std::vector<int> Reconstruct( const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
 
   std::pair<float,float> PedEstimate(const std::vector<Double_t>& data, bool start, int window, float cutoff);
-  
   std::pair<float,float> getrms (const std::vector<Double_t>& data, int k, int m, int window);
-  
-  std::vector<int> Reconstruct( const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
   
   int find_peak(const std::vector<Double_t>& data, int istart, int iend);
   
-  std::vector<int> find_max_pos(const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
+  
 
   };
 
