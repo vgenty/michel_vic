@@ -10,6 +10,7 @@ import root_numpy as rn
 def graph(event):
 
     looks_minos()
+    rr.gStyle.SetOptStat("emr")
     rr.gStyle.SetPalette(1)
     #rr.gStyle.SetOptStat(1111)
 
@@ -333,7 +334,7 @@ def graph(event):
   
 
     true_michel.Draw()
-    setaxis(true_michel, "Energy","")
+    setaxis(true_michel, "Energy","count")
 
     c15.Update()
     c15.Modified()
@@ -348,7 +349,7 @@ def graph(event):
     nnn = np.array([rec['_mcQ_frac'][k] for k in xrange(rec['_mcQ_frac'].size)])
     rn.fill_hist(mcQfrac, nnn)
     mcQfrac.Draw()
-    setaxis(mcQfrac,"efficiency","")
+    setaxis(mcQfrac,"Efficiency","count")
 
     c16.Update()
     c16.Modified()
