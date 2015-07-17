@@ -154,7 +154,7 @@ for peak in rec['_the_tmean_max_peak'][evt_num] :
     we += 1
     
 mcharges.Add(meancharge)
-mcharges.Add(meanchargepeaks)
+#mcharges.Add(meanchargepeaks)
 
 mcharges.Draw("ALP")
 setaxis(mcharges,"s [cm]","Truncated Q [ADC]")
@@ -266,8 +266,8 @@ chipeaks.SetMarkerColor(4)
 chipeaks.SetMarkerStyle(20)
     
 ccc.Add(chiS)
-ccc.Add(chipeaks)
-ccc.Draw("AP")
+#ccc.Add(chipeaks)
+ccc.Draw("ALP")
 
 setaxis(ccc,"s [cm]","#chi^{2}/NDF")
 
@@ -297,13 +297,13 @@ c13.Modified()
 c14 = rr.TCanvas()
 c14.cd()
 
-lifetime = rr.TH1D("lifetime", "", 100, 0.9, 1.8)
+lifetime = rr.TH1D("lifetime", "", 25, 0.9, 1.8)
 
 sss = np.array([rec['_lifetime_correction'][k] for k in xrange(rec['_lifetime_correction'].size)])
 
 rn.fill_hist(lifetime, sss)
 lifetime.Draw()
-setaxis(lifetime,"exp[t/ #tau]","")
+setaxis(lifetime,"exp[t/#tau]","Count/%.2f" % lifetime.GetXaxis().GetBinWidth(1))
 
 c14.Update()
 c14.Modified()
@@ -311,7 +311,7 @@ c14.Modified()
 c15 = rr.TCanvas()
 c15.cd()
 
-true_michel = rr.TH1D("true_michel", "", 100, 0, 60)
+true_michel = rr.TH1D("true_michel", "", 100, 0, 100)
 
 lll = np.array([rec['_true_michel_Det'][k] for k in xrange(rec['_true_michel_Det'].size)])
 rn.fill_hist(true_michel, lll)
@@ -327,7 +327,7 @@ c15.Modified()
 c16 = rr.TCanvas()
 c16.cd()
 
-mcQfrac = rr.TH1D("mcQfrac", "", 100, 0, 1.1)
+mcQfrac = rr.TH1D("mcQfrac", "", 25, 0, 1)
 
 nnn = np.array([rec['_mcQ_frac'][k] for k in xrange(rec['_mcQ_frac'].size)])
 rn.fill_hist(mcQfrac, nnn)
