@@ -92,7 +92,6 @@ void Reco2D::do_chi(ClusterYPlane*& c, //probably void right just so c is update
   // min->SetVariable(1, "a2", vstart[1], step[1],0,0);
 
   
-  //fuck me I give up
   //TGraphErrors *graph;
   //TF1 *tf;
 
@@ -786,25 +785,82 @@ std::vector<int> Reco2D::chi_max_pos(const ClusterYPlane *c,const int num_maxs){
 
 std::vector<int> Reco2D::find_max_pos(const std::vector<Double_t>& data, bool forward, int window, 
 				     float cutoff, float rise_edge, float fall_edge, float threshold){ 
-  auto peaks = Reconstruct(data, forward, window, cutoff, rise_edge, fall_edge, threshold);
+  auto peaks = Reconstruct_Maxes(data, forward, window, cutoff, rise_edge, fall_edge, threshold);
   return peaks;
 }
 
-int Reco2D::find_peak(const std::vector<Double_t>& data, int istart, int iend)
-  {
-    auto the_max = double{0.0};
-    int cl = 4096;
-    
-    for(int i = istart; i < iend; ++i) {
-      if(data[i] > the_max) { the_max = data[i]; cl = i; }
-    }
-    
-    return cl;
+std::vector<int> Reco2D::find_min_pos(const std::vector<Double_t>& data, bool forward, int window, 
+				     float cutoff, float rise_edge, float fall_edge, float threshold){ 
+  auto peaks = Reconstruct_Mins(data, forward, window, cutoff, rise_edge, fall_edge, threshold);
+  return peaks;
+}
+
+int Reco2D::find_max_peak(const std::vector<Double_t>& data, int istart, int iend)
+{
+  auto the_max = double{0.0};
+  int cl = 4096;
+  
+  for(int i = istart; i < iend; ++i) {
+    if(data[i] > the_max) { the_max = data[i]; cl = i; }
   }
+  
+  return cl;
+}
 
+int Reco2D::find_min_peak(const std::vector<Double_t>& data, int istart, int iend)
+{
+  auto the_min = double{9999.0};
+  int cl = 4096;
+    
+  for(int i = istart; i < iend; ++i) {
+    if(data[i] < the_min) { the_min = data[i]; cl = i; }
+  }
+    
+  return cl;
+}
 
-std::vector<int> Reco2D::Reconstruct( const std::vector<Double_t>& data, bool forward, 
-				      int window, float cutoff, float rise_edge, float fall_edge, float threshold)
+std::vector<int> Reco2D::Reconstruct_Mins( const std::vector<Double_t>& data, bool forward, 
+					   int window, float cutoff, float rise_edge, float fall_edge, float threshold)
+{
+  std::vector<int> result;
+  auto ped_info = PedEstimate(data,forward, window, cutoff);
+  bool found_pulse = false; 
+  size_t t = 0;
+  
+  while (  t < data.size() ) {
+    if(data[t] < (ped_info.first  + rise_edge * ped_info.second)  && 
+       data[t] < threshold + ped_info.first &&
+       !found_pulse)
+      found_pulse = true;
+      
+    if(found_pulse) {
+      size_t  t_end = t;
+
+      while(1) {
+	if(t_end == data.size() - 1)
+	  break;
+	  
+	if(data[t_end] >= (ped_info.first + fall_edge * ped_info.second) &&
+	   (data[t_end] >= threshold + ped_info.first))
+	  break;
+	else 
+	  ++t_end;
+      }
+	
+      result.push_back(find_min_peak(data, t, t_end));	
+	
+      while(t < t_end) ++t; //secretly increases t...
+	
+    }
+    ++t;
+    found_pulse = false;
+  }
+  
+  return result;
+}
+
+std::vector<int> Reco2D::Reconstruct_Maxes( const std::vector<Double_t>& data, bool forward, 
+					    int window, float cutoff, float rise_edge, float fall_edge, float threshold)
 {
     std::vector<int> result;
     auto ped_info = PedEstimate(data,forward, window, cutoff);
@@ -831,7 +887,7 @@ std::vector<int> Reco2D::Reconstruct( const std::vector<Double_t>& data, bool fo
 	    ++t_end;
 	}
 	
-	result.push_back(find_peak(data, t, t_end));	
+	result.push_back(find_max_peak(data, t, t_end));	
 	
 	while(t < t_end) ++t; //secretly increases t...
 	

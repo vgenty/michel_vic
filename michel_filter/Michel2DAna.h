@@ -76,9 +76,18 @@ namespace larlite {
     void set_near_X(const Double_t i)         { _nearX = i; }
     void set_near_Y(const Double_t i)         { _nearY = i; }
     void set_d_cutoff(const Double_t i)       { _d_cutoff = i;}
-    void set_rise(const Double_t i){_rise = i;}
-    void set_fall(const Double_t i){_fall = i;}
-    void set_threshold(const Double_t i){ _thresh = i;}
+
+    void set_chi2_rise(const Double_t i)     { _chi2_rise = i;}
+    void set_chi2_fall(const Double_t i)     { _chi2_fall = i;}
+    void set_chi2_threshold(const Double_t i){  _chi2_thresh = i;}
+    
+    void set_tmean_rise(const Double_t i){_tmean_rise = i;}
+    void set_tmean_fall(const Double_t i ){_tmean_fall = i;}
+    void set_tmean_threshold(const Double_t i){ _tmean_thresh = i;}
+
+    void set_tdqds_rise(const Double_t i){_tdqds_rise = i;}
+    void set_tdqds_fall(const Double_t i){_tdqds_fall = i;}
+    void set_tdqds_threshold(const Double_t i){ _tdqds_thresh = i;}
     
     
 
@@ -97,9 +106,17 @@ namespace larlite {
     Double_t _d_cutoff = 0;
     Int_t    _min_proto_cluster = 4;
 
-    Double_t  _rise = 5;
-    Double_t  _fall = 5;
-    Double_t  _thresh = 0;
+    Double_t  _chi2_rise = 5;
+    Double_t  _chi2_fall = 5;
+    Double_t  _chi2_thresh = 0;
+
+    Double_t  _tmean_rise = 5;
+    Double_t  _tmean_fall = 5;
+    Double_t  _tmean_thresh = 0;
+
+    Double_t  _tdqds_rise = 5;
+    Double_t  _tdqds_fall = 5;
+    Double_t  _tdqds_thresh = 0;
 
     //Variables going into tree...
     TTree *_output_tree;
@@ -155,6 +172,9 @@ namespace larlite {
 
     std::vector<int> _the_tmean_max_peak;
     int _num_tmean_max_peaks;
+    
+    std::vector<int> _the_tdqds_min_peak;
+    int _num_tdqds_min_peaks;
 
 
     Double_t _lifetime_correction;

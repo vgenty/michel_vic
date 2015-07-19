@@ -72,6 +72,9 @@ namespace larlite {
 
     _output_tree->Branch("_the_tmean_max_peak", "std::vector<int>", &_the_tmean_max_peak);
     _output_tree->Branch("_num_tmean_max_peaks", &_num_tmean_max_peaks, "_num_tmean_max_peaks/I");
+    
+    _output_tree->Branch("_the_tdqds_min_peak", "std::vector<int>", &_the_tdqds_min_peak);
+    _output_tree->Branch("_num_tdqds_min_peaks", &_num_tdqds_min_peaks, "_num_tdqds_min_peaks/I");
 
     return true;
     
@@ -110,6 +113,8 @@ namespace larlite {
     fWatch.Start();
     
     //lambda returns cluster with most number of ordered_pts
+
+    //this will change for cosmics, now we assume we only find large cluster
     auto largest = [](const std::vector<ClusterYPlane*>& _cl)
       {
 	size_t idx = 0; size_t size = 0; size_t ret = 0;
@@ -122,49 +127,60 @@ namespace larlite {
 	return ret;
       };
 
-    std::cout<<"\033[93m"<<Form("CP 4 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
-    
-    std::vector<Double_t> truncated_mean;
-    std::vector<Double_t> truncated_dqds;
-
     auto c = _clusters[largest(_clusters)];
-    
     if(c->_ordered_pts.size() < _min_cluster_size) //only this cluster size accepted.
       return false;
     
+    std::cout<<"\033[93m"<<Form("CP 4 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
+    
+    //Create truncated mean, and truncated dQds
+    
+    std::vector<Double_t> truncated_mean;
+    std::vector<Double_t> truncated_dqds;
+    
     //do truncated mean
     truncated_mean = r2d.windowed_means(_n_window_size,_window_cutoff,0,
-					 c->_ahits, c->_ordered_pts);
-
-    std::cout<<"\033[93m"<<Form("CP 5 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
+					c->_ahits, c->_ordered_pts);
     
-    //cut off the bullshit on the edges of mean
+    std::cout<<"\033[93m"<<Form("CP 5 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+
+    fWatch.Start();
     truncated_mean.erase(truncated_mean.begin(),
 			 truncated_mean.begin() + _truncated_shave);
-    
     truncated_mean.erase(truncated_mean.end() - _truncated_shave,
 			 truncated_mean.end());
-
+    
     std::cout<<"\033[93m"<<Form("CP 6 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     fWatch.Start();
-
-    int s = 3; // must be odd, currently has no setter
-    
-    for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
     
     //do smooth differentiation
+    int s = 3; // must be odd, currently has no setter
+    for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
     for(int i = s; i < truncated_mean.size() - s + 1; ++i) {
       std::vector<Double_t> f(truncated_mean.begin() + i - s,truncated_mean.begin() + i + s);
       std::vector<Double_t> x(c->_s.begin() + i - s + _truncated_shave,c->_s.begin() + i + s + _truncated_shave);
       truncated_dqds.push_back(r2d.smooth_derive(f,x,2*s+1));
     }
-    
     for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
-    
     c->_t_means = truncated_mean;
     c->_t_dqds  = truncated_dqds;
+    
+    
+    auto the_tmean_max_peaks = r2d.find_max_pos(c->_t_means, true, 15, 1.0, _tmean_rise, _tmean_fall, _tmean_thresh);
+    auto the_tdqds_min_peaks = r2d.find_min_pos(c->_t_dqds,  true, 15, 1.0, _tdqds_rise, _tdqds_fall, _tdqds_thresh);
+    
+    if(!the_tmean_max_peaks.size()) { std::cout << "Rejected no tmean peak\n"; return false; }
+    if(!the_tdqds_min_peaks.size()) { std::cout << "Rejected no tdqds dip\n";  return false; }
+
+        
+    //do chi2 ana
+    r2d.do_chi(c,15);
+    std::cout<<"\033[93m"<<Form("CP 8.4 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
+
+    auto the_chi_max_peaks   = r2d.find_max_pos(c->_chi2,    true, 15, 1.0,  _chi2_rise,  _chi2_fall,  _chi2_thresh);
+
     
     
     auto mean_michel_vtx = r2d.DetEVtx(truncated_mean,
@@ -219,9 +235,6 @@ namespace larlite {
     std::cout<<"\033[93m"<<Form("CP 8.3 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     fWatch.Start();
     
-    r2d.do_chi(c,15);
-    std::cout<<"\033[93m"<<Form("CP 8.4 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
 
     r2d.tag_michel(c,the_vtx,forward,evt_hits, _min_michel_rad);
 
@@ -233,7 +246,7 @@ namespace larlite {
     std::cout<<"\033[93m"<<Form("CP 8.6 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     fWatch.Start();
     
-    auto j= r2d. chi_max_pos(c, 3);
+    //auto j= r2d.chi_max_pos(c, 3);
     _Q_u_p2 = c-> _muon-> _charge;
 
     //double plane_charge
@@ -375,15 +388,17 @@ namespace larlite {
     _mcQ_frac = _simch_michel_true_shower_E/( _simch_plane_true_shower_E);
     _MeV_scale = _mcQ_frac * _true_michel_Det;
     
-    auto the_chi_max_peaks   = r2d.find_max_pos(c->_chi2,    forward, 10, 0.5, _rise, _fall, _thresh);
-    auto the_tmean_max_peaks = r2d.find_max_pos(c->_t_means, forward, 10, 0.5, _rise, _fall, 0);
     
     printvec(the_chi_max_peaks);
     
     _the_chi_max_peak = the_chi_max_peaks;
     _num_chi_max_peaks = the_chi_max_peaks.size();
+
     _the_tmean_max_peak  = the_tmean_max_peaks;
     _num_tmean_max_peaks = the_tmean_max_peaks.size();
+
+    _the_tdqds_min_peak  = the_tdqds_min_peaks;
+    _num_tdqds_min_peaks = the_tdqds_min_peaks.size();
     
     _chi2_copy = c->_chi2;
     _output_tree->Fill();

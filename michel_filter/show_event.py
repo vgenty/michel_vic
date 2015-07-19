@@ -114,12 +114,29 @@ def graph(event):
     setaxis(mcharges,"s [cm]","Q [ADC]")
     
     c1.cd(4)
-    tdqds  = rr.TGraph()
+    mdqds     = rr.TMultiGraph()
+    tdqds     = rr.TGraph()
+    dqdspeaks = rr.TGraph()
+
     dqds   = np.array([[rec['s'][evt_num][k],rec['dqds'][evt_num][k]] 
                        for k in xrange(rec['dqds'][evt_num].size)])
+    
     rn.fill_graph(tdqds,dqds)
-    tdqds.Draw("ALP")
-    setaxis(tdqds,"s [cm]","dQ/ds [ADC/cm]")
+
+    we = 0;
+    for peak in rec['_the_tdqds_min_peak'][evt_num] :
+        dqdspeaks.SetPoint(we,dqds[peak][0],dqds[peak][1])
+        we += 1
+    
+    
+    mdqds.Add(tdqds)
+    mdqds.Add(dqdspeaks)
+    
+    dqdspeaks.SetMarkerColor(6)
+    dqdspeaks.SetMarkerStyle(20)
+
+    mdqds.Draw("AP")
+    setaxis(mdqds,"s [cm]","dQ/ds [ADC/cm]")
 
     c1.cd(5)
     truecharge = rr.TGraph()

@@ -111,12 +111,16 @@ public:
   
     
   std::vector<int> find_max_pos(const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
-  std::vector<int> Reconstruct( const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
-
+  std::vector<int> find_min_pos(const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
+  
+  std::vector<int> Reconstruct_Maxes(const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
+  std::vector<int> Reconstruct_Mins (const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
+  
   std::pair<float,float> PedEstimate(const std::vector<Double_t>& data, bool start, int window, float cutoff);
   std::pair<float,float> getrms (const std::vector<Double_t>& data, int k, int m, int window);
   
-  int find_peak(const std::vector<Double_t>& data, int istart, int iend);
+  int find_max_peak(const std::vector<Double_t>& data, int istart, int iend);
+  int find_min_peak(const std::vector<Double_t>& data, int istart, int iend);
   
   
 
