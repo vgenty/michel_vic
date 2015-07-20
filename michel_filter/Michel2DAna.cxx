@@ -30,7 +30,7 @@ namespace larlite {
     _output_tree->Branch("mean_charges", "std::vector<Double_t>" , &_mean_charges_copy);
     _output_tree->Branch("dqds"        , "std::vector<Double_t>" , &_dqds_copy);
     _output_tree->Branch("s"           , "std::vector<Double_t>" , &_s_copy);
-    _output_tree->Branch("_chi2_copy"  , "std::vector<Double_t>" , &_chi2_copy);    
+    //  _output_tree->Branch("_chi2_copy"  , "std::vector<Double_t>" , &_chi2_copy);    
     
     _output_tree->Branch("_michel_E"      , &_michel_E      , "_michel_E/D");
     _output_tree->Branch("_michel_L"      , &_michel_L      , "_michel_L/D");
@@ -67,8 +67,8 @@ namespace larlite {
     _output_tree->Branch("_ALL_hits_p2_X", "std::vector<Double_t>" , &_ALL_hits_p2_X);
     _output_tree->Branch("_ALL_hits_p2_Y", "std::vector<Double_t>" , &_ALL_hits_p2_Y);
 
-    _output_tree->Branch("_the_chi_max_peak",    "std::vector<int>", &_the_chi_max_peak);
-    _output_tree->Branch("_num_chi_max_peaks",   &_num_chi_max_peaks, "_num_chi_max_peaks/I");
+    // _output_tree->Branch("_the_chi_max_peak",    "std::vector<int>", &_the_chi_max_peak);
+    //   _output_tree->Branch("_num_chi_max_peaks",   &_num_chi_max_peaks, "_num_chi_max_peaks/I");
 
     _output_tree->Branch("_the_tmean_max_peak", "std::vector<int>", &_the_tmean_max_peak);
     _output_tree->Branch("_num_tmean_max_peaks", &_num_tmean_max_peaks, "_num_tmean_max_peaks/I");
@@ -84,6 +84,8 @@ namespace larlite {
   
   bool Michel2DAna::analyze(storage_manager* storage) {
 
+    std::cout<<"\033[91m<<Entry "<<storage->get_index()<<">>\033[00m"<<std::endl;
+    
     TStopwatch fWatch;
     fWatch.Start();
     
@@ -92,16 +94,16 @@ namespace larlite {
     fWatch.Start();
     
     //True
-    auto evt_mcshower = storage->get_data<event_mcshower>("mcreco");
-    auto evt_simch    = storage->get_data<event_simch>("largeant");
+    auto const evt_mcshower = storage->get_data<event_mcshower>("mcreco");
+    auto const evt_simch    = storage->get_data<event_simch>("largeant");
     if(!evt_simch || !(evt_simch->size())) {
       print(msg::kERROR,__FUNCTION__,"SimChannel data product not found!");
       return false;
     }
     //Reco
-    auto evt_hits     = storage->get_data<event_hit>    ("gaushit");
-    auto evt_clusters = storage->get_data<event_cluster>(_cluster_producer);
-    auto evt_ass_data = storage->get_data<event_ass>    (_cluster_producer);
+    auto const evt_hits     = storage->get_data<event_hit>    ("gaushit");
+    auto const evt_clusters = storage->get_data<event_cluster>(_cluster_producer);
+    auto const evt_ass_data = storage->get_data<event_ass>    (_cluster_producer);
 
     std::cout<<"\033[93m"<<Form("CP 2 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     fWatch.Start();
@@ -193,11 +195,11 @@ namespace larlite {
     
     
     //do chi2 ana
-    r2d.do_chi(c,15);
+    // r2d.do_chi(c,15);
     std::cout<<"\033[93m"<<Form("CP 8.4 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     fWatch.Start();
     
-    auto the_chi_max_peaks   = r2d.find_max_pos(c->_chi2,    true, 15, 1.0,  _chi2_rise,  _chi2_fall,  _chi2_thresh);
+    // auto the_chi_max_peaks   = r2d.find_max_pos(c->_chi2,    true, 15, 1.0,  _chi2_rise,  _chi2_fall,  _chi2_thresh);
     
     auto mean_michel_vtx = r2d.DetEVtx(truncated_mean,
 					truncated_dqds); //should return index of highest charge
@@ -407,8 +409,8 @@ namespace larlite {
     
     //printvec(the_chi_max_peaks);
     
-    _the_chi_max_peak = the_chi_max_peaks;
-    _num_chi_max_peaks = the_chi_max_peaks.size();
+    //_the_chi_max_peak = the_chi_max_peaks;
+    // _num_chi_max_peaks = the_chi_max_peaks.size();
 
     _the_tmean_max_peak  = the_tmean_max_peaks;
     _num_tmean_max_peaks = the_tmean_max_peaks.size();
@@ -416,7 +418,7 @@ namespace larlite {
     _the_tdqds_min_peak  = the_tdqds_min_peaks;
     _num_tdqds_min_peaks = the_tdqds_min_peaks.size();
     
-    _chi2_copy = c->_chi2;
+    // _chi2_copy = c->_chi2;
     _output_tree->Fill();
     
     // don't delete these heap objects ever!!!!
