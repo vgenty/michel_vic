@@ -75,6 +75,8 @@ namespace larlite {
     
     _output_tree->Branch("_the_tdqds_min_peak", "std::vector<int>", &_the_tdqds_min_peak);
     _output_tree->Branch("_num_tdqds_min_peaks", &_num_tdqds_min_peaks, "_num_tdqds_min_peaks/I");
+    _output_tree->Branch("_matched_max_s", &_matched_max_s, "_matched_max_s/D");
+    _output_tree->Branch("_matched_min_s", &_matched_min_s, "_matched_min_s/D");
 
     return true;
     
@@ -173,15 +175,29 @@ namespace larlite {
     if(!the_tmean_max_peaks.size()) { std::cout << "Rejected no tmean peak\n"; return false; }
     if(!the_tdqds_min_peaks.size()) { std::cout << "Rejected no tdqds dip\n";  return false; }
 
-        
+    //compare the max peak in tmean to tdqds
+    
+    auto matchpeaks =  find_match_peaks(c, the_tmean_max_peaks,the_tdqds_min_peaks, 20);
+    std::cout <<"flag7"<< std::endl;
+    if (matchpeaks.first != -1 && matchpeaks.second != -1){
+      _matched_max_s = c->_s[matchpeaks.first];
+      _matched_min_s = c->_s[matchpeaks.second];
+    }
+
+    else {
+      _matched_max_s = -1;
+      _matched_min_s = -1;
+    }
+    
+    std::cout <<"flag8"<< std::endl;
+    
+    
     //do chi2 ana
     r2d.do_chi(c,15);
     std::cout<<"\033[93m"<<Form("CP 8.4 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     fWatch.Start();
-
-    auto the_chi_max_peaks   = r2d.find_max_pos(c->_chi2,    true, 15, 1.0,  _chi2_rise,  _chi2_fall,  _chi2_thresh);
-
     
+    auto the_chi_max_peaks   = r2d.find_max_pos(c->_chi2,    true, 15, 1.0,  _chi2_rise,  _chi2_fall,  _chi2_thresh);
     
     auto mean_michel_vtx = r2d.DetEVtx(truncated_mean,
 					truncated_dqds); //should return index of highest charge
@@ -710,9 +726,123 @@ namespace larlite {
     
     return true;
   }
+
+  std::pair<int, int>  Michel2DAna::find_match_peaks(const ClusterYPlane* c, std::vector<int>& the_tmean_max_peaks,
+						     std::vector<int>& the_tdqds_min_peaks, int range){
+    // c->_t_means
+    // c->_t_dqds
   
-  
-  
+    //the indices of tmean peaks that haven't already been checked
+    std::vector <int> checked_maxes_tmean;
+    for (int l = 0; l < the_tmean_max_peaks.size(); l++){
+      checked_maxes_tmean.push_back(the_tmean_max_peaks.at(l));
+    }
+
+    //the index/indices of matches in 
+    std::vector <int> index_in_tdqds;
+ 
+    int min = -1;
+    int max = -1;
+
+    
+    //for all of the remaining max peaks in tmean, in descending order
+    //while there are still maxes and no matched mins
+    while(checked_maxes_tmean.size() > 0 && index_in_tdqds.size() == 0){
+      std::cout <<"flag1" <<std::endl;
+      diagnostic(min, max, checked_maxes_tmean);
+      
+      //find max tmean
+      max = 0;
+      double max_tmean = c->_t_means[checked_maxes_tmean.at(max)];
+      diagnostic(min, max, checked_maxes_tmean);
+
+      /*
+      if (checked_maxes_tmean.size() == 2){
+	std::cout<<"flag1.1" << std::endl;
+        if (checked_maxes_tmean.at( c->_t_means[1])> max_tmean){
+	    max_tmean= c->_t_means[checked_maxes_tmean.at(1)];
+	    max = 1;
+	  }
+      }
+      */
+
+      if (checked_maxes_tmean.size() > 1){
+	std::cout<<"flag1.2" << std::endl;
+	for (int p = 1; p < checked_maxes_tmean.size(); p++){
+	  if ( c->_t_means[checked_maxes_tmean.at(p)]> max_tmean){
+	   std::cout<<"flag1.3" << std::endl;
+	    max_tmean= c->_t_means[checked_maxes_tmean.at(p)];
+	    max = p;
+	  }
+	}
+      }
+
+      diagnostic(min, max, checked_maxes_tmean);
+      std::cout <<"flag2" <<std::endl;
+     
+      //compare with peaks in tdqds
+	for( int n = 0; n <  the_tdqds_min_peaks.size(); n++){
+	 //if there's one with in range, match= true
+	 if (the_tdqds_min_peaks.at(n) < the_tmean_max_peaks.at(max) + range &&
+	      the_tdqds_min_peaks.at(n) > the_tmean_max_peaks.at(max) - range ){
+	   index_in_tdqds.push_back(n);
+	  }
+	}
+      
+      //if there are multiple, take the lowest tdqds
+	min=0;
+      if (index_in_tdqds.size() > 1){
+	  std::cout <<"flag3.1"<< std::endl;
+	double min_tdqds = c->_t_dqds[index_in_tdqds.at(min)];
+	for (int p = 1; p < index_in_tdqds.size(); p++){
+	  if (c->_t_dqds[index_in_tdqds.at(p)]< min_tdqds){
+	    min_tdqds= c->_t_dqds[index_in_tdqds.at(p)];
+	    min = p;
+	  }
+	}
+      }
+
+    
+      //if there's one match
+      else if (index_in_tdqds.size() == 1){
+	std::cout <<"flag3.2"<< std::endl;
+	min = index_in_tdqds.at(0);
+      }
+      
+      else {
+	std::cout <<"flag3.3"<< std::endl;
+	//update indices
+	min = -1;
+	max = -1;
+	//update vector
+	checked_maxes_tmean.erase(checked_maxes_tmean.begin() + max);
+      }
+
+      diagnostic(min, max, checked_maxes_tmean);
+      std::cout <<"flag5"<< std::endl;
+           
+    }
+
+    std::cout <<"flag6"<< std::endl;
+
+      //returns the index of the max and min in the tmean ordered vector, returns <-1,-1> if none found
+    if ( max != -1 && min != -1){
+      return std::make_pair(the_tmean_max_peaks.at(max), the_tdqds_min_peaks.at(min));
+      diagnostic(min, max, checked_maxes_tmean);
+    }
+
+    else{
+      return std::make_pair(max, min);
+      diagnostic(min, max, checked_maxes_tmean);
+    }
+  }
+
+
+void Michel2DAna::diagnostic(int min, int max, std::vector<int> v){
+  std::cout <<"the min is: " << min<< std::endl;
+  std::cout <<"the max is: " << max<< std::endl;
+  std::cout <<"the size of checked_maxes_tmean is : " << v.size() << std::endl;
+}
 }
 
 

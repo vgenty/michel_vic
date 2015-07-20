@@ -178,6 +178,10 @@ namespace larlite {
 
 
     Double_t _lifetime_correction;
+
+    Double_t _matched_max_s;
+    Double_t _matched_min_s;
+    
     
     //simchannel
     
@@ -215,6 +219,9 @@ namespace larlite {
 			   size_t mean_michel_vtx,
 			   size_t real_michel_vtx,
 			   const ClusterYPlane* c);
+
+     std::pair<int, int> find_match_peaks(const ClusterYPlane* c, std::vector<int>& the_tmean_max_peaks,
+					  std::vector<int>& the_tdqds_min_peaks, int range);
    
     
     
@@ -222,6 +229,8 @@ namespace larlite {
     //General Methods
 
     void printvec(std::vector<int> v);
+    
+    void diagnostic(int min, int max, std::vector<int> v);
       
     bool convert_2d(const event_hit     *evt_hits,
 		    const event_cluster *evt_clusters,
@@ -238,6 +247,7 @@ namespace larlite {
 							   bool plane2hits);
     
     void clear_all();
+
   };
 }
 #endif
