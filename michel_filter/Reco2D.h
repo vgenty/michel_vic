@@ -110,11 +110,11 @@ public:
   inline Double_t distance(const larlite::hit& a, const larlite::hit& b);
   
     
-  std::vector<int> find_max_pos(const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
-  std::vector<int> find_min_pos(const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
+  std::vector<int> find_max_pos(const std::vector<Double_t>& data, float rise_edge, float fall_edge, float threshold,float ped_mean, float ped_rms);
+  std::vector<int> find_min_pos(const std::vector<Double_t>& data, float rise_edge, float fall_edge, float threshold,  float ped_mean, float ped_rms);
   
-  std::vector<int> Reconstruct_Maxes(const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
-  std::vector<int> Reconstruct_Mins (const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
+  std::vector<int> Reconstruct_Maxes(const std::vector<Double_t>& data, float rise_edge, float fall_edge, float threshold, float ped_mean, float ped_rms);
+  std::vector<int> Reconstruct_Mins (const std::vector<Double_t>& data, float rise_edge, float fall_edge, float threshold, float ped_mean, float ped_rms);
   
   std::pair<float,float> PedEstimate(const std::vector<Double_t>& data, bool start, int window, float cutoff);
   std::pair<float,float> getrms (const std::vector<Double_t>& data, int k, int m, int window);

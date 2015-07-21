@@ -75,8 +75,15 @@ namespace larlite {
     
     _output_tree->Branch("_the_tdqds_min_peak", "std::vector<int>", &_the_tdqds_min_peak);
     _output_tree->Branch("_num_tdqds_min_peaks", &_num_tdqds_min_peaks, "_num_tdqds_min_peaks/I");
+    
     _output_tree->Branch("_matched_max_s", &_matched_max_s, "_matched_max_s/D");
     _output_tree->Branch("_matched_min_s", &_matched_min_s, "_matched_min_s/D");
+
+    _output_tree -> Branch( "_tmean_ped_mean",&_tmean_ped_mean, "_tmean_ped_mean/F");
+    _output_tree -> Branch( "_tmean_ped_rms",&_tmean_ped_rms, "_tmean_ped_rms/F");
+    _output_tree -> Branch( "_tdqds_ped_rms",&_tdqds_ped_rms, "_tdqds_ped_rms/F");
+    _output_tree -> Branch( "_tdqds_ped_mean",&_tdqds_ped_mean, "_tdqds_ped_mean/F");
+    
 
     return true;
     
@@ -178,10 +185,22 @@ namespace larlite {
     for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
     c._t_means = truncated_mean;
     c._t_dqds  = truncated_dqds;
-    
 
-    auto the_tmean_max_peaks = r2d.find_max_pos(c._t_means, true, 15, 1.0, _tmean_rise, _tmean_fall, _tmean_thresh);
-    auto the_tdqds_min_peaks = r2d.find_min_pos(c._t_dqds,  true, 15, 1.0, _tdqds_rise, _tdqds_fall, _tdqds_thresh);
+    auto tmean_ped = r2d.PedEstimate( c._t_means, true, 15, 1.0);
+    auto tdqds_ped = r2d.PedEstimate( c._t_dqds,  true, 15, 1.0);
+
+    float  tmean_ped_mean = tmean_ped.first;
+    float tmean_ped_rms = tmean_ped.second;
+    _tmean_ped_mean =  tmean_ped_mean;
+    _tmean_ped_rms =  tmean_ped_rms;
+
+    float  tdqds_ped_mean = tdqds_ped.first;
+    float  tdqds_ped_rms = tdqds_ped.second;
+    _tdqds_ped_mean =  tdqds_ped_mean;
+    _tdqds_ped_rms =  tdqds_ped_rms;
+
+    auto the_tmean_max_peaks = r2d.find_max_pos( c._t_means, _tmean_rise, _tmean_fall, _tmean_thresh,tmean_ped_mean, tmean_ped_rms);
+    auto the_tdqds_min_peaks = r2d.find_min_pos(c._t_dqds, _tdqds_rise, _tdqds_fall, _tdqds_thresh, tdqds_ped_mean, tdqds_ped_rms);
     
     if(!the_tmean_max_peaks.size()) { std::cout << "Rejected no tmean peak\n"; return false; }
     if(!the_tdqds_min_peaks.size()) { std::cout << "Rejected no tdqds dip\n";  return false; }

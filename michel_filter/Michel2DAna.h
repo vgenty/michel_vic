@@ -181,6 +181,12 @@ namespace larlite {
 
     Double_t _matched_max_s;
     Double_t _matched_min_s;
+
+    float _tmean_ped_mean ;
+    float _tmean_ped_rms ;
+    
+    float _tdqds_ped_mean ;
+    float _tdqds_ped_rms ;
     
     
     //simchannel
