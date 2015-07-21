@@ -97,7 +97,7 @@ namespace larlite {
     Int_t win = 0;
     ::btutil::MCMatchAlg fBTAlg;
     
-    std::vector<ClusterYPlane*> _clusters; 
+    std::vector<ClusterYPlane> _clusters; 
     std::string _cluster_producer;
     
     
@@ -218,9 +218,9 @@ namespace larlite {
     bool determine_forward(bool& ddiirr, 
 			   size_t mean_michel_vtx,
 			   size_t real_michel_vtx,
-			   const ClusterYPlane* c);
+			   const ClusterYPlane& c);
 
-     std::pair<int, int> find_match_peaks(const ClusterYPlane* c, std::vector<int>& the_tmean_max_peaks,
+     std::pair<int, int> find_match_peaks(const ClusterYPlane& c, std::vector<int>& the_tmean_max_peaks,
 					  std::vector<int>& the_tdqds_min_peaks, int range);
    
     

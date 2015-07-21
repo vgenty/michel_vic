@@ -29,6 +29,8 @@ class Michel{
 public:
 
   /// Default constructor
+  Michel(){}
+  
   Michel(Double_t c, Double_t l, 
 	 TVector2 s,
 	 const std::vector<larlite::hit>& h,

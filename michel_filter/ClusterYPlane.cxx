@@ -11,7 +11,9 @@ ClusterYPlane::ClusterYPlane(const ClusterYPlane& other)
   
   _nX       = other._nX; //set local nears wire
   _nX       = other._nY; //set local nears time
-  _d_cutoff = other._d_cutoff; 
+  _d_cutoff = other._d_cutoff;
+
+  if(_ahits.empty()) throw std::exception();
 
   //quickly sort the hits based on x location
   sort_hits();
@@ -41,6 +43,8 @@ ClusterYPlane::ClusterYPlane(const std::vector<larlite::hit>&     in_hits,
 
   _clusters = in_clusters;
   _ahits.resize(in_hits.size());
+
+  if(_ahits.empty()) throw std::exception();
   
   auto xy = [](const larlite::hit& h,Double_t *a) 
     { a[0] = h.WireID().Wire * 0.3;
@@ -51,7 +55,7 @@ ClusterYPlane::ClusterYPlane(const std::vector<larlite::hit>&     in_hits,
     _ahits[i].hit = in_hits[i];
     _ahits[i].vec = TVector2(a);
   }
-  
+
   //quickly sort the hits based on x location
   sort_hits();
   
@@ -80,6 +84,7 @@ ClusterYPlane::ClusterYPlane(const std::vector<larlite::hit>&     in_hits,
   
   _clusters.push_back(in_cluster);
   _ahits.resize(in_hits.size());
+  if(_ahits.empty()) throw std::exception();
   
   //Lambda encapsulates xy conversion
 
@@ -127,6 +132,16 @@ void ClusterYPlane::calculate_distances() {
   
 }
 
+void ClusterYPlane::set_start_end() {
+  if(_ordered_pts.empty()) {
+    std::cout<<"SHIT: "<<_ordered_pts.size()<<"/"<<_ahits.size()<<std::endl;
+    throw std::exception();
+    return ;
+  }
+  _start = _ahits[_ordered_pts.front()];
+  _end   = _ahits[_ordered_pts.back() ];
+}
+
 
 void ClusterYPlane::order_points() {
   // try to order the points starting from left to right (lower wire -> higher)
@@ -134,7 +149,8 @@ void ClusterYPlane::order_points() {
   // take whichever cluster is larger...
   
   //feed do_ordering the start index inside of ahits
-  
+
+  if(_ahits.empty()) throw std::exception();
   auto right_to_left = do_ordering(_ahits.size() - 1); // right to left
   auto left_to_right = do_ordering(0);                 // left  to right
   
@@ -143,6 +159,8 @@ void ClusterYPlane::order_points() {
     _ordered_pts = right_to_left;
   else
     _ordered_pts = left_to_right;
+
+  std::cout<<_ordered_pts.size()<<"/"<<_ahits.size()<<std::endl;
 }
 
 
@@ -202,28 +220,28 @@ Double_t ClusterYPlane::distance(const TVector2& a,
   return ((a - b).Mod());
 }
 
-ClusterYPlane ClusterYPlane::operator+(const ClusterYPlane* other) {
+ClusterYPlane ClusterYPlane::operator+(const ClusterYPlane& other) {
   
   // (this->_ahits).insert   ( this->_ahits.end(), 
-  // 			    other->_ahits.begin(), other->_ahits.end() );
+  // 			    other._ahits.begin(), other._ahits.end() );
   // (this->_clusters).insert( this->_clusters.end(), 
-  // 			    other->_clusters.begin(), other->_clusters.end() );
+  // 			    other._clusters.begin(), other._clusters.end() );
   //scary
   
   std::vector<larlite::hit>     send_hits;
   std::vector<larlite::cluster> send_clusters;
 
-  send_hits.reserve(this->_ahits.size() + other->_ahits.size());
-  send_clusters.reserve(this->_clusters.size() + other->_clusters.size());
+  send_hits.reserve(this->_ahits.size() + other._ahits.size());
+  send_clusters.reserve(this->_clusters.size() + other._clusters.size());
   
   for(auto const& h : this->_ahits)
     send_hits.push_back(h.hit);
-  for(auto const& h : other->_ahits)
+  for(auto const& h : other._ahits)
     send_hits.push_back(h.hit);
 
   for(auto const& c : this->_clusters)
     send_clusters.push_back(c);
-  for(auto const& c : other->_clusters)
+  for(auto const& c : other._clusters)
     send_clusters.push_back(c);
   
   ClusterYPlane merged(send_hits,send_clusters,_nX,_nY,_d_cutoff);
@@ -233,10 +251,10 @@ ClusterYPlane ClusterYPlane::operator+(const ClusterYPlane* other) {
   
 }
 
-bool ClusterYPlane::touching(const ClusterYPlane* other) {
+bool ClusterYPlane::touching(const ClusterYPlane& other) {
   
-  if(near(this->_start.vec,other->_end.vec) ||
-     near(this->_end.vec  ,other->_start.vec))
+  if(near(this->_start.vec,other._end.vec) ||
+     near(this->_end.vec  ,other._start.vec))
     return true;
   
   

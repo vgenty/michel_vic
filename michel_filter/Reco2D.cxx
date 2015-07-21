@@ -19,7 +19,7 @@
 
 #include <TStopwatch.h>
 
-void Reco2D::do_chi(ClusterYPlane*& c, //probably void right just so c is updated
+void Reco2D::do_chi(ClusterYPlane& c, //probably void right just so c is updated
 		    const Int_t window_size,
 		    size_t ref_index)
 {
@@ -98,7 +98,7 @@ void Reco2D::do_chi(ClusterYPlane*& c, //probably void right just so c is update
   TStopwatch fWatch;
   fWatch.Start();
   
-  auto chi_data = get_windows(c->_ordered_pts,window_size);
+  auto chi_data = get_windows(c._ordered_pts,window_size);
 
   std::cout<<"\033[93m"<<Form("CP 8.4.1 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
   fWatch.Start();
@@ -147,8 +147,8 @@ void Reco2D::do_chi(ClusterYPlane*& c, //probably void right just so c is update
     
     for(unsigned int i = 0; i < window_size; ++i) {
       graph.SetPoint( i,
-		      c->_ahits[cd[i]].vec.X(),
-		      c->_ahits[cd[i]].vec.Y() );
+		      c._ahits[cd[i]].vec.X(),
+		      c._ahits[cd[i]].vec.Y() );
       //xerr[i] = 0.3;
       //yerr[i] = 1.0;
     }
@@ -183,7 +183,7 @@ void Reco2D::do_chi(ClusterYPlane*& c, //probably void right just so c is update
   std::cout<<"\033[93m"<<Form("CP 8.4.2 %g",fWatch.RealTime())<<"... "<<chi_data.size()<<" minuit calls...\033[00m"<<std::endl;
   fWatch.Start();
 
-  c->_chi2 = chi;
+  c._chi2 = chi;
   //delete ptMinuit;
 } 
 
@@ -282,25 +282,25 @@ std::vector<Double_t> Reco2D::windowed_means(int window_size, Double_t p_above, 
  
   std::vector<Double_t> mean_window;
   std::vector<Double_t> means;
-  
-  auto charge = [](const ahit& h){ return h.hit.Integral(); };
-  
+
   for(int i = 1; i <= num; ++i) {
     if(i < w) {
       for(int j = 0; j < 2 * (i%w) - 1; ++j)
-	means.push_back(charge(data[order[j]]));
+	means.push_back(data.at(order.at(j)).hit.Integral());
     }else if (i > num - w + 1){
       for(int j = num - 2*((num - i)%w)-1 ; j < num; ++j)
-	means.push_back(charge(data[order[j]]));
+	means.push_back(data.at(order.at(j)).hit.Integral());
     }else{
       for(int j = i - w; j < i + w - 1; ++j)
-  	means.push_back(charge(data[order[j]]));
+  	means.push_back(data.at(order.at(j)).hit.Integral());
     }
     
-    
     if(means.size() > 3) cut(means,p_above,1);
-    
-    mean_window.push_back(calc_mean(means));
+
+    if(means.size())
+      mean_window.push_back(calc_mean(means));
+    else
+      mean_window.push_back(0);
     means.clear();
   }
   
@@ -316,7 +316,25 @@ inline Double_t Reco2D::calc_mean(std::vector<Double_t> &data) {
 
 inline void Reco2D::cut(std::vector<Double_t>& data,
 			double frac, bool above) {
+
+  if(data.empty()) return;
+
+  std::multimap<double,size_t> q_index;
+  for(size_t i=0; i<data.size(); ++i) q_index.emplace(double(data[i]),i);
+
+  size_t to_stay(frac * data.size());
+
+  data.clear();
+  data.reserve(to_stay+1);
+  for(auto const& key_value : q_index) {
+    data.push_back(key_value.first);
+    if(data.size() > to_stay) break;
+  }
   
+  /*
+  
+
+
   auto size = data.size();
   int to_stay = floor(frac*size);
   
@@ -331,7 +349,7 @@ inline void Reco2D::cut(std::vector<Double_t>& data,
     data.erase(data.begin() + to_stay, data.end());
   else 
     data.erase(data.begin(),data.begin()+to_stay);
-  
+  */  
 }
 
 std::pair<size_t,size_t> Reco2D::DetEVtx(const std::vector<Double_t>& q,
@@ -455,7 +473,7 @@ size_t Reco2D::find_min(const std::vector<Double_t>& data) {
 }
 
 
-void Reco2D::tag_muon(ClusterYPlane*& c,  
+void Reco2D::tag_muon(ClusterYPlane& c,  
 		      size_t idx,        
 		      bool forward,      
 		      const larlite::event_hit *evt_hits) {
@@ -463,34 +481,34 @@ void Reco2D::tag_muon(ClusterYPlane*& c,
   std::vector<ahit> muon_hits;
   std::vector<double> distance;
 
-  muon_hits.reserve(c->_ordered_pts.size());
-  distance.reserve(c->_ordered_pts.size());
+  muon_hits.reserve(c._ordered_pts.size());
+  distance.reserve(c._ordered_pts.size());
    if (forward == true){
-     for (int i = 0; i < c->_ordered_pts.size();i++){
+     for (int i = 0; i < c._ordered_pts.size();i++){
        if (i < idx){
-	 muon_hits.push_back(c->_ahits[c->_ordered_pts[i]]);
-	 distance.push_back(c->_s[i]);
+	 muon_hits.push_back(c._ahits[c._ordered_pts[i]]);
+	 distance.push_back(c._s[i]);
        }
      }
      
    }
 
    else{
-     for (int i = 0; i < c->_ordered_pts.size();i++){
+     for (int i = 0; i < c._ordered_pts.size();i++){
        if (i > idx){
-	 muon_hits.push_back(c->_ahits[c->_ordered_pts[i]]);
-	 distance.push_back(c->_s[i]);
+	 muon_hits.push_back(c._ahits[c._ordered_pts[i]]);
+	 distance.push_back(c._s[i]);
        }
      }
    }
    
-   c-> _muon= new Muon(muon_hits, distance);
+   c. _muon= Muon(muon_hits, distance);
 }
 
 
 
   
-void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c of filter
+void Reco2D::tag_michel(ClusterYPlane& c, //for now this DOES have 1 michel b/c of filter
 			size_t idx,        // of chosen in michel in orderd_pts
 			bool forward,      //higher/lower in orderedpts
 			const larlite::event_hit *evt_hits,//all the hits
@@ -505,25 +523,25 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   
   std::vector<size_t>       michel_idxs;
   std::vector<larlite::hit> michel_hits;
-  std::cout << "ordered_pts . size() " << c->_ordered_pts.size() << std::endl;
+  std::cout << "ordered_pts . size() " << c._ordered_pts.size() << std::endl;
   std::cout << "michel... idx... {";
-  for(size_t i = 0; i < c->_ordered_pts.size(); ++i) {
+  for(size_t i = 0; i < c._ordered_pts.size(); ++i) {
     if(forward)  {
       if(i >= idx) {
-	michel_idxs.push_back(c->_ordered_pts[i]);
+	michel_idxs.push_back(c._ordered_pts[i]);
 
-	if(i < c->_ordered_pts.size() - 1) radius += c->_ds[i];
+	if(i < c._ordered_pts.size() - 1) radius += c._ds[i];
 	else radius += 0.3;
-	std::cout << " i " << c->_ordered_pts[i] << " " ;
+	std::cout << " i " << c._ordered_pts[i] << " " ;
       }
     }
     else {
       if( i <= idx ) {
-	michel_idxs.push_back(c->_ordered_pts[i]);
+	michel_idxs.push_back(c._ordered_pts[i]);
 	
-	if(i < c->_ordered_pts.size() - 1) radius += c->_ds[i];
+	if(i < c._ordered_pts.size() - 1) radius += c._ds[i];
 	else radius += 0.3;
-	std::cout << " i " << c->_ordered_pts[i] << " " ;
+	std::cout << " i " << c._ordered_pts[i] << " " ;
       }
     }
   }
@@ -532,7 +550,7 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   
   // //remove duplicate hits...............
   // int w = 0;
-  // //auto _ahits_copy = c->ahits();
+  // //auto _ahits_copy = c.ahits();
   // std::vector<ahit> _ahits_copy;
   // //std::vector<size_t> duplicates;
   // bool ggg = true;
@@ -540,16 +558,16 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   // int total = 0;
   // int called = 0;
   // while(1) {
-  //   //for(const auto& ahit1 : c->_ahits) {
-  //   for(a1 = c->_ahits.begin(); a1 != c->_ahits.end(); ++a1) {
-  //     for(a2 = c->_ahits.begin(); a2 != c->_ahits.end(); ++a2) {
-  // 	//for(const auto& ahit2 : c->_ahits) {
+  //   //for(const auto& ahit1 : c._ahits) {
+  //   for(a1 = c._ahits.begin(); a1 != c._ahits.end(); ++a1) {
+  //     for(a2 = c._ahits.begin(); a2 != c._ahits.end(); ++a2) {
+  // 	//for(const auto& ahit2 : c._ahits) {
   // 	if((*a1).hit == (*a2).hit) {
   // 	  w++;
   // 	}
   //     }
   //     if(w > 1) {
-  // 	c->_ahits.erase(a1);
+  // 	c._ahits.erase(a1);
   // 	called++;
   // 	w = 0;
   // 	std::cout << "found a dup\n";
@@ -566,8 +584,8 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   
   std::vector<larlite::hit> cluster_hits;
   
-  //for(size_t i = 0; i < c->_ahits.size(); ++i) { //vic 07142015
-  for(size_t i = 0; i < c->_ordered_pts.size(); ++i) {
+  //for(size_t i = 0; i < c._ahits.size(); ++i) { //vic 07142015
+  for(size_t i = 0; i < c._ordered_pts.size(); ++i) {
     for(size_t j = 0; j < michel_idxs.size(); ++j) {
       if( i == michel_idxs[j] ) {
 	there = true;
@@ -575,7 +593,7 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
       }						
     }
     if(!there)  {
-      cluster_hits.push_back(c->_ahits[i].hit);
+      cluster_hits.push_back(c._ahits[i].hit);
     }
     there = false;
   }
@@ -583,8 +601,8 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   // int f = 0;
   // int fdupe = 0;
   
-  // for(const auto& ahit1 : c->_ahits) {
-  //   for(const auto& ahit2 : c->_ahits) {
+  // for(const auto& ahit1 : c._ahits) {
+  //   for(const auto& ahit2 : c._ahits) {
   //     if(ahit1.hit == ahit2.hit) {
   // 	f++;
   //     }
@@ -634,8 +652,8 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   //there = false;
   
   // if(michel_idxs.size() == 1)
-  //   std::cout << " before any farther ~ dist to idx is ~ " << distance(c->_ahits[michel_idxs[0]].hit,
-  // 								       c->_ahits[c->_ordered_pts[idx]].hit)
+  //   std::cout << " before any farther ~ dist to idx is ~ " << distance(c._ahits[michel_idxs[0]].hit,
+  // 								       c._ahits[c._ordered_pts[idx]].hit)
   // 	      << "\n";
   // std::cout << "cluster hits.sioze() " << cluster_hits.size() << "\n";
 
@@ -644,7 +662,7 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   // for(const auto& ehit : *evt_hits) {
   //   if(ehit.View() == 2) {
   //     for(int i = 0 ; i < michel_idxs.size(); ++i) { //loop over all cluster hits that are not michels;
-  // 	if(ehit == c->_ahits[michel_idxs[i]].hit) {
+  // 	if(ehit == c._ahits[michel_idxs[i]].hit) {
   // 	  counter++;
   // 	  std::cout << "found counter: " << counter << " michels at i "<< michel_idxs[i] << std::endl;
   // 	}
@@ -667,7 +685,7 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   while(1) {
     for(a1 = cluster_hits.begin(); a1 != cluster_hits.end(); ++a1) {
       for(int i = 0 ; i < michel_idxs.size(); ++i) { //loop over all cluster hits that are not michels;
-	if(*a1 == c->_ahits[michel_idxs[i]].hit) {
+	if(*a1 == c._ahits[michel_idxs[i]].hit) {
 	  w++;
 	  break;  
 	}
@@ -734,7 +752,7 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
 	  break;
 	}
       }
-      if( !there && (distance(ehit,c->_ahits[c->_ordered_pts[idx]].hit) <= radius) )
+      if( !there && (distance(ehit,c._ahits[c._ordered_pts[idx]].hit) <= radius) )
   	michel_hits.push_back(ehit);
       
     } //end Y plane
@@ -747,12 +765,12 @@ void Reco2D::tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c
   std::cout << "michel_hits.size() : " << michel_hits.size() << std::endl;
   
   
-  c->_michel = new Michel(E,radius,
-			  c->_ahits[c->_ordered_pts[idx]].vec,
-			  michel_hits,
-			  michel_hits.size());
+  c._michel = Michel(E,radius,
+		     c._ahits[c._ordered_pts[idx]].vec,
+		     michel_hits,
+		     michel_hits.size());
   
-  c->_michel->dump();
+  c._michel.dump();
   
 }
 
@@ -768,12 +786,12 @@ inline Double_t Reco2D::distance(const larlite::hit& a, const larlite::hit& b) {
   return sqrt((x1-y1)*(x1-y1) + (x2-y2)*(x2-y2));
 }
 
-std::vector<int> Reco2D::chi_max_pos(const ClusterYPlane *c,const int num_maxs){
+std::vector<int> Reco2D::chi_max_pos(const ClusterYPlane& c,const int num_maxs){
   std::vector<int> the_maxs;
   
   int count = 0;
   while(count< num_maxs){
-    the_maxs.push_back(find_max(c-> _chi2, the_maxs));
+    the_maxs.push_back(find_max(c. _chi2, the_maxs));
     count++;
   }
   
