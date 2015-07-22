@@ -187,6 +187,12 @@ namespace larlite {
 
     Double_t _matched_max_s;
     Double_t _matched_min_s;
+
+    float _tmean_ped_mean ;
+    float _tmean_ped_rms ;
+    
+    float _tdqds_ped_mean ;
+    float _tdqds_ped_rms ;
     
     
     //simchannel
@@ -202,6 +208,10 @@ namespace larlite {
     
     Double_t _simch_cluster_true_shower_E   ;
     Double_t _simch_cluster_false_shower_E  ;
+
+    Double_t  _michel_L_true;
+    
+    int  _min_hits_to_edge;
 
     Int_t _evt = 0;
 
@@ -253,6 +263,8 @@ namespace larlite {
 							   bool plane2hits);
     
     void clear_all();
+
+    int  N_to_edge(const ClusterYPlane& c, int tmean_max_ind);
 
   };
 }

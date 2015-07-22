@@ -508,7 +508,7 @@ void Reco2D::tag_muon(ClusterYPlane& c,
 
 
   
-void Reco2D::tag_michel(ClusterYPlane& c, //for now this DOES have 1 michel b/c of filter
+Double_t Reco2D::tag_michel(ClusterYPlane& c, //for now this DOES have 1 michel b/c of filter
 			size_t idx,        // of chosen in michel in orderd_pts
 			bool forward,      //higher/lower in orderedpts
 			const larlite::event_hit *evt_hits,//all the hits
@@ -546,6 +546,7 @@ void Reco2D::tag_michel(ClusterYPlane& c, //for now this DOES have 1 michel b/c 
     }
   }
   std::cout << " }\n";
+  Double_t true_rad = radius;
   if(radius < _min_rad) radius = _min_rad;
   
   // //remove duplicate hits...............
@@ -771,7 +772,8 @@ void Reco2D::tag_michel(ClusterYPlane& c, //for now this DOES have 1 michel b/c 
 		     michel_hits.size());
   
   c._michel.dump();
-  
+
+  return true_rad;
 }
 
 
@@ -801,15 +803,15 @@ std::vector<int> Reco2D::chi_max_pos(const ClusterYPlane& c,const int num_maxs){
 //this one is to find all the local maximums above a pedestal value
 //takes the cluster, whether forward or back, a window size for calculation, and an rms cutoff value
 
-std::vector<int> Reco2D::find_max_pos(const std::vector<Double_t>& data, bool forward, int window, 
-				     float cutoff, float rise_edge, float fall_edge, float threshold){ 
-  auto peaks = Reconstruct_Maxes(data, forward, window, cutoff, rise_edge, fall_edge, threshold);
+std::vector<int> Reco2D::find_max_pos(const std::vector<Double_t>& data, float rise_edge, float fall_edge, float threshold,
+				      float ped_mean, float ped_rms){ 
+  auto peaks = Reconstruct_Maxes(data, rise_edge, fall_edge, threshold, ped_mean, ped_rms);
   return peaks;
 }
 
-std::vector<int> Reco2D::find_min_pos(const std::vector<Double_t>& data, bool forward, int window, 
-				     float cutoff, float rise_edge, float fall_edge, float threshold){ 
-  auto peaks = Reconstruct_Mins(data, forward, window, cutoff, rise_edge, fall_edge, threshold);
+std::vector<int> Reco2D::find_min_pos(const std::vector<Double_t>& data, float rise_edge, float fall_edge, float threshold,
+				      float ped_mean, float ped_rms){ 
+  auto peaks = Reconstruct_Mins(data, rise_edge, fall_edge, threshold, ped_mean, ped_rms);
   return peaks;
 }
 
@@ -837,17 +839,16 @@ int Reco2D::find_min_peak(const std::vector<Double_t>& data, int istart, int ien
   return cl;
 }
 
-std::vector<int> Reco2D::Reconstruct_Mins( const std::vector<Double_t>& data, bool forward, 
-					   int window, float cutoff, float rise_edge, float fall_edge, float threshold)
+std::vector<int> Reco2D::Reconstruct_Mins( const std::vector<Double_t>& data, float rise_edge, float fall_edge, float threshold, float ped_mean, float ped_rms)
 {
   std::vector<int> result;
-  auto ped_info = PedEstimate(data,forward, window, cutoff);
+  // auto ped_info = PedEstimate(data,forward, window, cutoff);
   bool found_pulse = false; 
   size_t t = 0;
   
   while (  t < data.size() ) {
-    if(data[t] < (ped_info.first  + rise_edge * ped_info.second)  && 
-       data[t] < threshold + ped_info.first &&
+    if(data[t] < (ped_mean  + rise_edge * ped_rms)  && 
+       data[t] < threshold + ped_mean &&
        !found_pulse)
       found_pulse = true;
       
@@ -858,8 +859,8 @@ std::vector<int> Reco2D::Reconstruct_Mins( const std::vector<Double_t>& data, bo
 	if(t_end == data.size() - 1)
 	  break;
 	  
-	if(data[t_end] >= (ped_info.first + fall_edge * ped_info.second) &&
-	   (data[t_end] >= threshold + ped_info.first))
+	if(data[t_end] >= (ped_mean + fall_edge * ped_rms) &&
+	   (data[t_end] >= threshold + ped_mean))
 	  break;
 	else 
 	  ++t_end;
@@ -877,17 +878,16 @@ std::vector<int> Reco2D::Reconstruct_Mins( const std::vector<Double_t>& data, bo
   return result;
 }
 
-std::vector<int> Reco2D::Reconstruct_Maxes( const std::vector<Double_t>& data, bool forward, 
-					    int window, float cutoff, float rise_edge, float fall_edge, float threshold)
+std::vector<int> Reco2D::Reconstruct_Maxes( const std::vector<Double_t>& data, float rise_edge, float fall_edge, float threshold, float ped_mean, float ped_rms)
 {
     std::vector<int> result;
-    auto ped_info = PedEstimate(data,forward, window, cutoff);
+    //auto ped_info = PedEstimate(data,forward, window, cutoff);
     bool found_pulse = false; 
     size_t t = 0;
     
     while (  t < data.size() ) {
-      if(data[t] > (ped_info.first  + rise_edge * ped_info.second)  && 
-	data[t] > threshold + ped_info.first &&
+      if(data[t] > (ped_mean  + rise_edge * ped_rms)  && 
+	 data[t] > (threshold + ped_mean) &&
 	 !found_pulse)
 	found_pulse = true;
       
@@ -898,8 +898,8 @@ std::vector<int> Reco2D::Reconstruct_Maxes( const std::vector<Double_t>& data, b
 	  if(t_end == data.size() - 1)
 	    break;
 	  
-	  if(data[t_end] <= (ped_info.first + fall_edge * ped_info.second) &&
-	     (data[t_end] <= threshold + ped_info.first))
+	  if(data[t_end] <= (ped_mean + fall_edge * ped_rms) &&
+	     (data[t_end] <= threshold + ped_mean))
 	    break;
 	  else 
 	    ++t_end;

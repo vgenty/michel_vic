@@ -82,8 +82,18 @@ namespace larlite {
     
     _output_tree->Branch("_the_tdqds_min_peak", "std::vector<int>", &_the_tdqds_min_peak);
     _output_tree->Branch("_num_tdqds_min_peaks", &_num_tdqds_min_peaks, "_num_tdqds_min_peaks/I");
+    
     _output_tree->Branch("_matched_max_s", &_matched_max_s, "_matched_max_s/D");
     _output_tree->Branch("_matched_min_s", &_matched_min_s, "_matched_min_s/D");
+
+    _output_tree -> Branch( "_tmean_ped_mean",&_tmean_ped_mean, "_tmean_ped_mean/F");
+    _output_tree -> Branch( "_tmean_ped_rms",&_tmean_ped_rms, "_tmean_ped_rms/F");
+    _output_tree -> Branch( "_tdqds_ped_rms",&_tdqds_ped_rms, "_tdqds_ped_rms/F");
+    _output_tree -> Branch( "_tdqds_ped_mean",&_tdqds_ped_mean, "_tdqds_ped_mean/F");
+
+     _output_tree -> Branch( "_michel_L_true",&_michel_L_true, "_michel_L_true/D");
+     _output_tree -> Branch( "_min_hits_to_edge",&_min_hits_to_edge, "_min_hits_to_edge/I");
+
 
     return true;
     
@@ -192,10 +202,22 @@ namespace larlite {
     for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
     c._t_means = truncated_mean;
     c._t_dqds  = truncated_dqds;
-    
 
-    auto the_tmean_max_peaks = r2d.find_max_pos(c._t_means, true, 15, 1.0, _tmean_rise, _tmean_fall, _tmean_thresh);
-    auto the_tdqds_min_peaks = r2d.find_min_pos(c._t_dqds,  true, 15, 1.0, _tdqds_rise, _tdqds_fall, _tdqds_thresh);
+    auto tmean_ped = r2d.PedEstimate( c._t_means, true, 15, 1.0);
+    auto tdqds_ped = r2d.PedEstimate( c._t_dqds,  true, 15, 1.0);
+
+    float  tmean_ped_mean = tmean_ped.first;
+    float tmean_ped_rms = tmean_ped.second;
+    _tmean_ped_mean =  tmean_ped_mean;
+    _tmean_ped_rms =  tmean_ped_rms;
+
+    float  tdqds_ped_mean = tdqds_ped.first;
+    float  tdqds_ped_rms = tdqds_ped.second;
+    _tdqds_ped_mean =  tdqds_ped_mean;
+    _tdqds_ped_rms =  tdqds_ped_rms;
+
+    auto the_tmean_max_peaks = r2d.find_max_pos( c._t_means, _tmean_rise, _tmean_fall, _tmean_thresh,tmean_ped_mean, tmean_ped_rms);
+    auto the_tdqds_min_peaks = r2d.find_min_pos(c._t_dqds, _tdqds_rise, _tdqds_fall, _tdqds_thresh, tdqds_ped_mean, tdqds_ped_rms);
     
     if(!the_tmean_max_peaks.size()) { std::cout << "Rejected no tmean peak\n"; return false; }
     if(!the_tdqds_min_peaks.size()) { std::cout << "Rejected no tdqds dip\n";  return false; }
@@ -204,6 +226,15 @@ namespace larlite {
 
     auto matchpeaks =  find_match_peaks(c, the_tmean_max_peaks,the_tdqds_min_peaks, 20);
 
+<<<<<<< HEAD
+=======
+    int tmean_max_ind =matchpeaks.first;
+    int min_to_edge = N_to_edge(c, tmean_max_ind);
+    _min_hits_to_edge = min_to_edge;
+    
+
+    std::cout <<"flag7"<< std::endl;
+>>>>>>> origin/test_branch_1
     if (matchpeaks.first != -1 && matchpeaks.second != -1){
       _matched_max_s = c._s[matchpeaks.first];
       _matched_min_s = c._s[matchpeaks.second];
@@ -281,7 +312,8 @@ namespace larlite {
     fWatch.Start();
     
 
-    r2d.tag_michel(c,the_vtx,forward,evt_hits, _min_michel_rad);
+    Double_t true_rad = r2d.tag_michel(c,the_vtx,forward,evt_hits, _min_michel_rad);
+    _michel_L_true = true_rad;
 
     std::cout<<"\033[93m"<<Form("CP 8.5 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     fWatch.Start();
@@ -906,8 +938,23 @@ void Michel2DAna::diagnostic(int min, int max, std::vector<int> v){
   std::cout <<"the max is: " << max<< std::endl;
   std::cout <<"the size of checked_maxes_tmean is : " << v.size() << std::endl;
 }
+
+
+int Michel2DAna:: N_to_edge(const ClusterYPlane& c, int tmean_max_ind){
+  int length = c._t_means.size();
+  int left = tmean_max_ind;
+  int right = length - tmean_max_ind-1;
+
+  if (left < right){
+    return left;
+  }
+
+  else{
+    return right;
+  }
 }
 
+}
 
 
 #endif
