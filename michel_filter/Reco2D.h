@@ -91,7 +91,7 @@ public:
 
 
   size_t find_min(const std::vector<Double_t>& data);
-  void tag_michel(ClusterYPlane& c, //for now this DOES have 1 michel b/c of filter
+  Double_t tag_michel(ClusterYPlane& c, //for now this DOES have 1 michel b/c of filter
 		  size_t idx,      // of chosen in michel in orderd_pts
 		  bool forward,    //higher/lower in orderedpts
 		  const larlite::event_hit *evt_hits,  //all the hits

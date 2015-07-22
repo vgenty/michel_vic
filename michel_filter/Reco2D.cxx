@@ -508,7 +508,7 @@ void Reco2D::tag_muon(ClusterYPlane& c,
 
 
   
-void Reco2D::tag_michel(ClusterYPlane& c, //for now this DOES have 1 michel b/c of filter
+Double_t Reco2D::tag_michel(ClusterYPlane& c, //for now this DOES have 1 michel b/c of filter
 			size_t idx,        // of chosen in michel in orderd_pts
 			bool forward,      //higher/lower in orderedpts
 			const larlite::event_hit *evt_hits,//all the hits
@@ -546,6 +546,7 @@ void Reco2D::tag_michel(ClusterYPlane& c, //for now this DOES have 1 michel b/c 
     }
   }
   std::cout << " }\n";
+  Double_t true_rad = radius;
   if(radius < _min_rad) radius = _min_rad;
   
   // //remove duplicate hits...............
@@ -771,7 +772,8 @@ void Reco2D::tag_michel(ClusterYPlane& c, //for now this DOES have 1 michel b/c 
 		     michel_hits.size());
   
   c._michel.dump();
-  
+
+  return true_rad;
 }
 
 
