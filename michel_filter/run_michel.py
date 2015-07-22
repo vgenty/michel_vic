@@ -19,10 +19,11 @@ for x in xrange(len(sys.argv)-1):
 
 my_proc.set_io_mode(fmwk.storage_manager.kREAD)
 my_proc.set_ana_output_file("output.root");
-#my_proc.enable_filter(True)
+my_proc.enable_filter(True)
 
-#the_filter = fmwk.MichelFilter()
+the_filter = fmwk.MichelFilter()
 the_ana    = fmwk.Michel2DAna("fuzzycluster");
+#the_filter = fmwk.RemoveMichel()
 
 #~~tune-able parameters, they have defaults...
 the_ana.set_min_merge_cluster_size(25)
@@ -50,7 +51,7 @@ the_ana.set_near_X(nwires*0.3)      # cm ~~ 1.0
 the_ana.set_near_Y(nwires*0.3/0.08) # cm ~~ 3.75
 the_ana.set_d_cutoff(20.0*0.3)      # cm ~~ 20*0.3
 
-#my_proc.add_process(the_filter)
+my_proc.add_process(the_filter)
 my_proc.add_process(the_ana)
 
 my_proc.set_verbosity(fmwk.msg.kDEBUG)
