@@ -32,6 +32,13 @@ namespace larlite {
     _output_tree->Branch("s"           , "std::vector<Double_t>" , &_s_copy);
     //  _output_tree->Branch("_chi2_copy"  , "std::vector<Double_t>" , &_chi2_copy);    
     
+    _output_tree->Branch("_has_michel"  ,  &_has_michel     , "_has_michel/O");
+    _output_tree->Branch("_tru_id"  ,  &_tru_id     , "_tru_id/O");
+    _output_tree->Branch("_mis_id"  ,  &_mis_id     , "_mis_id/O");
+
+
+    _output_tree->Branch("_michel_hits" ,  &_michel_hits    , "_michel_hits/I");
+
     _output_tree->Branch("_michel_E"      , &_michel_E      , "_michel_E/D");
     _output_tree->Branch("_michel_L"      , &_michel_L      , "_michel_L/D");
     _output_tree->Branch("d_michel_hit"   , &_d_m_h         , "d_michel_hit/D");
@@ -107,6 +114,13 @@ namespace larlite {
 
     if(!evt_clusters || evt_clusters->empty()) return false;
 
+
+    for(auto const& mcs : *evt_mcshower)
+      if(mcs.MotherPdgCode() == 13 &&
+	 mcs.Process() == "muMinusCaptureAtRest")
+	 _has_michel = true;
+    
+    
     std::cout<<"\033[93m"<<Form("CP 2 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     fWatch.Start();
     
@@ -164,7 +178,7 @@ namespace larlite {
     //marker
     std::cout<<"\033[93m"<<Form("CP 6 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     fWatch.Start();
-
+    
     //do smooth differentiation
     int s = 3; // must be odd, currently has no setter
     for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
@@ -174,7 +188,7 @@ namespace larlite {
       std::vector<Double_t> x(c._s.begin() + i - s + _truncated_shave,c._s.begin() + i + s + _truncated_shave);
       truncated_dqds.push_back(r2d.smooth_derive(f,x,2*s+1));
     }
-
+    
     for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
     c._t_means = truncated_mean;
     c._t_dqds  = truncated_dqds;
@@ -185,12 +199,11 @@ namespace larlite {
     
     if(!the_tmean_max_peaks.size()) { std::cout << "Rejected no tmean peak\n"; return false; }
     if(!the_tdqds_min_peaks.size()) { std::cout << "Rejected no tdqds dip\n";  return false; }
-
+    
     //compare the max peak in tmean to tdqds
 
     auto matchpeaks =  find_match_peaks(c, the_tmean_max_peaks,the_tdqds_min_peaks, 20);
 
-    std::cout <<"flag7"<< std::endl;
     if (matchpeaks.first != -1 && matchpeaks.second != -1){
       _matched_max_s = c._s[matchpeaks.first];
       _matched_min_s = c._s[matchpeaks.second];
@@ -201,7 +214,9 @@ namespace larlite {
       _matched_min_s = -1;
     }
     
-    std::cout <<"flag8"<< std::endl;
+
+    //Decide to do the reconstruction.........:-)
+    
     
     //do chi2 ana
     // r2d.do_chi(c,15);
@@ -211,12 +226,15 @@ namespace larlite {
     // auto the_chi_max_peaks   = r2d.find_max_pos(c._chi2,    true, 15, 1.0,  _chi2_rise,  _chi2_fall,  _chi2_thresh);
     
     auto mean_michel_vtx = r2d.DetEVtx(truncated_mean,
-					truncated_dqds); //should return index of highest charge
+				       truncated_dqds); //should return index of highest charge
+
     std::cout << "number is: " << mean_michel_vtx.first << " \n";
+    
     if(mean_michel_vtx.first == 99999) return false;
+
     auto real_michel_vtx = r2d.REALDetEVtx(c._ahits,
-					    c._ordered_pts,
-					    mean_michel_vtx.first);
+					   c._ordered_pts,
+					   mean_michel_vtx.first);
     auto the_vtx = size_t{0}; //reco vtx
 
     std::cout<<"\033[93m"<<Form("CP 7 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
@@ -406,9 +424,10 @@ namespace larlite {
     _endY = c._end.vec.Y();
     
     _d_m_h = c._michel_dist;
-    _michel_E = c._michel._charge;
-    _michel_L = c._michel._length;
-    
+    _michel_E    = c._michel._charge;
+    _michel_L    = c._michel._length;
+    _michel_hits = c._michel._num_hits;
+
     _reco_Q_o_mc_Q = 0.0;
     //_reco_Q_o_mc_Q = _michel_E / _simch_plane_true_shower_E;
     
@@ -426,6 +445,9 @@ namespace larlite {
 
     _the_tdqds_min_peak  = the_tdqds_min_peaks;
     _num_tdqds_min_peaks = the_tdqds_min_peaks.size();
+
+    if( _has_michel)   _tru_id = true;
+    if(!_has_michel)   _mis_id = true;
     
     // _chi2_copy = c._chi2;
     _output_tree->Fill();
@@ -446,7 +468,10 @@ namespace larlite {
     _large_frac_shower_hits_Y.clear();
     _ALL_hits_p2_X.clear();
     _ALL_hits_p2_Y.clear();
- 
+
+
+    
+    
     return true;
     
 }
@@ -566,6 +591,10 @@ namespace larlite {
     _mean_charges_copy.clear();
     _dqds_copy.clear();
     _s_copy.clear();
+    
+    _has_michel = false;
+    _tru_id = false;
+    _mis_id = false;
   }
 
   bool Michel2DAna::find_projected_start(TVector2& p, 

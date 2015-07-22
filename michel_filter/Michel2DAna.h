@@ -125,7 +125,12 @@ namespace larlite {
     Double_t _tY;
     Double_t _rX;
     Double_t _rY;
+    
+    Bool_t _has_michel;
+    Bool_t _tru_id;
+    Bool_t _mis_id;
 
+    
     std::vector<Double_t> _ahits_X_copy;
     std::vector<Double_t> _ahits_Y_copy;
     std::vector<Double_t> _charges_copy;
@@ -134,7 +139,8 @@ namespace larlite {
     std::vector<Double_t> _dqds_copy;
     std::vector<Double_t> _s_copy;
     std::vector<Double_t> _chi2_copy;
-    
+
+    Int_t _michel_hits;
     
     //0715
     Double_t _num_hits;
@@ -185,7 +191,7 @@ namespace larlite {
     
     //simchannel
     
-    Double_t _simch_michel_true_shower_E     ;
+    Double_t _simch_michel_true_shower_E    ;
     Double_t _simch_michel_false_shower_E   ;
     
     Double_t _simch_plane_true_shower_E     ;
