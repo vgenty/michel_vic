@@ -38,6 +38,8 @@ namespace larlite {
     _output_tree->Branch("_mis_id",            &_mis_id,           "_mis_id/O");
     _output_tree->Branch("_biggest_was_muon",  &_biggest_was_muon, "_Biggest_muon/O");
 
+    _output_tree->Branch("_forward",  &_forward, "_forward/O");
+
 
     _output_tree->Branch("_michel_hits"   ,  &_michel_hits  , "_michel_hits/I");
     _output_tree->Branch("_michel_E"      , &_michel_E      , "_michel_E/D");
@@ -380,8 +382,8 @@ namespace larlite {
     	auto const& mcs = (*evt_mcshower)[mc_index];
 	
 	if(mcs.MotherPdgCode() == 13 &&
-	   mcs.Process() == "muMinusCaptureAtRest" &&
-	   mcs.DetProfile().E()/mcs.Start().E() > 0.95) {
+	   mcs.Process() == "muMinusCaptureAtRest") {
+	   //mcs.DetProfile().E()/mcs.Start().E() > 0.95) {
 	
 	  double energy = mcs.DetProfile().E();
       
@@ -533,6 +535,8 @@ namespace larlite {
       _biggest_was_muon = false;
     }
     
+    _forward = forward;
+    
     _output_tree->Fill();
     
     // don't delete these heap objects ever
@@ -653,7 +657,8 @@ namespace larlite {
   }
   
   void Michel2DAna::clear_all() {
-
+    _forward = false;
+    
     _clusters.clear();
     
     _ahits_X_copy.clear();

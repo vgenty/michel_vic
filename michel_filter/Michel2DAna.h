@@ -96,6 +96,7 @@ namespace larlite {
     std::string _cluster_producer;
     
     
+    Bool_t _forward;
     //From the setters
     Double_t  _nearX = 0;
     Double_t  _nearY = 0;
