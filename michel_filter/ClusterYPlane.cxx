@@ -87,7 +87,6 @@ ClusterYPlane::ClusterYPlane(const std::vector<larlite::hit>&     in_hits,
   if(_ahits.empty()) throw std::exception();
   
   //Lambda encapsulates xy conversion
-
   auto xy = [](const larlite::hit& h,Double_t *a) 
     { a[0] = h.WireID().Wire * 0.3;
       a[1] = h.PeakTime() * 0.0802814; }; // no trigger offset
@@ -104,7 +103,7 @@ ClusterYPlane::ClusterYPlane(const std::vector<larlite::hit>&     in_hits,
   
   //order the points
   order_points();
-
+  
   //set start and end point
   set_start_end();
   
@@ -119,14 +118,14 @@ void ClusterYPlane::calculate_distances() {
   
   _s .push_back(0.0);
   _ds.push_back(0.0);
-
+  
   for(size_t u = 0; u < _ordered_pts.size() - 1; ++u) {
     auto zz = distance(_ahits[_ordered_pts[ u ]].vec,
 		       _ahits[_ordered_pts[u+1]].vec);
     _ds.push_back(zz);
-
+    
     tot_dist += zz;
-
+    
     _s.push_back(tot_dist);
   }
   
@@ -150,7 +149,6 @@ void ClusterYPlane::order_points() {
   // take whichever cluster is larger...
   
   //feed do_ordering the start index inside of ahits
-
   if(_ahits.empty()) throw std::exception();
   auto right_to_left = do_ordering(_ahits.size() - 1); // right to left
   auto left_to_right = do_ordering(0);                 // left  to right
@@ -160,7 +158,7 @@ void ClusterYPlane::order_points() {
     _ordered_pts = right_to_left;
   else
     _ordered_pts = left_to_right;
-
+  
   std::cout<<_ordered_pts.size()<<"/"<<_ahits.size()<<std::endl;
 }
 
@@ -181,15 +179,12 @@ std::vector<HitIdx_t> ClusterYPlane::do_ordering(const size_t start_idx) {
   size_t cnt = 0;
   std::vector<HitIdx_t>::iterator idxholder;
   Double_t closest = 9999.9;
-  Double_t stot = 0.0;
   
   while(aho) {
   
      for(std::vector<HitIdx_t>::iterator itr = all_pts.begin();
-	   itr != all_pts.end(); ++itr) {
+	 itr != all_pts.end(); ++itr) {
        zz = distance(_ahits[the_order[cnt]].vec,_ahits[*itr].vec);
-       
-       //       if(zz < closest && zz < 0.3*20) { //hard cutoff here to avoid delta ray
        if(zz < closest && zz < _d_cutoff) { //hard cutoff here to avoid delta ray
 	 idxholder = itr;
 	 closest   = zz;
@@ -223,15 +218,9 @@ Double_t ClusterYPlane::distance(const TVector2& a,
 
 ClusterYPlane ClusterYPlane::operator+(const ClusterYPlane& other) {
   
-  // (this->_ahits).insert   ( this->_ahits.end(), 
-  // 			    other._ahits.begin(), other._ahits.end() );
-  // (this->_clusters).insert( this->_clusters.end(), 
-  // 			    other._clusters.begin(), other._clusters.end() );
-  //scary
-  
   std::vector<larlite::hit>     send_hits;
   std::vector<larlite::cluster> send_clusters;
-
+  
   send_hits.reserve(this->_ahits.size() + other._ahits.size());
   send_clusters.reserve(this->_clusters.size() + other._clusters.size());
   
@@ -246,8 +235,6 @@ ClusterYPlane ClusterYPlane::operator+(const ClusterYPlane& other) {
     send_clusters.push_back(c);
   
   ClusterYPlane merged(send_hits,send_clusters,_nX,_nY,_d_cutoff);
-  // std::cout << "found a baby ... \n";
-  // baby.dump();
   return merged;
   
 }
@@ -288,7 +275,7 @@ size_t ClusterYPlane::find_closest_hit(const TVector2& point) {
 
 int ClusterYPlane::match(const TVector2& michel_loc) {
   
-  ///in cosmics
+  ///in cosmics only. Someway to pick a good cluster idk.
   if(_has_michel)
     return 2; //2 I already have a michel...
   

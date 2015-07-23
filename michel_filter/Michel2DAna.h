@@ -1,17 +1,3 @@
-/**
- * \file Michel2DAna.h
- *
- * \ingroup michel_filter
- * 
- * \brief Class def header for a class Michel2DAna
- *
- * @author vgenty
- */
-
-/** \addtogroup michel_filter
-
-    @{*/
-
 #ifndef LARLITE_MICHEL2DANA_H
 #define LARLITE_MICHEL2DANA_H
 
@@ -26,8 +12,8 @@
 #include "LArUtil/DetectorProperties.h"
 #include "DataFormat/mcshower.h"
 #include "DataFormat/simch.h"
-#include "DataFormat/shower.h" // not sure if needed
 
+//Backtracker
 #include "MCComp/MCMatchAlg.h"
 
 //ROOT
@@ -70,35 +56,36 @@ namespace larlite {
     virtual bool finalize();
 
     // Setter methods for various reco parameters as per ATLAS coding guidelines
-    void set_min_merge_cluster_size(const int i)    { _min_cluster_size = i; }
-    void set_min_proto_cluster_size(const Int_t i)   { _min_proto_cluster = i;}
-    void set_n_window_size(const int i)       { _n_window_size    = i; }
-    void set_window_cutoff(const Double_t i)  { _window_cutoff    = i; }
-    void set_truncated_shave(const int i)     { _truncated_shave  = i; }
-    void set_min_rad(const Double_t i)        { _min_michel_rad   = i; }
+    void set_min_merge_cluster_size(const int i)       { _min_cluster_size = i; }
+    void set_min_proto_cluster_size(const Int_t i)     { _min_proto_cluster = i;}
+    void set_n_window_size         (const int i)       { _n_window_size    = i; }
+    void set_window_cutoff         (const Double_t i)  { _window_cutoff    = i; }
+    void set_truncated_shave       (const int i)       { _truncated_shave  = i; }
+    void set_min_rad               (const Double_t i)  { _min_michel_rad   = i; }
 
-    void set_near_X(const Double_t i)         { _nearX = i; }
-    void set_near_Y(const Double_t i)         { _nearY = i; }
-    void set_d_cutoff(const Double_t i)       { _d_cutoff = i;}
+    void set_near_X                (const Double_t i)  { _nearX = i; }
+    void set_near_Y                (const Double_t i)  { _nearY = i; }
+    void set_d_cutoff              (const Double_t i)  { _d_cutoff = i;}
 
-    void set_chi2_rise(const Double_t i)     { _chi2_rise = i;}
-    void set_chi2_fall(const Double_t i)     { _chi2_fall = i;}
-    void set_chi2_threshold(const Double_t i){  _chi2_thresh = i;}
+    void set_chi2_rise             (const Double_t i)  { _chi2_rise = i;}
+    void set_chi2_fall             (const Double_t i)  { _chi2_fall = i;}
+    void set_chi2_threshold        (const Double_t i)  {  _chi2_thresh = i;}
     
-    void set_tmean_rise(const Double_t i){_tmean_rise = i;}
-    void set_tmean_fall(const Double_t i ){_tmean_fall = i;}
-    void set_tmean_threshold(const Double_t i){ _tmean_thresh = i;}
+    void set_tmean_rise            (const Double_t i)  {_tmean_rise = i;}
+    void set_tmean_fall            (const Double_t i)  {_tmean_fall = i;}
+    void set_tmean_threshold       (const Double_t i)  { _tmean_thresh = i;}
 
-    void set_tdqds_rise(const Double_t i){_tdqds_rise = i;}
-    void set_tdqds_fall(const Double_t i){_tdqds_fall = i;}
-    void set_tdqds_threshold(const Double_t i){ _tdqds_thresh = i;}
+    void set_tdqds_rise            (const Double_t i)  {_tdqds_rise = i;}
+    void set_tdqds_fall            (const Double_t i)  {_tdqds_fall = i;}
+    void set_tdqds_threshold       (const Double_t i)  { _tdqds_thresh = i;}
     
-    void set_nhits_cut(Int_t i) { _nhits_cut = i; }
-
+    void set_nhits_cut             (Int_t i)           { _nhits_cut = i; }
+    
     Int_t get_num_reco() { return _num_recod; }
 
   private:
-   
+    
+    
     Int_t _nhits_cut;
     Int_t _num_recod;
 
@@ -109,10 +96,11 @@ namespace larlite {
     std::string _cluster_producer;
     
     
-    Double_t _nearX = 0;
-    Double_t _nearY = 0;
-    Double_t _d_cutoff = 0;
-    Int_t    _min_proto_cluster = 4;
+    //From the setters
+    Double_t  _nearX = 0;
+    Double_t  _nearY = 0;
+    Double_t  _d_cutoff = 0;
+    Int_t     _min_proto_cluster = 4;
 
     Double_t  _chi2_rise = 5;
     Double_t  _chi2_fall = 5;
@@ -150,7 +138,6 @@ namespace larlite {
 
     Int_t _michel_hits;
     
-    //0715
     Double_t _num_hits;
     Double_t _num_wires;
     Double_t _num_hits_p_wire;
@@ -182,12 +169,11 @@ namespace larlite {
     std::vector<Double_t> _ALL_hits_p2_Y;
 
     std::vector<int> _the_chi_max_peak;
-    int _num_chi_max_peaks;
-
     std::vector<int> _the_tmean_max_peak;
-    int _num_tmean_max_peaks;
-    
     std::vector<int> _the_tdqds_min_peak;
+ 
+    int _num_chi_max_peaks;
+    int _num_tmean_max_peaks;
     int _num_tdqds_min_peaks;
 
 
@@ -205,17 +191,17 @@ namespace larlite {
     
     //simchannel
     
-    Double_t _simch_michel_true_shower_E    ;
-    Double_t _simch_michel_false_shower_E   ;
+    Double_t _simch_michel_true_shower_E;
+    Double_t _simch_michel_false_shower_E;
     
-    Double_t _simch_plane_true_shower_E     ;
-    Double_t _simch_plane_false_shower_E    ;
+    Double_t _simch_plane_true_shower_E;
+    Double_t _simch_plane_false_shower_E;
     
-    Double_t _simch_ordered_true_shower_E   ;
-    Double_t _simch_ordered_false_shower_E  ;
+    Double_t _simch_ordered_true_shower_E;
+    Double_t _simch_ordered_false_shower_E;
     
-    Double_t _simch_cluster_true_shower_E   ;
-    Double_t _simch_cluster_false_shower_E  ;
+    Double_t _simch_cluster_true_shower_E;
+    Double_t _simch_cluster_false_shower_E;
 
     Double_t  _michel_L_true;
     
@@ -223,14 +209,13 @@ namespace larlite {
 
     Int_t _evt = 0;
 
-    //THE Reco object
+    //THE only Reco object
     Reco2D r2d;
     
     //Geo variables
     Double_t _time2cm;
     Double_t _wire2cm;
     Double_t _ne2ADC;
-
     
     Int_t    _small_cluster_nHits;
     Double_t _small_cluster_L;
@@ -246,23 +231,22 @@ namespace larlite {
     Double_t _window_cutoff    = 0.25;
     int      _truncated_shave  = 2;
 
-    Double_t _min_michel_rad = 0.3;
+    Double_t _min_michel_rad   = 0.3;
     
     bool determine_forward(bool& ddiirr, 
 			   size_t mean_michel_vtx,
 			   size_t real_michel_vtx,
 			   const ClusterYPlane& c);
 
-     std::pair<int, int> find_match_peaks(const ClusterYPlane& c, std::vector<int>& the_tmean_max_peaks,
-					  std::vector<int>& the_tdqds_min_peaks, int range);
+    std::pair<int, int> find_match_peaks(const ClusterYPlane& c, std::vector<int>& the_tmean_max_peaks,
+					 std::vector<int>& the_tdqds_min_peaks, int range);
     
     
-    //General Methods
-
+    //General Methods for the algorithm
     void printvec(std::vector<int> v);
     
     void diagnostic(int min, int max, std::vector<int> v);
-      
+    
     bool convert_2d(const event_hit     *evt_hits,
 		    const event_cluster *evt_clusters,
 		    const event_ass     *evt_ass_data);
@@ -272,25 +256,15 @@ namespace larlite {
     
     void check_cluster_boundaries();
     
-    
     std::pair<Double_t,Double_t> get_summed_mcshower_other(const ::btutil::MCBTAlg& aho,
 							   const std::vector<larlite::hit>& hits,
 							   bool plane2hits);
     
     void clear_all();
-
+    
     int  N_to_edge(const ClusterYPlane& c, int tmean_max_ind);
-
+    
   };
 }
 #endif
 
-//**************************************************************************
-// 
-// For Analysis framework documentation, read Manual.pdf here:
-//
-// http://microboone-docdb.fnal.gov:8080/cgi-bin/ShowDocument?docid=3183
-//
-//**************************************************************************
-
-/** @} */ // end of doxygen group 

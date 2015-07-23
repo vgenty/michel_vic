@@ -15,14 +15,14 @@ namespace larlite {
     
     _output_tree = new TTree("out_tree","aho_tree");
 
-    _output_tree->Branch("true_X" , &_tX , "tX/D");
-    _output_tree->Branch("true_Y" , &_tY , "tY/D");
-    _output_tree->Branch("reco_X" , &_rX , "rX/D");
-    _output_tree->Branch("reco_Y" , &_rY , "rY/D"); 
-    _output_tree->Branch("startX"      , &_startX, "startX/D");
-    _output_tree->Branch("startY"      , &_startY, "startY/D");
-    _output_tree->Branch("endX"        , &_endX,   "endX/D"  );
-    _output_tree->Branch("endY"        , &_endY,   "startX/D");
+    _output_tree->Branch("true_X" , &_tX,     "tX/D");
+    _output_tree->Branch("true_Y" , &_tY,     "tY/D");
+    _output_tree->Branch("reco_X" , &_rX,     "rX/D");
+    _output_tree->Branch("reco_Y" , &_rY,     "rY/D"); 
+    _output_tree->Branch("startX" , &_startX, "startX/D");
+    _output_tree->Branch("startY" , &_startY, "startY/D");
+    _output_tree->Branch("endX"   , &_endX,   "endX/D"  );
+    _output_tree->Branch("endY"   , &_endY,   "startX/D");
     
     _output_tree->Branch("ahits_X"     , "std::vector<Double_t>" , &_ahits_X_copy);
     _output_tree->Branch("ahits_Y"     , "std::vector<Double_t>" , &_ahits_Y_copy);
@@ -31,16 +31,15 @@ namespace larlite {
     _output_tree->Branch("mean_charges", "std::vector<Double_t>" , &_mean_charges_copy);
     _output_tree->Branch("dqds"        , "std::vector<Double_t>" , &_dqds_copy);
     _output_tree->Branch("s"           , "std::vector<Double_t>" , &_s_copy);
-    //  _output_tree->Branch("_chi2_copy"  , "std::vector<Double_t>" , &_chi2_copy);    
+    //_output_tree->Branch("_chi2_copy"  , "std::vector<Double_t>" , &_chi2_copy);    
     
-    _output_tree->Branch("_has_michel"  ,  &_has_michel     , "_has_michel/O");
-    _output_tree->Branch("_tru_id"  ,  &_tru_id     , "_tru_id/O");
-    _output_tree->Branch("_mis_id"  ,  &_mis_id     , "_mis_id/O");
-    _output_tree->Branch("_biggest_was_muon"  ,  &_biggest_was_muon     , "_biggest_was_muon/O");
+    _output_tree->Branch("_has_michel",        &_has_michel,       "_has_michel/O");
+    _output_tree->Branch("_tru_id",            &_tru_id,           "_tru_id/O");
+    _output_tree->Branch("_mis_id",            &_mis_id,           "_mis_id/O");
+    _output_tree->Branch("_biggest_was_muon",  &_biggest_was_muon, "_Biggest_muon/O");
 
 
-    _output_tree->Branch("_michel_hits" ,  &_michel_hits    , "_michel_hits/I");
-
+    _output_tree->Branch("_michel_hits"   ,  &_michel_hits  , "_michel_hits/I");
     _output_tree->Branch("_michel_E"      , &_michel_E      , "_michel_E/D");
     _output_tree->Branch("_michel_L"      , &_michel_L      , "_michel_L/D");
     _output_tree->Branch("d_michel_hit"   , &_d_m_h         , "d_michel_hit/D");
@@ -52,17 +51,17 @@ namespace larlite {
     //output_tree->Branch("_reco_Q_o_mc_Q" , &_reco_Q_o_mc_Q , "_reco_Q_o_mc_Q/D");
 
     _output_tree->Branch("_small_cluster_nHits" , &_small_cluster_nHits, "_small_cluster_nHits/I");
-    _output_tree->Branch("_small_cluster_L" , &_small_cluster_L , "_small_cluster_L/D");
+    _output_tree->Branch("_small_cluster_L"     , &_small_cluster_L,     "_small_cluster_L/D");
 
-    _output_tree->Branch("_big_cluster_nHits" , &_big_cluster_nHits, "_big_cluster_nHits/I");
-    _output_tree->Branch("_big_cluster_L" ,    &_big_cluster_L , "_big_cluster_L/D");
+    _output_tree->Branch("_big_cluster_nHits", &_big_cluster_nHits, "_big_cluster_nHits/I");
+    _output_tree->Branch("_big_cluster_L",     &_big_cluster_L,     "_big_cluster_L/D");
 
     
     _output_tree->Branch("_mcQ_frac", &_mcQ_frac, "_mcQ_frac/D");
 
-    _output_tree->Branch("_Q_tot_p2" , &_Q_tot_p2 , "_Q_tot_p2/D");
-    _output_tree->Branch("_Q_u_p2" , &_Q_u_p2 , "_Q_u_p2/D");
-    _output_tree->Branch("_MeV_scale", &_MeV_scale, "_MeV_scale/D");
+    _output_tree->Branch("_Q_tot_p2" ,       &_Q_tot_p2,        "_Q_tot_p2/D");
+    _output_tree->Branch("_Q_u_p2" ,         &_Q_u_p2,          "_Q_u_p2/D");
+    _output_tree->Branch("_MeV_scale",       &_MeV_scale,       "_MeV_scale/D");
     _output_tree->Branch("_true_michel_Det", &_true_michel_Det, "_true_michel_Det/D");
 
     
@@ -87,7 +86,7 @@ namespace larlite {
     _output_tree->Branch("_ALL_hits_p2_Y", "std::vector<Double_t>" , &_ALL_hits_p2_Y);
 
     // _output_tree->Branch("_the_chi_max_peak",    "std::vector<int>", &_the_chi_max_peak);
-    //   _output_tree->Branch("_num_chi_max_peaks",   &_num_chi_max_peaks, "_num_chi_max_peaks/I");
+    // _output_tree->Branch("_num_chi_max_peaks",   &_num_chi_max_peaks, "_num_chi_max_peaks/I");
 
     _output_tree->Branch("_the_tmean_max_peak", "std::vector<int>", &_the_tmean_max_peak);
     _output_tree->Branch("_num_tmean_max_peaks", &_num_tmean_max_peaks, "_num_tmean_max_peaks/I");
@@ -946,7 +945,6 @@ namespace larlite {
       //if there are multiple, take the lowest tdqds
       min=0;
       if (index_in_tdqds.size() > 1){
-	std::cout <<"flag3.1"<< std::endl;
 	double min_tdqds = c._t_dqds.at(index_in_tdqds.at(min));
 	for (int p = 1; p < index_in_tdqds.size(); p++){
 	  if (c._t_dqds.at(index_in_tdqds.at(p))< min_tdqds){
@@ -958,7 +956,6 @@ namespace larlite {
     
       //if there's one match
       else if (index_in_tdqds.size() == 1){
-	std::cout <<"flag3.2"<< std::endl;
 	min = index_in_tdqds.at(0);
       }
       else {
@@ -981,11 +978,7 @@ namespace larlite {
       }
 
       diagnostic(min, max, checked_maxes_tmean);
-      std::cout <<"flag5"<< std::endl;
-           
     }
-
-    std::cout <<"flag6"<< std::endl;
 
     //returns the index of the max and min in the tmean ordered vector, returns <-1,-1> if none found
     if ( max != -1 && min != -1){
@@ -1009,8 +1002,8 @@ void Michel2DAna::diagnostic(int min, int max, std::vector<int> v){
 
 int Michel2DAna:: N_to_edge(const ClusterYPlane& c, int tmean_max_ind){
   int length = c._t_means.size();
-  int left = tmean_max_ind;
-  int right = length - tmean_max_ind-1;
+  int left   = tmean_max_ind;
+  int right  = length - tmean_max_ind-1;
 
   if (left < right){
     return left;

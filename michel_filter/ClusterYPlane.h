@@ -1,16 +1,3 @@
-/**
- * \file ClusterYPlane.h
- *
- * \ingroup michel_filter
- * 
- * \brief Class def header for a class ClusterYPlane
- *
- * @author vgenty
- */
-
-/** \addtogroup michel_filter
-
-    @{*/
 #ifndef CLUSTERYPLANE_H
 #define CLUSTERYPLANE_H
 
@@ -19,20 +6,10 @@
 
 //larLite
 #include "DataFormat/cluster.h"
-#include "DataFormat/hit.h"
 
-//ROOT
-#include "TVector2.h"
-
-//particles
+//Particles
 #include "Michel.h"
 #include "Muon.h"
-
-/**
-   \class ClusterYPlane
-   User defined class ClusterYPlane ... these comments are used to generate
-   doxygen documentation!
- */
 
 typedef size_t HitIdx_t;
 
@@ -57,14 +34,13 @@ public:
   /// Default destructor
   virtual ~ClusterYPlane(){}
   
-  //copy ctor? THIS must Go under destructor wtf??
+  //copy ctor THIS must Go under destructor for some reason.
   ClusterYPlane(const ClusterYPlane& other);
   
-
-  //everything is public save me from getters: - )
-  //private:  
+  //everything is public save from getters.
+  //private: 
   
-  //class variables
+  /////////RECO VARIABLES////////////
   bool _has_michel = false;
   
   size_t   _michel_location;
@@ -80,7 +56,7 @@ public:
   Double_t _nY;
   Double_t _d_cutoff;
 
-  //all of these ordered
+  //all of these "ordered" and will have same size at _ordered_pts
   std::vector<HitIdx_t>  _ordered_pts;
   std::vector<Double_t>  _ds;
   std::vector<Double_t>  _s;
@@ -88,28 +64,28 @@ public:
   std::vector<Double_t>  _t_means;
   std::vector<Double_t>  _t_dqds;
 
-  //Michel
+  //Particles we will create based on algo
   Michel _michel;
-  Muon _muon;
+  Muon   _muon;
   
-  //Operator methods
-  ClusterYPlane operator+(const ClusterYPlane& other);
   
-  //Usual methods
+  //Setters caleld by constructor only
+  void set_start_end();
   void order_points();
-  void dump();
   void calculate_distances();
-
+  
+  
   Double_t distance(const TVector2& a,
-		    const TVector2& b);
+		    const TVector2& b); //Get distance between two TVector2
 
-  std::vector<HitIdx_t> do_ordering(const size_t start_idx);
+  std::vector<HitIdx_t> do_ordering(const size_t start_idx); //from the given index, order the points while stepping around.
 
-  bool near(const TVector2& a, const TVector2& b);
-  bool touching(const ClusterYPlane& other);
+  bool near    (const TVector2& a, const TVector2& b); //there two points are "near" based on given criteria
+  bool touching(const ClusterYPlane& other);           //used in merging, tell me if this cluster is touching another
 
-  int match(const TVector2& michel_loc);
-  size_t find_closest_hit(const TVector2& point);
+  int match(const TVector2& michel_loc); //Used in the cosmic ana. Does't do anything yet.
+
+  size_t find_closest_hit(const TVector2& point); //Return closest his in ordered_pts to point
   
   //Inline Methods
   inline void sort_hits() {
@@ -120,8 +96,13 @@ public:
 	      });
   };
   
+  void dump(); //Print out some class variables
   
-  void set_start_end();
+
+  
+  //Operator methods
+  ClusterYPlane operator+(const ClusterYPlane& other);
+  
 };
 
 #endif
