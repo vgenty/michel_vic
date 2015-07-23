@@ -325,6 +325,9 @@ namespace larlite {
       TVector2 proj_start;
       find_projected_start(proj_start,evt_mcshower); //this actually updated proj_start pointer
       auto real_michel = c.find_closest_hit(proj_start); //find closest hit to projection  
+      _tX = c._ahits[c._ordered_pts[real_michel]].vec.X();
+      _tY = c._ahits[c._ordered_pts[real_michel]].vec.Y();
+      
     }
     
     //return false;
@@ -464,8 +467,6 @@ namespace larlite {
     /////////////////////////////////////////
     
     if(_is_signal) {
-      _tX = c._ahits[c._ordered_pts[the_vtx]].vec.X();
-      _tY = c._ahits[c._ordered_pts[the_vtx]].vec.Y();
     }
     
     _rX = c._ahits[c._ordered_pts[the_vtx]].vec.X();
