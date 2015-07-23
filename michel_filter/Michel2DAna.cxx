@@ -189,16 +189,28 @@ namespace larlite {
     truncated_mean = r2d.windowed_means(_n_window_size,_window_cutoff,0,
 					c._ahits, c._ordered_pts);
 
-    std::cout<<"\033[93m"<<Form("CP 5 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-
-    fWatch.Start();
-    truncated_mean.erase(truncated_mean.begin(),
-			 truncated_mean.begin() + _truncated_shave);
-    truncated_mean.erase(truncated_mean.end() - _truncated_shave,
-			 truncated_mean.end());
-    //marker
-    std::cout<<"\033[93m"<<Form("CP 6 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
+    // std::cout<<"\033[93m"<<Form("CP 5 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    // fWatch.Start();
+    
+    //truncated mean window size is very small on the edge
+    c._t_means = truncated_mean;
+    auto tmean_ped = r2d.PedEstimate( c._t_means, true, 15, 1.0);
+    
+    for(int i = 0; i < _truncated_shave; ++i)
+      truncated_mean.at(i) = tmean_ped.first;
+    for(int i = truncated_mean.size() - 1; 
+	i <= truncated_mean.size() - _truncated_shave; 
+	--i)
+      truncated_mean.at(i) = tmean_ped.first;
+    
+    // truncated_mean.erase(truncated_mean.begin(),
+    // 			 truncated_mean.begin() + _truncated_shave);
+    // truncated_mean.erase(truncated_mean.end() - _truncated_shave,
+    // 			 truncated_mean.end());
+    
+    // //marker
+    // std::cout<<"\033[93m"<<Form("CP 6 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    // fWatch.Start();
     
     //do smooth differentiation
     int s = 3; // must be odd, currently has no setter
@@ -211,21 +223,20 @@ namespace larlite {
     }
     
     for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
-    c._t_means = truncated_mean;
     c._t_dqds  = truncated_dqds;
 
-    auto tmean_ped = r2d.PedEstimate( c._t_means, true, 15, 1.0);
+
     auto tdqds_ped = r2d.PedEstimate( c._t_dqds,  true, 15, 1.0);
 
     float  tmean_ped_mean = tmean_ped.first;
-    float tmean_ped_rms = tmean_ped.second;
+    float  tmean_ped_rms  = tmean_ped.second;
     _tmean_ped_mean =  tmean_ped_mean;
-    _tmean_ped_rms =  tmean_ped_rms;
+    _tmean_ped_rms  =  tmean_ped_rms;
 
     float  tdqds_ped_mean = tdqds_ped.first;
-    float  tdqds_ped_rms = tdqds_ped.second;
+    float  tdqds_ped_rms  = tdqds_ped.second;
     _tdqds_ped_mean =  tdqds_ped_mean;
-    _tdqds_ped_rms =  tdqds_ped_rms;
+    _tdqds_ped_rms  =  tdqds_ped_rms;
 
     auto the_tmean_max_peaks = r2d.find_max_pos( c._t_means, _tmean_rise, _tmean_fall, _tmean_thresh,tmean_ped_mean, tmean_ped_rms);
     auto the_tdqds_min_peaks = r2d.find_min_pos(c._t_dqds, _tdqds_rise, _tdqds_fall, _tdqds_thresh, tdqds_ped_mean, tdqds_ped_rms);
@@ -234,52 +245,43 @@ namespace larlite {
     if(!the_tdqds_min_peaks.size()) { std::cout << "Rejected no tdqds dip\n";  return false; }
     
     //compare the max peak in tmean to tdqds
+    auto matchpeaks =  find_match_peaks(c, the_tmean_max_peaks,the_tdqds_min_peaks, 10);
 
-    auto matchpeaks =  find_match_peaks(c, the_tmean_max_peaks,the_tdqds_min_peaks, 20);
-
-
-    int tmean_max_ind =matchpeaks.first;
+    int tmean_max_ind = matchpeaks.first;
     int min_to_edge = N_to_edge(c, tmean_max_ind);
     _min_hits_to_edge = min_to_edge;
     
-
-    std::cout <<"flag7"<< std::endl;
-
     if (matchpeaks.first != -1 && matchpeaks.second != -1){
       _matched_max_s = c._s[matchpeaks.first];
       _matched_min_s = c._s[matchpeaks.second];
     }
-
+    
     else {
       _matched_max_s = -1;
       _matched_min_s = -1;
+      return false;
     }
     
-
-    //Decide to do the reconstruction.........:-)
     
     
-    //do chi2 ana
+    // do chi2 ana
     // r2d.do_chi(c,15);
-    std::cout<<"\033[93m"<<Form("CP 8.4 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
+    // std::cout<<"\033[93m"<<Form("CP 8.4 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    // fWatch.Start();
     
     // auto the_chi_max_peaks   = r2d.find_max_pos(c._chi2,    true, 15, 1.0,  _chi2_rise,  _chi2_fall,  _chi2_thresh);
     
     auto mean_michel_vtx = r2d.DetEVtx(truncated_mean,
 				       truncated_dqds); //should return index of highest charge
-
-    std::cout << "number is: " << mean_michel_vtx.first << " \n";
-    
     if(mean_michel_vtx.first == 99999) return false;
-
+    
     auto real_michel_vtx = r2d.REALDetEVtx(c._ahits,
 					   c._ordered_pts,
 					   mean_michel_vtx.first);
     auto the_vtx = size_t{0}; //reco vtx
 
-    std::cout<<"\033[93m"<<Form("CP 7 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
+    // std::cout<<"\033[93m"<<Form("CP 7 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    // fWatch.Start();
     
     bool forward;
     bool ddiirr;
@@ -289,19 +291,30 @@ namespace larlite {
     
     if(ddiirr) {
       the_vtx = real_michel_vtx + 1;
+      if(the_vtx == c._ordered_pts.size()) the_vtx--;
+      
       forward = true;
+      
     } else {
       if(real_michel_vtx != 0)
 	the_vtx = real_michel_vtx - 1;
       else
 	the_vtx = real_michel_vtx;
+      
       forward = false;
     }
+    auto thit = c._ahits[c._ordered_pts[the_vtx]];    //get hit of the reco vtx point ~~ RECO MICHEL
     
-    std::cout << "\n forward... " << forward << std::endl;
+    Double_t true_rad = r2d.tag_michel(c,the_vtx,forward,evt_hits, _min_michel_rad);
+    _michel_L_true = true_rad;
 
-    std::cout<<"\033[93m"<<Form("CP 8 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
+    r2d.tag_muon(c,the_vtx,forward,evt_hits);
+    
+    
+    //std::cout << "\n forward... " << forward << std::endl;
+
+    // std::cout<<"\033[93m"<<Form("CP 8 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    // fWatch.Start();
     
     // Get the closest reconstructed hit to the start of the mcshower
     // TVector2 proj_start;
@@ -316,18 +329,13 @@ namespace larlite {
     // std::cout<<"\033[93m"<<Form("CP 8.2 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     // fWatch.Start();
     
-    auto thit = c._ahits[c._ordered_pts[the_vtx]];    //get hit of the reco vtx point
-
     // std::cout<<"\033[93m"<<Form("CP 8.3 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     // fWatch.Start();
     
-    Double_t true_rad = r2d.tag_michel(c,the_vtx,forward,evt_hits, _min_michel_rad);
-    _michel_L_true = true_rad;
 
     // std::cout<<"\033[93m"<<Form("CP 8.5 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     // fWatch.Start();
 
-    r2d.tag_muon(c,the_vtx,forward,evt_hits);
 
     // std::cout<<"\033[93m"<<Form("CP 8.6 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     // fWatch.Start();
@@ -340,32 +348,6 @@ namespace larlite {
 
     // std::cout<<"\033[93m"<<Form("CP 9 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     // fWatch.Start();
-    
-
-
-
-
-    ///ADD THE CUT RIGHT HERE !!!!!!
-    ///ADD THE CUT RIGHT HERE !!!!!!
-    ///ADD THE CUT RIGHT HERE !!!!!!
-    ///ADD THE CUT RIGHT HERE !!!!!!
-    ///ADD THE CUT RIGHT HERE !!!!!!
-
-    //aho
-    
-    
-    // if(c._michel._num_hits <= _nhits_cut) {
-    //   return false;
-    // }
-
-
-    ///ADD THE CUT RIGHT HERE !!!!!!
-    ///ADD THE CUT RIGHT HERE !!!!!!
-    ///ADD THE CUT RIGHT HERE !!!!!!
-    ///ADD THE CUT RIGHT HERE !!!!!!
-    ///ADD THE CUT RIGHT HERE !!!!!!
-
-    
     
     // /////////COMPARE TO MC////////////////
     
@@ -460,9 +442,9 @@ namespace larlite {
     
     // _simch_cluster_true_shower_E    = cluster_hits.first;
     // _simch_cluster_false_shower_E   = cluster_hits.second;
-
-    std::cout<<"\033[93m"<<Form("CP 10 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
+    
+    // std::cout<<"\033[93m"<<Form("CP 10 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    // fWatch.Start();
     
     ///////////////////////////////////////////
     ////////////WRITE OUT TO TTREE////////////
@@ -538,17 +520,9 @@ namespace larlite {
       _biggest_was_muon = false;
     }
     
-
-    
-    
-    
-
-    
-    
-    
     _output_tree->Fill();
     
-    // don't delete these heap objects ever!!!!
+    // don't delete these heap objects ever
     // delete evt_hits;
     // delete evt_clusters;
     // delete evt_mcshower;
@@ -575,7 +549,7 @@ namespace larlite {
   bool Michel2DAna::finalize() {
     _output_tree->Write();
 
-    std::cout << "\n\n\n\n\\n\n..................hey............. _num_recod: " << _num_recod << " and nhits_cut: " << _nhits_cut << "    \n\n\n\n\n\n";
+    std::cout << "\n\n\n\n\\n\n......hey...... _num_recod: " << _num_recod << " and nhits_cut: " << _nhits_cut << "    \n\n\n\n\n\n";
 
     return true;
   }
@@ -634,6 +608,10 @@ namespace larlite {
   }
   
   void Michel2DAna::check_cluster_boundaries() {
+    
+    bool j = false;
+    size_t a = 0;
+    size_t b = 0;
     
     while(1) {
       for( a = 0; a < _clusters.size(); ++a) {
@@ -757,8 +735,8 @@ namespace larlite {
     
     Double_t p1 = 0;
     Double_t p2 = 0;
-    
-    for (size_t i = 0; i< c._ordered_pts.size(); i++){
+    ///
+    for (size_t i = 0; i < c._ordered_pts.size(); i++){
       if (i < real_michel_vtx)      p1++;
       else if (i > real_michel_vtx) p2++;
     }
@@ -788,18 +766,7 @@ namespace larlite {
     // std::cout << " \n";
     
     ////FIRST////
-    if( p1/p2 > n_cutoff || p1/p2 < 1/n_cutoff) {
-      
-      if (part1 > part2) {
-	ddiirr = true;
-      } else {
-	ddiirr = false; 
-      }
-      std::cout << "n_cutoff...\n";
-    }
-    
-    ////SECOND/////
-    else if (part1/part2 > c_cutoff || part1/part2 < 1/c_cutoff) {
+    if (part1/part2 > c_cutoff || part1/part2 < 1/c_cutoff) {
       
       if (part1 > part2) {
 	ddiirr = true;
@@ -808,6 +775,18 @@ namespace larlite {
       }
       std::cout << "c_cutoff...\n";
     }
+    
+    ////SECOND/////
+     else if( p1/p2 > n_cutoff || p1/p2 < 1/n_cutoff) {
+       
+       if (part1 > part2) {
+	 ddiirr = true;
+       } else {
+	 ddiirr = false; 
+       }
+       std::cout << "n_cutoff...\n";
+    }
+    
     ////THIRD/////
     else if(p1 > w_cutoff && p2 > w_cutoff) {
       
@@ -848,18 +827,18 @@ namespace larlite {
     return true;
   }
 
-  std::pair<int, int>  Michel2DAna::find_match_peaks(const ClusterYPlane& c, std::vector<int>& the_tmean_max_peaks,
-						     std::vector<int>& the_tdqds_min_peaks, int range){
-    // c._t_means
-    // c._t_dqds
-
+  std::pair<int, int>  Michel2DAna::find_match_peaks(const ClusterYPlane& c, 
+						     std::vector<int>& the_tmean_max_peaks,
+						     std::vector<int>& the_tdqds_min_peaks, 
+						     int range){
+    
     std::pair<int,int> res(-1,-1);
     
     //the indices of tmean peaks that haven't already been checked
     std::vector <int> checked_maxes_tmean;
-    for (int l = 0; l < the_tmean_max_peaks.size(); l++){
+    for (int l = 0; l < the_tmean_max_peaks.size(); l++)
       checked_maxes_tmean.push_back(the_tmean_max_peaks.at(l));
-    }
+    
 
     //the index/indices of matches in 
     std::vector <int> index_in_tdqds;

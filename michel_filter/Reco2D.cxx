@@ -233,7 +233,7 @@ std::pair<size_t,size_t> Reco2D::DetEVtx(const std::vector<Double_t>& q,
 
 
 size_t Reco2D::REALDetEVtx(const std::vector<ahit>& h,
-			   const std::vector<HitIdx_t>& o,
+			   const std::vector<HitIdx_t>& o, //ordered_pts
 			   size_t mean_michel_vtx) {
   
   auto window_size = 20;
@@ -241,37 +241,57 @@ size_t Reco2D::REALDetEVtx(const std::vector<ahit>& h,
   auto right = 0;
   
   
-  right = o.size() - mean_michel_vtx;
+  right = o.size() - 1 - mean_michel_vtx;
   left  = mean_michel_vtx;
   
-  auto smallest = [](const size_t& r, const size_t& l)
-    { if (r < l) return r;
-      if (l < r) return l;
-    };
+  // auto smallest = [](const size_t& r, const size_t& l)
+  //   { if (r <= l) return r;
+  //     if (l <  r) return l;
+  //   };
   
   
-  if(smallest(right,left) < window_size)
-    window_size = smallest(right,left);
-
+  // if(smallest(right,left) < window_size)
+  //   window_size = smallest(right,left);
+  
+  bool right_is_smaller;
+  int iMin = 0;
+  int iMax = 0;
+    
+  if(right < left)
+    right_is_smaller = true;
+  else
+    right_is_smaller = false;
+  
+  if(right > window_size) right = window_size;
+  if(left  > window_size) left  = window_size;
+  
+  if(right_is_smaller) {
+    iMax = right + mean_michel_vtx;
+    iMin = mean_michel_vtx - window_size;
+    if(iMin < 0) iMin = 0;
+    
+  } else {
+    iMax = mean_michel_vtx + window_size;
+    iMin = mean_michel_vtx - left;
+    
+    if(iMax >= o.size()) iMax = o.size() - 1;
+      
+  }
+    
   auto k   = 0.0;
   auto idx = 0;
 
-  if(window_size == 0)
-    window_size++; //this only works because I pop...
-  
   //this loop is most contentious!!
-  for(int window = mean_michel_vtx - window_size;
-      window < mean_michel_vtx + window_size; ++window){
-    auto c = h[o[window]].hit.Integral();
-    if(c > k) {
-      k = c; idx = window;
-    }
-    
+  // for(int window = mean_michel_vtx - window_size;
+  //     window < mean_michel_vtx + window_size; ++window){
+  
+  for(int w = iMin; w <= iMax; ++w) {
+    auto c = h[o[w]].hit.Integral();
+    if(c > k) { k = c; idx = w; }
   }
   
   return idx;
 }
-
 
 size_t Reco2D::find_max(const std::vector<Double_t>& data) {
 

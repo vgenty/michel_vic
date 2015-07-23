@@ -21,8 +21,8 @@ my_proc.set_io_mode(fmwk.storage_manager.kREAD)
 my_proc.set_ana_output_file("output.root");
 my_proc.enable_filter(True)
 
-the_filter = fmwk.RemoveMichel()
-#the_filter = fmwk.MichelFilter()
+#the_filter = fmwk.RemoveMichel()
+the_filter = fmwk.MichelFilter()
 the_ana    = fmwk.Michel2DAna("fuzzycluster");
 
 #~~tune-able parameters, they have defaults...
