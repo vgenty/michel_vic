@@ -53,7 +53,11 @@ namespace larlite {
     Michel2DAna(std::string cp) : 
       _output_tree     (nullptr),
       _cluster_producer(cp)
-    { _name="Michel2DAna"; _fout=0;}
+    { _name="Michel2DAna"; 
+      _fout=0;
+      _num_recod = 0;
+      _nhits_cut = 0;
+    }
 
 
     /// Default destructor
@@ -89,11 +93,15 @@ namespace larlite {
     void set_tdqds_fall(const Double_t i){_tdqds_fall = i;}
     void set_tdqds_threshold(const Double_t i){ _tdqds_thresh = i;}
     
-    
+    void set_nhits_cut(Int_t i) { _nhits_cut = i; }
+
+    Int_t get_num_reco() { return _num_recod; }
 
   private:
    
-    
+    Int_t _nhits_cut;
+    Int_t _num_recod;
+
     Int_t win = 0;
     ::btutil::MCMatchAlg fBTAlg;
     
@@ -222,7 +230,16 @@ namespace larlite {
     Double_t _time2cm;
     Double_t _wire2cm;
     Double_t _ne2ADC;
+
     
+    Int_t    _small_cluster_nHits;
+    Double_t _small_cluster_L;
+
+    Int_t    _big_cluster_nHits;
+    Double_t _big_cluster_L;
+    
+    Bool_t _biggest_was_muon;
+
     //Python setters with various variables
     int      _min_cluster_size = 25;
     int      _n_window_size    = 25;
@@ -238,8 +255,6 @@ namespace larlite {
 
      std::pair<int, int> find_match_peaks(const ClusterYPlane& c, std::vector<int>& the_tmean_max_peaks,
 					  std::vector<int>& the_tdqds_min_peaks, int range);
-   
-    
     
     
     //General Methods

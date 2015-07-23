@@ -117,7 +117,8 @@ void ClusterYPlane::calculate_distances() {
   
   auto tot_dist = double{0.0};
   
-  _s.push_back(0.0);
+  _s .push_back(0.0);
+  _ds.push_back(0.0);
 
   for(size_t u = 0; u < _ordered_pts.size() - 1; ++u) {
     auto zz = distance(_ahits[_ordered_pts[ u ]].vec,
