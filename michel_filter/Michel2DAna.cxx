@@ -226,15 +226,13 @@ namespace larlite {
 
     auto matchpeaks =  find_match_peaks(c, the_tmean_max_peaks,the_tdqds_min_peaks, 20);
 
-<<<<<<< HEAD
-=======
     int tmean_max_ind =matchpeaks.first;
     int min_to_edge = N_to_edge(c, tmean_max_ind);
     _min_hits_to_edge = min_to_edge;
     
 
     std::cout <<"flag7"<< std::endl;
->>>>>>> origin/test_branch_1
+
     if (matchpeaks.first != -1 && matchpeaks.second != -1){
       _matched_max_s = c._s[matchpeaks.first];
       _matched_min_s = c._s[matchpeaks.second];
