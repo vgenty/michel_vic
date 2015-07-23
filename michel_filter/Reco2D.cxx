@@ -592,14 +592,36 @@ std::vector<int> Reco2D::Reconstruct_Mins( const std::vector<Double_t>& data,
 					   float ped_mean, 
 					   float ped_rms)
 {
+  std::vector<int> the_commons;
+
+  auto scanned_forward = scan_forward2  (data,rise_edge,fall_edge,threshold,ped_mean,ped_rms);
+  auto scanned_backward = scan_backward2(data,rise_edge,fall_edge,threshold,ped_mean,ped_rms);
+  
+  for(const auto& idx1: scanned_forward)
+    for(const auto& idx2: scanned_backward)
+      if(idx1 == idx2)
+	the_commons.push_back(idx1);
+  
+  return the_commons;
+}
+
+
+
+std::vector<int> Reco2D::scan_forward2( const std::vector<Double_t>& data, 
+					float rise_edge, 
+					float fall_edge, 
+					float threshold, 
+					float ped_mean, 
+					float ped_rms)
+{
   std::vector<int> result;
-  // auto ped_info = PedEstimate(data,forward, window, cutoff);
+  //auto ped_info = PedEstimate(data,forward, window, cutoff);
   bool found_pulse = false; 
-  size_t t = 0;
+  int t = 0;
   
   while (  t < data.size() ) {
     if(data[t] < (ped_mean  + rise_edge * ped_rms)  && 
-       data[t] < threshold + ped_mean &&
+       data[t] < (threshold + ped_mean) &&
        !found_pulse)
       found_pulse = true;
       
@@ -608,20 +630,18 @@ std::vector<int> Reco2D::Reconstruct_Mins( const std::vector<Double_t>& data,
 
       while(1) {
 	if(t_end == data.size() - 1) {
-	  t_end++;
+	  ++t_end;
 	  goto END;
 	}
-	
-	//break;
-	
-	if(data[t_end] >= (ped_mean + fall_edge * ped_rms) &&
+	  
+	if(data[t_end]  >= (ped_mean + fall_edge * ped_rms) &&
 	   (data[t_end] >= threshold + ped_mean))
 	  break;
 	else 
 	  ++t_end;
       }
-	
       result.push_back(find_min_peak(data, t, t_end));	
+	
     END:
       while(t < t_end) ++t; //secretly increases t...
 	
@@ -629,8 +649,151 @@ std::vector<int> Reco2D::Reconstruct_Mins( const std::vector<Double_t>& data,
     ++t;
     found_pulse = false;
   }
-  
+    
   return result;
+  
+}
+
+std::vector<int> Reco2D::scan_backward2( const std::vector<Double_t>& data, 
+					float rise_edge, 
+					float fall_edge, 
+					float threshold, 
+					float ped_mean, 
+					float ped_rms)
+{
+  std::vector<int> result;
+  
+  bool found_pulse = false; 
+  int t = data.size() - 1;
+  
+  while (  t >= 0 ) {
+    if(data[t] < (ped_mean  + rise_edge * ped_rms)  && 
+       data[t] < (threshold + ped_mean) &&
+       !found_pulse)
+      found_pulse = true;
+      
+    if(found_pulse) {
+      size_t  t_end = t;
+
+      while(1) {
+	if(t_end == 0) {
+	  --t_end;
+	  goto END;
+	}
+	  
+	if(data[t_end]  >= (ped_mean + fall_edge * ped_rms) &&
+	   (data[t_end] >= threshold + ped_mean))
+	  break;
+	else 
+	  --t_end;
+      }
+      result.push_back(find_min_peak(data, t_end, t));	
+	
+    END:
+      while(t > t_end) --t; //secretly decreases t...
+	
+    }
+    --t;
+    found_pulse = false;
+  }
+    
+  return result;
+  
+}
+
+
+std::vector<int> Reco2D::scan_forward( const std::vector<Double_t>& data, 
+				       float rise_edge, 
+				       float fall_edge, 
+				       float threshold, 
+				       float ped_mean, 
+				       float ped_rms)
+{
+  std::vector<int> result;
+  //auto ped_info = PedEstimate(data,forward, window, cutoff);
+  bool found_pulse = false; 
+  int t = 0;
+  
+  while (  t < data.size() ) {
+    if(data[t] > (ped_mean  + rise_edge * ped_rms)  && 
+       data[t] > (threshold + ped_mean) &&
+       !found_pulse)
+      found_pulse = true;
+      
+    if(found_pulse) {
+      size_t  t_end = t;
+
+      while(1) {
+	if(t_end == data.size() - 1) {
+	  ++t_end;
+	  goto END;
+	}
+	  
+	if(data[t_end]  <= (ped_mean + fall_edge * ped_rms) &&
+	   (data[t_end] <= threshold + ped_mean))
+	  break;
+	else 
+	  ++t_end;
+      }
+      result.push_back(find_max_peak(data, t, t_end));	
+	
+    END:
+      while(t < t_end) ++t; //secretly increases t...
+	
+    }
+    ++t;
+    found_pulse = false;
+  }
+    
+  return result;
+  
+}
+
+std::vector<int> Reco2D::scan_backward( const std::vector<Double_t>& data, 
+					float rise_edge, 
+					float fall_edge, 
+					float threshold, 
+					float ped_mean, 
+					float ped_rms)
+{
+  std::vector<int> result;
+  
+  bool found_pulse = false; 
+  int t = data.size() - 1;
+  
+  while (  t >= 0 ) {
+    if(data[t] > (ped_mean  + rise_edge * ped_rms)  && 
+       data[t] > (threshold + ped_mean) &&
+       !found_pulse)
+      found_pulse = true;
+      
+    if(found_pulse) {
+      size_t  t_end = t;
+
+      while(1) {
+	if(t_end == 0) {
+	  --t_end;
+	  goto END;
+	}
+	  
+	if(data[t_end]  <= (ped_mean + fall_edge * ped_rms) &&
+	   (data[t_end] <= threshold + ped_mean))
+	  break;
+	else 
+	  --t_end;
+      }
+      result.push_back(find_max_peak(data, t_end, t));	
+	
+    END:
+      while(t > t_end) --t; //secretly decreases t...
+	
+    }
+    --t;
+    found_pulse = false;
+  }
+    
+  return result;
+  
 }
 
 std::vector<int> Reco2D::Reconstruct_Maxes( const std::vector<Double_t>& data, 
@@ -640,45 +803,19 @@ std::vector<int> Reco2D::Reconstruct_Maxes( const std::vector<Double_t>& data,
 					    float ped_mean, 
 					    float ped_rms)
 {
-    std::vector<int> result;
-    //auto ped_info = PedEstimate(data,forward, window, cutoff);
-    bool found_pulse = false; 
-    size_t t = 0;
-    
-    while (  t < data.size() ) {
-      if(data[t] > (ped_mean  + rise_edge * ped_rms)  && 
-	 data[t] > (threshold + ped_mean) &&
-	 !found_pulse)
-	found_pulse = true;
-      
-      if(found_pulse) {
-        size_t  t_end = t;
+ 
+  std::vector<int> the_commons;
 
-	while(1) {
-	  if(t_end == data.size() - 1) {
-	    ++t_end;
-	    goto END;
-	  }
-	  
-	  if(data[t_end]  <= (ped_mean + fall_edge * ped_rms) &&
-	     (data[t_end] <= threshold + ped_mean))
-	    break;
-	  else 
-	    ++t_end;
-	}
-	result.push_back(find_max_peak(data, t, t_end));	
-	
-      END:
-	while(t < t_end) ++t; //secretly increases t...
-	
-      }
-      ++t;
-      found_pulse = false;
-    }
-    
-    return result;
+  auto scanned_forward = scan_forward  (data,rise_edge,fall_edge,threshold,ped_mean,ped_rms);
+  auto scanned_backward = scan_backward(data,rise_edge,fall_edge,threshold,ped_mean,ped_rms);
+  
+  for(const auto& idx1: scanned_forward)
+    for(const auto& idx2: scanned_backward)
+      if(idx1 == idx2)
+	the_commons.push_back(idx1);
+  
+  return the_commons;
 }
-
 
 
 std::pair<float,float> Reco2D::PedEstimate(const std::vector<Double_t>& data, bool start, int window, float cutoff) {

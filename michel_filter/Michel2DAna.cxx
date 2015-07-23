@@ -39,8 +39,6 @@ namespace larlite {
     _output_tree->Branch("_biggest_was_muon",  &_biggest_was_muon, "_Biggest_muon/O");
 
     _output_tree->Branch("_forward",  &_forward, "_forward/O");
-
-
     _output_tree->Branch("_michel_hits"   ,  &_michel_hits  , "_michel_hits/I");
     _output_tree->Branch("_michel_E"      , &_michel_E      , "_michel_E/D");
     _output_tree->Branch("_michel_L"      , &_michel_L      , "_michel_L/D");
@@ -48,7 +46,12 @@ namespace larlite {
     _output_tree->Branch("_true_michel_E" , &_true_michel_E , "_true_michel_E/D");
     _output_tree->Branch("_reco_Q_o_mc_Q" , &_reco_Q_o_mc_Q , "_reco_Q_o_mc_Q/D");
 
-     _output_tree->Branch("_small_cluster_nHits", &_small_cluster_nHits, "_small_cluster_nHits/I");
+    _output_tree->Branch("_muonTSZ" , &_muonTSZ , "_muonTSZ/D");
+    _output_tree->Branch("_muonTSX" , &_muonTSX , "_muonTSX/D");
+    _output_tree->Branch("_muonTEZ" , &_muonTEZ , "_muonTEZ/D");
+    _output_tree->Branch("_muonTEX" , &_muonTEX , "_muonTEX/D");
+
+    _output_tree->Branch("_small_cluster_nHits", &_small_cluster_nHits, "_small_cluster_nHits/I");
     _output_tree->Branch("_small_cluster_L",      &_small_cluster_L,     "_small_cluster_L/D");
 
     _output_tree->Branch("_big_cluster_nHits",    &_big_cluster_nHits, "_big_cluster_nHits/I");
@@ -121,11 +124,15 @@ namespace larlite {
     
     //True
     auto const evt_mcshower = storage->get_data<event_mcshower>("mcreco");
+    auto const evt_mctrack  = storage->get_data<event_mctrack> ("mcreco");
+
     auto const evt_simch    = storage->get_data<event_simch>("largeant");
+
     if(!evt_simch || !(evt_simch->size())) {
       print(msg::kERROR,__FUNCTION__,"SimChannel data product not found!");
       return false;
     }
+    
     //Reco
     auto const evt_hits     = storage->get_data<event_hit>    ("gaushit");
     auto const evt_clusters = storage->get_data<event_cluster>(_cluster_producer);
@@ -291,6 +298,7 @@ namespace larlite {
     // auto real_michel_vtx = r2d.REALDetEVtx(c._ahits,
     // 					   c._ordered_pts,
     // 					   mean_michel_vtx.first);
+
     auto real_michel_vtx = r2d.REALDetEVtx(c._ahits,
     					   c._ordered_pts,
     					   matchpeaks.first);
@@ -308,7 +316,7 @@ namespace larlite {
     //   return false;
 
     if(!determine_forward(ddiirr,matchpeaks.first,
-    			  real_michel_vtx, c))
+    			  real_michel_vtx,c))
       return false;
 
 
@@ -347,11 +355,25 @@ namespace larlite {
       auto real_michel = c.find_closest_hit(proj_start); //find closest hit to projection  
       _tX = c._ahits[c._ordered_pts[real_michel]].vec.X();
       _tY = c._ahits[c._ordered_pts[real_michel]].vec.Y();
-      
+
     }
     
-    //return false;
 
+    TVector2 muon_proj_start;
+    TVector2 muon_proj_end;
+    find_projected_start(muon_proj_start,muon_proj_end,evt_mctrack);
+    
+
+    auto real_muon_start = c.find_closest_hit(muon_proj_start); 
+    auto real_muon_end   = c.find_closest_hit(muon_proj_end); 
+    
+    _muonTSZ = c._ahits[c._ordered_pts[real_muon_start]].vec.X();
+    _muonTSX = c._ahits[c._ordered_pts[real_muon_start]].vec.Y();
+    
+    _muonTEZ = c._ahits[c._ordered_pts[real_muon_end]].vec.X();
+    _muonTEX = c._ahits[c._ordered_pts[real_muon_end]].vec.Y();
+    
+    //return false;
     // std::cout<<"\033[93m"<<Form("CP 8.1 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     // fWatch.Start();
     
@@ -403,7 +425,6 @@ namespace larlite {
 	
 	if(mcs.MotherPdgCode() == 13 &&
 	   mcs.Process() == "muMinusCaptureAtRest") {
-	   //mcs.DetProfile().E()/mcs.Start().E() > 0.95) {
 	
 	  double energy = mcs.DetProfile().E();
       
@@ -422,7 +443,7 @@ namespace larlite {
       
 	}
       }
-      //if(g4_trackid_v.size() == 0) return false;
+      //if(g4_trackid_v.size() == 0) goto LEAVE;
         
       event_hit* ev_hit = nullptr;
       auto const& ass_hit_v = storage->find_one_ass(evt_clusters->id(),ev_hit,evt_clusters->name());
@@ -430,7 +451,7 @@ namespace larlite {
       try { fBTAlg.BuildMap(g4_trackid_v, *evt_simch, *ev_hit, ass_hit_v); }
       catch(larutil::LArUtilException) { std::cout << "\n ~~..~~ exception at build map ~~..~~ \n"; }
     
-      auto aho = fBTAlg.BTAlg();
+      auto aho              = fBTAlg.BTAlg();
       auto reco_michel_hits = get_summed_mcshower_other(aho,c._michel._hits,1);
       auto all_hits         = get_summed_mcshower_other(aho,plane2hits,1);
       
@@ -694,6 +715,53 @@ namespace larlite {
 
   }
 
+  bool Michel2DAna::find_projected_start(TVector2& p1,
+					 TVector2& p2,
+					 const event_mctrack* evt_mctrack) {
+
+    TLorentzVector true_start;
+    TLorentzVector true_end;
+    auto bb = false;
+
+    for(const auto& track : *evt_mctrack) {
+      if (track.PdgCode() == 13) {
+	true_start       = track.Start().Position();
+	true_end         = track.End().Position();
+	//_true_michel_E   = shower.Charge(2);
+	//_true_michel_Det = shower.DetProfile().E();
+	//auto t = shower.DetProfile().X()/160.0;
+	//_lifetime_correction = exp(t/3.0);
+	bb = true; 
+      }
+    }
+    if(!bb)
+      return false;
+    
+    TVector3 ttt(true_start.Vect());
+    TVector3 yyy(true_start.Vect());
+    
+    ::larutil::PxPoint pxpoint1;
+    ::larutil::PxPoint pxpoint2;
+    
+    try{ 
+      pxpoint1 = ::larutil::GeometryUtilities::GetME()->Get2DPointProjection2(&ttt,2);
+    } catch(larutil::LArUtilException) { return false; }
+
+    try{ 
+      pxpoint2 = ::larutil::GeometryUtilities::GetME()->Get2DPointProjection2(&yyy,2);
+    } catch(larutil::LArUtilException) { return false; }
+    
+    
+    p1 = TVector2(pxpoint1.w * 0.3,
+		  pxpoint1.t * 0.0802814);
+    
+    p2 = TVector2(pxpoint2.w * 0.3,
+		  pxpoint2.t * 0.0802814);
+    
+    
+    return true;
+    
+  }
   bool Michel2DAna::find_projected_start(TVector2& p, 
 					 const event_mcshower* evt_mcshower) {
     

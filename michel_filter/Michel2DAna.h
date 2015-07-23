@@ -12,6 +12,7 @@
 #include "LArUtil/DetectorProperties.h"
 #include "DataFormat/mcshower.h"
 #include "DataFormat/simch.h"
+#include "DataFormat/mctrack.h"
 
 //Backtracker
 #include "MCComp/MCMatchAlg.h"
@@ -95,7 +96,14 @@ namespace larlite {
     std::vector<ClusterYPlane> _clusters; 
     std::string _cluster_producer;
     
+
+    Double_t _muonTSZ;
+    Double_t _muonTSX;
+
+    Double_t _muonTEZ;
+    Double_t _muonTEX;
     
+
     Bool_t _forward;
     //From the setters
     Double_t  _nearX = 0;
@@ -250,6 +258,10 @@ namespace larlite {
     bool convert_2d(const event_hit     *evt_hits,
 		    const event_cluster *evt_clusters,
 		    const event_ass     *evt_ass_data);
+    
+    bool find_projected_start(TVector2& p1,
+			      TVector2& p2,
+			      const event_mctrack* evt_mctrack);
     
     bool find_projected_start(TVector2& p, 
 			      const event_mcshower* evt_mcshower);
