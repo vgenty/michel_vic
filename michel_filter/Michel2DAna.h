@@ -125,7 +125,6 @@ namespace larlite {
     Bool_t _has_michel;
     Bool_t _tru_id;
     Bool_t _mis_id;
-
     
     std::vector<Double_t> _ahits_X_copy;
     std::vector<Double_t> _ahits_Y_copy;

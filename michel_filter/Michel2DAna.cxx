@@ -635,20 +635,6 @@ namespace larlite {
   
   void Michel2DAna::check_cluster_boundaries() {
     
-    //this code will probably leak memory
-    //i create new heap ClusterYPlane from addition
-    //the old ones get erased from the _clusters array
-    //but they surely exist somewhere right?
-
-    //here is vic's bullshit implementation to 
-    //check pairwise touching clusters
-    //then use old school goto to remove them from _clusters
-    //the added cluster get added to the rear with push_back(1+2)
-    
-    bool j = false;
-    size_t a = 0;
-    size_t b = 0;
-
     while(1) {
       for( a = 0; a < _clusters.size(); ++a) {
 	for( b = 0; b < _clusters.size(); ++b) {
@@ -676,10 +662,7 @@ namespace larlite {
   }
   
   void Michel2DAna::clear_all() {
-    /*
-      for (std::vector<ClusterYPlane*>::iterator it = _clusters.begin() 
-      ; it != _clusters.end(); ++it) { delete (*it); } 
-    */
+
     _clusters.clear();
     
     _ahits_X_copy.clear();
@@ -738,9 +721,6 @@ namespace larlite {
     Double_t baka1 = 0.0;
     Double_t baka2 = 0.0;
 
-    
-    //std::cout << "in get_summed... " << std::endl;
-    //for(size_t u = 0; u < c._ordered_pts.size(); ++u) {
     for(const auto& h : hits) {
       ::btutil::WireRange_t wire_hit(h.Channel(),h.StartTick(),h.EndTick());
       baka1 += aho.MCQ(wire_hit)[0]; // * _ne2ADC;
@@ -791,9 +771,9 @@ namespace larlite {
     }
     
     
-    std::cout << " \n";
-    std::cout << " \npart1 : " << part1 << " part2: " << part2 << "\n";
-    std::cout << " \np1 : " << p1 << " p2: " << p2 << "\n";
+    // std::cout << " \n";
+    // std::cout << " \npart1 : " << part1 << " part2: " << part2 << "\n";
+    // std::cout << " \np1 : " << p1 << " p2: " << p2 << "\n";
         
     Double_t n_cutoff = 2;
     Double_t c_cutoff = 1.15;
@@ -802,10 +782,10 @@ namespace larlite {
     if(p1 == 0 || p2 == 0)
       return false;
     
-    std::cout << "\tp1/p2 : " << std::setprecision(15) << p1/p2 << " \n";
-    std::cout << "\tpart1/part2 : " << std::setprecision(15) << part1/part2 << " \n";
-    std::cout << " \n";
-    std::cout << " \n";
+    // std::cout << "\tp1/p2 : " << std::setprecision(15) << p1/p2 << " \n";
+    // std::cout << "\tpart1/part2 : " << std::setprecision(15) << part1/part2 << " \n";
+    // std::cout << " \n";
+    // std::cout << " \n";
     
     ////FIRST////
     if( p1/p2 > n_cutoff || p1/p2 < 1/n_cutoff) {
@@ -892,7 +872,7 @@ namespace larlite {
     //while there are still maxes and no matched mins
     while(checked_maxes_tmean.size() > 0 && index_in_tdqds.size() == 0){
 
-      diagnostic(min, max, checked_maxes_tmean);
+      //diagnostic(min, max, checked_maxes_tmean);
       
       //find max tmean
       max = 0;
@@ -905,7 +885,7 @@ namespace larlite {
 	return res;
       }
       double max_tmean = c._t_means.at(checked_maxes_tmean.at(max));
-      diagnostic(min, max, checked_maxes_tmean);
+      //diagnostic(min, max, checked_maxes_tmean);
 
       /*
       if (checked_maxes_tmean.size() == 2){
@@ -931,7 +911,7 @@ namespace larlite {
 	}
       }
 
-      diagnostic(min, max, checked_maxes_tmean);
+      //diagnostic(min, max, checked_maxes_tmean);
      
       //compare with peaks in tdqds
       for( int n = 0; n <  the_tdqds_min_peaks.size(); n++){
@@ -977,21 +957,21 @@ namespace larlite {
 	//checked_maxes_tmean.erase(checked_maxes_tmean.begin() + max);
       }
 
-      diagnostic(min, max, checked_maxes_tmean);
+      //diagnostic(min, max, checked_maxes_tmean);
     }
 
     //returns the index of the max and min in the tmean ordered vector, returns <-1,-1> if none found
     if ( max != -1 && min != -1){
       return std::make_pair(the_tmean_max_peaks.at(max), the_tdqds_min_peaks.at(min));
-      diagnostic(min, max, checked_maxes_tmean);
+      //diagnostic(min, max, checked_maxes_tmean);
     }
 
     else{
       return std::make_pair(max, min);
-      diagnostic(min, max, checked_maxes_tmean);
+      //diagnostic(min, max, checked_maxes_tmean);
     }
   }
-
+  
 
 void Michel2DAna::diagnostic(int min, int max, std::vector<int> v){
   std::cout <<"the min is: " << min<< std::endl;
