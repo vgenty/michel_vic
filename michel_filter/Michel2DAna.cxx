@@ -46,11 +46,7 @@ namespace larlite {
     _output_tree->Branch("_true_michel_E" , &_true_michel_E , "_true_michel_E/D");
     _output_tree->Branch("_reco_Q_o_mc_Q" , &_reco_Q_o_mc_Q , "_reco_Q_o_mc_Q/D");
 
-
-    //output_tree->Branch("_true_michel_E" , &_true_michel_E , "_true_michel_E/D");
-    //output_tree->Branch("_reco_Q_o_mc_Q" , &_reco_Q_o_mc_Q , "_reco_Q_o_mc_Q/D");
-
-    _output_tree->Branch("_small_cluster_nHits" , &_small_cluster_nHits, "_small_cluster_nHits/I");
+     _output_tree->Branch("_small_cluster_nHits" , &_small_cluster_nHits, "_small_cluster_nHits/I");
     _output_tree->Branch("_small_cluster_L"     , &_small_cluster_L,     "_small_cluster_L/D");
 
     _output_tree->Branch("_big_cluster_nHits", &_big_cluster_nHits, "_big_cluster_nHits/I");
@@ -119,7 +115,7 @@ namespace larlite {
     
     clear_all();
     //std::cout<<"\033[93m"<<Form("CP 1 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
+    //fWatch.Start();
     
     //True
     auto const evt_mcshower = storage->get_data<event_mcshower>("mcreco");
@@ -180,10 +176,10 @@ namespace larlite {
     std::vector<Double_t> truncated_mean;
     std::vector<Double_t> truncated_dqds;
 
-    double sum=0;
-    for(auto const& h : c._ahits)
-      sum += h.hit.Integral();
-    std::cout<<sum<<std::endl;
+    // double sum=0;
+    // for(auto const& h : c._ahits)
+    //   sum += h.hit.Integral();
+    // std::cout<<sum<<std::endl;
 
     //do truncated mean
     truncated_mean = r2d.windowed_means(_n_window_size,_window_cutoff,0,
@@ -317,15 +313,17 @@ namespace larlite {
     // fWatch.Start();
     
     // Get the closest reconstructed hit to the start of the mcshower
-    // TVector2 proj_start;
-    // if(!find_projected_start(proj_start,evt_mcshower)) //this actually updated proj_start pointer
-    //   return false;
+    if(_is_signal) {
+      TVector2 proj_start;
+      find_projected_start(proj_start,evt_mcshower); //this actually updated proj_start pointer
+      auto real_michel = c.find_closest_hit(proj_start); //find closest hit to projection  
+    }
+    
+    //return false;
 
     // std::cout<<"\033[93m"<<Form("CP 8.1 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     // fWatch.Start();
     
-    //auto real_michel = c.find_closest_hit(proj_start); //find closest hit to projection
-
     // std::cout<<"\033[93m"<<Form("CP 8.2 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     // fWatch.Start();
     
@@ -344,57 +342,97 @@ namespace larlite {
     
     _Q_u_p2 = c. _muon. _charge;
 
-    //double plane_charge
 
     // std::cout<<"\033[93m"<<Form("CP 9 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     // fWatch.Start();
     
     // /////////COMPARE TO MC////////////////
+
+    double plane_charge = 0.0;
+    std::vector<larlite::hit> plane2hits;
     
-    // //From shower quality 
-    // auto _mc_energy_min = 0;
-    // auto _mc_energy_max = 65; // ?? MeV ??
-   
-    // std::vector<std::vector<unsigned int> > g4_trackid_v;
-    // std::vector<unsigned int> mc_index_v;
-    // g4_trackid_v.reserve(evt_mcshower->size());
+    for(const auto& h : *evt_hits) {
+      if(h.View() == 2) {
+	plane2hits.push_back(h);
+	plane_charge += h.Integral();
+	_ALL_hits_p2_X.push_back(h.WireID().Wire * 0.3);
+	_ALL_hits_p2_Y.push_back(h.PeakTime() * 0.0802814);
+      }
+    }
+
     
-    // for(size_t mc_index=0; mc_index<evt_mcshower->size(); ++mc_index) {
-    // 	auto const& mcs = (*evt_mcshower)[mc_index];
+    // //From shower quality
+    if(_is_signal) {
+      auto _mc_energy_min = 0;
+      auto _mc_energy_max = 65; // ?? MeV ??
+      
+      std::vector<std::vector<unsigned int> > g4_trackid_v;
+      std::vector<unsigned int> mc_index_v;
+      g4_trackid_v.reserve(evt_mcshower->size());
+    
+      for(size_t mc_index=0; mc_index<evt_mcshower->size(); ++mc_index) {
+    	auto const& mcs = (*evt_mcshower)[mc_index];
 	
-    //   if(mcs.MotherPdgCode() == 13 &&
-    // 	 mcs.Process() == "muMinusCaptureAtRest" &&
-    // 	 mcs.DetProfile().E()/mcs.Start().E() > 0.95) {
+	if(mcs.MotherPdgCode() == 13 &&
+	   mcs.Process() == "muMinusCaptureAtRest" &&
+	   mcs.DetProfile().E()/mcs.Start().E() > 0.95) {
 	
-    // 	double energy = mcs.DetProfile().E();
+	  double energy = mcs.DetProfile().E();
       
-    // 	std::vector<unsigned int> id_v;
-    // 	id_v.reserve(mcs.DaughterTrackID().size());
+	  std::vector<unsigned int> id_v;
+	  id_v.reserve(mcs.DaughterTrackID().size());
       
-    // 	if( _mc_energy_min < energy && energy < _mc_energy_max ) {
-    // 	  for(auto const& id : mcs.DaughterTrackID()) {
-    // 	    if(id == mcs.TrackID()) continue;
-    // 	    id_v.push_back(id);
-    // 	  }
-    // 	  id_v.push_back(mcs.TrackID());
-    // 	  g4_trackid_v.push_back(id_v);
-    // 	  mc_index_v.push_back(mc_index);
-    // 	}
+	  if( _mc_energy_min < energy && energy < _mc_energy_max ) {
+	    for(auto const& id : mcs.DaughterTrackID()) {
+	      if(id == mcs.TrackID()) continue;
+	      id_v.push_back(id);
+	    }
+	    id_v.push_back(mcs.TrackID());
+	    g4_trackid_v.push_back(id_v);
+	    mc_index_v.push_back(mc_index);
+	  }
       
-    //   }
-    // }
-    // if(g4_trackid_v.size() == 0) return false;
+	}
+      }
+      //if(g4_trackid_v.size() == 0) return false;
         
-    // event_hit* ev_hit = nullptr;
-    // auto const& ass_hit_v = storage->find_one_ass(evt_clusters->id(),ev_hit,evt_clusters->name());
+      event_hit* ev_hit = nullptr;
+      auto const& ass_hit_v = storage->find_one_ass(evt_clusters->id(),ev_hit,evt_clusters->name());
     
-    // try { fBTAlg.BuildMap(g4_trackid_v, *evt_simch, *ev_hit, ass_hit_v); }
-    // catch(larutil::LArUtilException) { return false; }
+      try { fBTAlg.BuildMap(g4_trackid_v, *evt_simch, *ev_hit, ass_hit_v); }
+      catch(larutil::LArUtilException) { std::cout << "\n ~~..~~ exception at build map ~~..~~ \n"; }
     
-    // auto aho = fBTAlg.BTAlg();
+      auto aho = fBTAlg.BTAlg();
+      auto reco_michel_hits = get_summed_mcshower_other(aho,c._michel._hits,1);
+      auto all_hits         = get_summed_mcshower_other(aho,plane2hits,1);
+      
+      std::vector<larlite::hit> ordered_cluster_hits;
+      for(const auto& idx : c._ordered_pts)
+	ordered_cluster_hits.push_back(c._ahits[idx].hit);
+      
+      auto ordered_hits = get_summed_mcshower_other(aho,ordered_cluster_hits,0);
+      
+      std::vector<larlite::hit> all_cluster_hits;
+      for(const auto& h : c._ahits)
+	all_cluster_hits.push_back(h.hit);
+
+      auto cluster_hits = get_summed_mcshower_other(aho,all_cluster_hits,0);
+      
+      _simch_michel_true_shower_E     = reco_michel_hits.first;
+      _simch_michel_false_shower_E    = reco_michel_hits.second;
     
-    // auto reco_michel_hits  = get_summed_mcshower_other(aho,c._michel->_hits,1);
+      _simch_plane_true_shower_E      = all_hits.first;
+      _simch_plane_false_shower_E     = all_hits.second;
+      
+      _simch_ordered_true_shower_E    = ordered_hits.first;
+      _simch_ordered_false_shower_E   = ordered_hits.second;
     
+      _simch_cluster_true_shower_E    = cluster_hits.first;
+      _simch_cluster_false_shower_E   = cluster_hits.second;
+
+      
+    }
+
     std::map<Double_t,bool> wires;
 
     for(const auto& p : c._ordered_pts)
@@ -405,43 +443,10 @@ namespace larlite {
      
     _num_hits_p_wire = _num_hits/_num_wires;;
 
-    double plane_charge = 0.0;
+    //double plane_charge = 0.0;
     
-    std::vector<larlite::hit> plane2hits;
-    for(const auto& h : *evt_hits) {
-      if(h.View() == 2) {
-	plane2hits.push_back(h);
-	plane_charge += h.Integral();
-	_ALL_hits_p2_X.push_back(h.WireID().Wire * 0.3);
-	_ALL_hits_p2_Y.push_back(h.PeakTime() * 0.0802814);
-      }
-    }
     
     _Q_tot_p2 = plane_charge;
-    
-    // auto all_hits = get_summed_mcshower_other(aho,plane2hits,1);
-    
-    // std::vector<larlite::hit> ordered_cluster_hits;
-    // for(const auto& idx : c._ordered_pts)
-    //   ordered_cluster_hits.push_back(c._ahits[idx].hit);
-    // auto ordered_hits = get_summed_mcshower_other(aho,ordered_cluster_hits,0);
-    
-    // std::vector<larlite::hit> all_cluster_hits;
-    // for(const auto& h : c._ahits)
-    //   all_cluster_hits.push_back(h.hit);
-    // auto cluster_hits = get_summed_mcshower_other(aho,all_cluster_hits,0);
-    
-    // _simch_michel_true_shower_E     = reco_michel_hits.first;
-    // _simch_michel_false_shower_E    = reco_michel_hits.second;
-    
-    // _simch_plane_true_shower_E      = all_hits.first;
-    // _simch_plane_false_shower_E     = all_hits.second;
-    
-    // _simch_ordered_true_shower_E    = ordered_hits.first;
-    // _simch_ordered_false_shower_E   = ordered_hits.second;
-    
-    // _simch_cluster_true_shower_E    = cluster_hits.first;
-    // _simch_cluster_false_shower_E   = cluster_hits.second;
     
     // std::cout<<"\033[93m"<<Form("CP 10 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     // fWatch.Start();
@@ -450,8 +455,11 @@ namespace larlite {
     ////////////WRITE OUT TO TTREE////////////
     /////////////////////////////////////////
     
-    // _tX = c._ahits[c._ordered_pts[real_michel]].vec.X();
-    // _tY = c._ahits[c._ordered_pts[real_michel]].vec.Y();
+    if(_is_signal) {
+      _tX = c._ahits[c._ordered_pts[the_vtx]].vec.X();
+      _tY = c._ahits[c._ordered_pts[the_vtx]].vec.Y();
+    }
+    
     _rX = c._ahits[c._ordered_pts[the_vtx]].vec.X();
     _rY = c._ahits[c._ordered_pts[the_vtx]].vec.Y();
 
@@ -478,17 +486,15 @@ namespace larlite {
     _michel_L    = c._michel._length;
     _michel_hits = c._michel._num_hits;
 
-    _reco_Q_o_mc_Q = 0.0;
-    
-    //_reco_Q_o_mc_Q = _michel_E / _simch_plane_true_shower_E;
-    
-    //_mcQ_frac = _simch_michel_true_shower_E/( _simch_plane_true_shower_E);
-    //_MeV_scale = _mcQ_frac * _true_michel_Det;
-    
+    if(_is_signal) {
+      _reco_Q_o_mc_Q = _michel_E / _simch_plane_true_shower_E;
+      _mcQ_frac = _simch_michel_true_shower_E/( _simch_plane_true_shower_E);
+      _MeV_scale = _mcQ_frac * _true_michel_Det;
+    }
     //printvec(the_chi_max_peaks);
     
     //_the_chi_max_peak = the_chi_max_peaks;
-    // _num_chi_max_peaks = the_chi_max_peaks.size();
+    //_num_chi_max_peaks = the_chi_max_peaks.size();
 
     _the_tmean_max_peak  = the_tmean_max_peaks;
     _num_tmean_max_peaks = the_tmean_max_peaks.size();

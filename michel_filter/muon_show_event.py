@@ -15,7 +15,8 @@ def graph(event):
 
     event = int(event)
     evt_num = event
-    f    = rr.TFile.Open("output_muons_only.root","READ")
+    #f    = rr.TFile.Open("output_muons_only.root","READ")
+    f    = rr.TFile.Open(sys.argv[1],"READ")
     tree = f.Get("out_tree")
 
     rec  = rn.tree2rec(tree)

@@ -26,23 +26,21 @@
 #include "Reco2D.h"
 
 namespace larlite {
-  /**
-     \class Michel2DAna
-     User custom analysis class made by me
-   */
+
   class Michel2DAna : public ana_base{
   
   public:
 
     /// Default constructor
     
-    Michel2DAna(std::string cp) : 
+    Michel2DAna(std::string cp, Bool_t signal) : 
       _output_tree     (nullptr),
       _cluster_producer(cp)
     { _name="Michel2DAna"; 
       _fout=0;
       _num_recod = 0;
       _nhits_cut = 0;
+      _is_signal = signal;
     }
 
 
@@ -85,6 +83,7 @@ namespace larlite {
 
   private:
     
+    Bool_t _is_signal;
     
     Int_t _nhits_cut;
     Int_t _num_recod;
