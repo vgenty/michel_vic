@@ -607,10 +607,13 @@ std::vector<int> Reco2D::Reconstruct_Mins( const std::vector<Double_t>& data,
       size_t  t_end = t;
 
       while(1) {
-	if(t_end == data.size() - 1)
+	if(t_end == data.size() - 1) {
+	  t_end++;
 	  goto END;
-	  //break;
-	  
+	}
+	
+	//break;
+	
 	if(data[t_end] >= (ped_mean + fall_edge * ped_rms) &&
 	   (data[t_end] >= threshold + ped_mean))
 	  break;
@@ -652,8 +655,10 @@ std::vector<int> Reco2D::Reconstruct_Maxes( const std::vector<Double_t>& data,
         size_t  t_end = t;
 
 	while(1) {
-	  if(t_end == data.size() - 1)
+	  if(t_end == data.size() - 1) {
+	    ++t_end;
 	    goto END;
+	  }
 	  
 	  if(data[t_end]  <= (ped_mean + fall_edge * ped_rms) &&
 	     (data[t_end] <= threshold + ped_mean))
