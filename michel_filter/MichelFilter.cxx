@@ -36,9 +36,10 @@ namespace larlite {
     }
     //Loop over MCShowers, ask if they came from a muon decay
     for(auto const& mcs : *ev_mcshower){
-      if(mcs.MotherPdgCode() == 13 &&
-	 mcs.Process() == "muMinusCaptureAtRest") {
-	//mcs.DetProfile().E()/mcs.Start().E() > 0.5) {
+      if((mcs.MotherPdgCode() == 13                &&
+	  mcs.Process() == "muMinusCaptureAtRest") &&
+	 (mcs.DetProfile().E()/mcs.Start().E()  > 0.5
+	  || mcs.DetProfile().E() >= 15)) {
 	kept_evts++;
 	return true;
       }
