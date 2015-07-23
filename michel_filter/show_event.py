@@ -177,50 +177,51 @@ def graph(event):
     setaxis(ppp,"Z","X")
 
 
-    
-    c1.cd(7)
-    
-    
-    xmin = np.amin(order[:,0]) - 10.0
-    xmax = np.amax(order[:,0]) + 10.0
-    ymin = np.amin(order[:,1]) - 10.0
-    ymax = np.amax(order[:,1]) + 10.0
-    
-    nbinsx = int(np.ceil((xmax-xmin)/0.3))
-    nbinsy = int(np.ceil((ymax-ymin)/0.08))
 
-    th2 = rr.TH2D("baka",";;",nbinsx,xmin,xmax,nbinsy,ymin,ymax)
-    th2.SetTitle(";Wire [cm]; Time [cm]")
-    for i in xrange(len(order)) :
-        th2.Fill(order[i][0],order[i][1],rec['_chi2_copy'][evt_num][i])
+   # c1.cd(7)
+
+
+   # xmin = np.amin(order[:,0]) - 10.0
+   # xmax = np.amax(order[:,0]) + 10.0
+   # ymin = np.amin(order[:,1]) - 10.0
+   # ymax = np.amax(order[:,1]) + 10.0
+
+   # nbinsx = int(np.ceil((xmax-xmin)/0.3))
+   # nbinsy = int(np.ceil((ymax-ymin)/0.08))
+
+   # th2 = rr.TH2D("baka",";;",nbinsx,xmin,xmax,nbinsy,ymin,ymax)
+   # th2.SetTitle(";Wire [cm]; Time [cm]")
+   # for i in xrange(len(order)) :
+   #    th2.Fill(order[i][0],order[i][1],rec['_chi2_copy'][evt_num][i])
+
+   # th2.Draw("COLZ")
     
-    th2.Draw("COLZ")
     
     
-    c1.cd(8)
+    #c1.cd(8)
     
-    ccc      = rr.TMultiGraph()
-    chipeaks = rr.TGraph()
-    chiS     = rr.TGraph()
+   # ccc      = rr.TMultiGraph()
+   # chipeaks = rr.TGraph()
+    #chiS     = rr.TGraph()
     
-    chhh = np.array([[rec['s'][evt_num][k],rec['_chi2_copy'][evt_num][k]] 
-                     for k in xrange(rec['s'][evt_num].size)])
-    we = 0;
-    for peak in rec['_the_chi_max_peak'][evt_num] :
-        chipeaks.SetPoint(we,chhh[peak][0],chhh[peak][1])
-        we += 1
+   # chhh = np.array([[rec['s'][evt_num][k],rec['_chi2_copy'][evt_num][k]] 
+   #                  for k in xrange(rec['s'][evt_num].size)])
+   # we = 0;
+   # for peak in rec['_the_chi_max_peak'][evt_num] :
+    #    chipeaks.SetPoint(we,chhh[peak][0],chhh[peak][1])
+     #   we += 1
         
     
-    rn.fill_graph(chiS,chhh)
-    chipeaks.SetMarkerColor(4)
+    #rn.fill_graph(chiS,chhh)
+    #chipeaks.SetMarkerColor(4)
     #chipeaks.SetMarkerSize(2)
-    chipeaks.SetMarkerStyle(20)
+    #chipeaks.SetMarkerStyle(20)
         
-    ccc.Add(chiS)
-    ccc.Add(chipeaks)
-    ccc.Draw("AP")
+   # ccc.Add(chiS)
+   # ccc.Add(chipeaks)
+   # ccc.Draw("AP")
     
-    setaxis(ccc,"s [cm]","Chi2/NDF")
+   # setaxis(ccc,"s [cm]","Chi2/NDF")
 
     # Xs = np.array([[rec['reco_X'][i],rec['true_X'][i]] for i in xrange(rec['reco_X'].size)])
     # Ys = np.array([[rec['reco_Y'][i],rec['true_Y'][i]] for i in xrange(rec['reco_Y'].size)])

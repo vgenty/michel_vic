@@ -274,7 +274,9 @@ namespace larlite {
       _matched_min_s = -1;
       return false;
     }
-    
+
+    std::cout << "matched max ind :" << matchpeaks.first<< std::endl;
+    std::cout << "matched min ind :" << matchpeaks.second<< std::endl;
     
     
     // do chi2 ana
@@ -423,7 +425,32 @@ namespace larlite {
 	}
       }
       //if(g4_trackid_v.size() == 0) return false;
-        
+
+      //ask dad about this??
+      if(g4_trackid_v.size() == 0) {
+	
+
+	_simch_michel_true_shower_E     = 0.0;
+      _simch_michel_false_shower_E    = 0.0;
+    
+      _simch_plane_true_shower_E      = 0.0;
+      _simch_plane_false_shower_E     = 0.0;
+      
+      _simch_ordered_true_shower_E    = 0.0;
+      _simch_ordered_false_shower_E   = 0.0;
+    
+      _simch_cluster_true_shower_E    = 0.0;
+      _simch_cluster_false_shower_E   = 0.0;
+
+      _large_frac_shower_hits_X.push_back({});
+      _large_frac_shower_hits_Y.push_back({});
+      
+      goto AWAY;
+      
+      }
+	
+      
+      
       event_hit* ev_hit = nullptr;
       auto const& ass_hit_v = storage->find_one_ass(evt_clusters->id(),ev_hit,evt_clusters->name());
     
@@ -457,10 +484,10 @@ namespace larlite {
     
       _simch_cluster_true_shower_E    = cluster_hits.first;
       _simch_cluster_false_shower_E   = cluster_hits.second;
-
       
     }
 
+  AWAY:
     std::map<Double_t,bool> wires;
 
     for(const auto& p : c._ordered_pts)
