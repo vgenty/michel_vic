@@ -36,7 +36,8 @@ namespace larlite {
     Michel2DAna(std::string cp, Bool_t signal) : 
       _output_tree     (nullptr),
       _cluster_producer(cp)
-    { _name="Michel2DAna"; 
+    { 
+      _name="Michel2DAna"; 
       _fout=0;
       _num_recod = 0;
       _nhits_cut = 0;

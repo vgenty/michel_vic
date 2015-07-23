@@ -211,6 +211,10 @@ namespace larlite {
     //do smooth differentiation
     int s = 3; // must be odd, currently has no setter
     for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
+    
+    // std::cout << "=======================\n";
+    // std::cout << "truncated_mean.size() : " << truncated_mean.size() << std::endl;
+    
 
     for(int i = s; i < truncated_mean.size() - s + 1; ++i) {
       std::vector<Double_t> f(truncated_mean.begin() + i - s,truncated_mean.begin() + i + s);
@@ -218,7 +222,9 @@ namespace larlite {
       truncated_dqds.push_back(r2d.smooth_derive(f,x,2*s+1));
     }
     
-    for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
+    for(int o = 0; o < s - 1; ++o) truncated_dqds.push_back(0.0);
+    // std::cout << "truncated_dqds.size() : " << truncated_dqds.size() << std::endl;
+    // std::cout << "=======================\n";
     c._t_dqds  = truncated_dqds;
 
 
@@ -487,6 +493,7 @@ namespace larlite {
     _michel_hits = c._michel._num_hits;
 
     if(_is_signal) {
+      std::cout << "ooooOOO00000OOOOooo you are looking at signal oooooOOOO0000OOOoooo\n";
       _reco_Q_o_mc_Q = _michel_E / _simch_plane_true_shower_E;
       _mcQ_frac = _simch_michel_true_shower_E/( _simch_plane_true_shower_E);
       _MeV_scale = _mcQ_frac * _true_michel_Det;
