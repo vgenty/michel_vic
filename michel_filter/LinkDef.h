@@ -15,6 +15,7 @@
 #pragma link C++ class RecoMethods+;
 #pragma link C++ class Reco2D+;
 #pragma link C++ class larlite::MichelFilter+;
+#pragma link C++ class larlite::RemoveMichel+;
 #pragma link C++ class larlite::Michel2DCosmics+;
 #pragma link C++ class Michel+;
 #pragma link C++ class Muon+;

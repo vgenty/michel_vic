@@ -21,9 +21,9 @@ my_proc.set_io_mode(fmwk.storage_manager.kREAD)
 my_proc.set_ana_output_file("output.root");
 my_proc.enable_filter(True)
 
-the_filter = fmwk.MichelFilter()
+the_filter = fmwk.RemoveMichel()
+#the_filter = fmwk.MichelFilter()
 the_ana    = fmwk.Michel2DAna("fuzzycluster");
-#the_filter = fmwk.RemoveMichel()
 
 #~~tune-able parameters, they have defaults...
 the_ana.set_min_merge_cluster_size(25)
@@ -33,9 +33,9 @@ the_ana.set_window_cutoff(0.25)
 the_ana.set_truncated_shave(3)
 the_ana.set_min_rad(10)
 
-the_ana.set_chi2_threshold(0); #min value to open window
-the_ana.set_chi2_rise(5);      #number sigma above baseline
-the_ana.set_chi2_fall(6);     #number sigma below baseline
+the_ana.set_chi2_threshold(0);  #min value to open window
+the_ana.set_chi2_rise(5);       #number sigma above baseline
+the_ana.set_chi2_fall(6);       #number sigma below baseline
 
 the_ana.set_tmean_threshold(0);
 the_ana.set_tmean_rise(10);       
@@ -53,10 +53,10 @@ the_ana.set_d_cutoff(20.0*0.3)      # cm ~~ 20*0.3
 
 my_proc.add_process(the_filter)
 my_proc.add_process(the_ana)
-
 my_proc.set_verbosity(fmwk.msg.kDEBUG)
 
 #~~Let's run it.
+#my_proc.run(0,45)
 my_proc.run()
 
 #~~Or process single event

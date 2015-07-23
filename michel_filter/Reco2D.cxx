@@ -480,14 +480,14 @@ void Reco2D::tag_muon(ClusterYPlane& c,
   //kas771
   std::vector<ahit> muon_hits;
   std::vector<double> distance;
-
+  
   muon_hits.reserve(c._ordered_pts.size());
   distance.reserve(c._ordered_pts.size());
    if (forward == true){
      for (int i = 0; i < c._ordered_pts.size();i++){
        if (i < idx){
 	 muon_hits.push_back(c._ahits[c._ordered_pts[i]]);
-	 distance.push_back(c._s[i]);
+	 distance.push_back(c._ds[i]);
        }
      }
      
@@ -497,7 +497,7 @@ void Reco2D::tag_muon(ClusterYPlane& c,
      for (int i = 0; i < c._ordered_pts.size();i++){
        if (i > idx){
 	 muon_hits.push_back(c._ahits[c._ordered_pts[i]]);
-	 distance.push_back(c._s[i]);
+	 distance.push_back(c._ds[i]);
        }
      }
    }
@@ -523,8 +523,7 @@ Double_t Reco2D::tag_michel(ClusterYPlane& c, //for now this DOES have 1 michel 
   
   std::vector<size_t>       michel_idxs;
   std::vector<larlite::hit> michel_hits;
-  std::cout << "ordered_pts . size() " << c._ordered_pts.size() << std::endl;
-  std::cout << "michel... idx... {";
+
   for(size_t i = 0; i < c._ordered_pts.size(); ++i) {
     if(forward)  {
       if(i >= idx) {
@@ -532,7 +531,6 @@ Double_t Reco2D::tag_michel(ClusterYPlane& c, //for now this DOES have 1 michel 
 
 	if(i < c._ordered_pts.size() - 1) radius += c._ds[i];
 	else radius += 0.3;
-	std::cout << " i " << c._ordered_pts[i] << " " ;
       }
     }
     else {
@@ -541,11 +539,10 @@ Double_t Reco2D::tag_michel(ClusterYPlane& c, //for now this DOES have 1 michel 
 	
 	if(i < c._ordered_pts.size() - 1) radius += c._ds[i];
 	else radius += 0.3;
-	std::cout << " i " << c._ordered_pts[i] << " " ;
       }
     }
   }
-  std::cout << " }\n";
+  //std::cout << " }\n";
   Double_t true_rad = radius;
   if(radius < _min_rad) radius = _min_rad;
   
