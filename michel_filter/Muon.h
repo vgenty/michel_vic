@@ -30,6 +30,8 @@ class Muon{
 public:
 
   /// Default constructor
+  Muon(){}
+  
   Muon(const std::vector<ahit> & h, std::vector<double> d ){
     _hits = h;
     _distance = d;

@@ -57,10 +57,10 @@ public:
   //for fitting TMinuit requires globally scoped bullshit why even bother
   //end TMINUIT
     
-  void do_chi(ClusterYPlane*& c,
+  void do_chi(ClusterYPlane& c,
 	      const Int_t window_size,
 	      size_t ref_index=0);
-  std::vector<int> chi_max_pos(const ClusterYPlane *c,const int num_maxs);
+  std::vector<int> chi_max_pos(const ClusterYPlane& c,const int num_maxs);
   
   Double_t coeff(Double_t k, Double_t N);
   unsigned int nCk( unsigned int n, unsigned int k );
@@ -91,13 +91,13 @@ public:
 
 
   size_t find_min(const std::vector<Double_t>& data);
-  void tag_michel(ClusterYPlane*& c, //for now this DOES have 1 michel b/c of filter
+  Double_t tag_michel(ClusterYPlane& c, //for now this DOES have 1 michel b/c of filter
 		  size_t idx,      // of chosen in michel in orderd_pts
 		  bool forward,    //higher/lower in orderedpts
 		  const larlite::event_hit *evt_hits,  //all the hits
 		  Double_t _min_rad);
 
-  void tag_muon(ClusterYPlane*& c, //for now this DOES have 1 michel b/c of filter
+  void tag_muon(ClusterYPlane& c, //for now this DOES have 1 michel b/c of filter
 		  size_t idx,      // of chosen in michel in orderd_pts
 		  bool forward,    //higher/lower in orderedpts
 		  const larlite::event_hit *evt_hits); //all the hits
@@ -110,13 +110,17 @@ public:
   inline Double_t distance(const larlite::hit& a, const larlite::hit& b);
   
     
-  std::vector<int> find_max_pos(const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
-  std::vector<int> Reconstruct( const std::vector<Double_t>& data, bool forward, int window, float cutoff, float rise_edge, float fall_edge, float threshold);
-
+  std::vector<int> find_max_pos(const std::vector<Double_t>& data, float rise_edge, float fall_edge, float threshold,float ped_mean, float ped_rms);
+  std::vector<int> find_min_pos(const std::vector<Double_t>& data, float rise_edge, float fall_edge, float threshold,  float ped_mean, float ped_rms);
+  
+  std::vector<int> Reconstruct_Maxes(const std::vector<Double_t>& data, float rise_edge, float fall_edge, float threshold, float ped_mean, float ped_rms);
+  std::vector<int> Reconstruct_Mins (const std::vector<Double_t>& data, float rise_edge, float fall_edge, float threshold, float ped_mean, float ped_rms);
+  
   std::pair<float,float> PedEstimate(const std::vector<Double_t>& data, bool start, int window, float cutoff);
   std::pair<float,float> getrms (const std::vector<Double_t>& data, int k, int m, int window);
   
-  int find_peak(const std::vector<Double_t>& data, int istart, int iend);
+  int find_max_peak(const std::vector<Double_t>& data, int istart, int iend);
+  int find_min_peak(const std::vector<Double_t>& data, int istart, int iend);
   
   
 

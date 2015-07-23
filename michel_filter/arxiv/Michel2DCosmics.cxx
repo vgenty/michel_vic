@@ -202,11 +202,11 @@ namespace larlite {
 	for( b = 0; b < _clusters.size(); ++b) {
 	  // std::cout << "b " << b << " ";
 	  //	  if(itr1 != itr2 && (*itr1)->touching(*itr2) ) {
-	  if(a != b && (_clusters[a])->touching(_clusters[b]) ) {
+	  if(a != b && (_clusters[a]).touching(_clusters[b]) ) {
 	    //std::cout << "\nc\n ";
 	    //std::cout << "Found two touchers \n";
-	    auto bb = *_clusters[a] + _clusters[b]; //real object, how do I put this in a reference of pointers??
-	    _clusters.push_back(new ClusterYPlane(bb)); //wow
+	    auto bb = _clusters[a] + _clusters[b]; //real object, how do I put this in a reference of pointers??
+	    _clusters.push_back(ClusterYPlane(bb)); //wow
 	    goto baka; //ouch
 	  }
 	}

@@ -40,6 +40,8 @@ class ClusterYPlane{
 
 public:
 
+  ClusterYPlane(){}
+  
   /// ctors
   
   ClusterYPlane(const std::vector<larlite::hit>&     in_hits,
@@ -87,11 +89,11 @@ public:
   std::vector<Double_t>  _t_dqds;
 
   //Michel
-  Michel *_michel;
-  Muon * _muon;
+  Michel _michel;
+  Muon _muon;
   
   //Operator methods
-  ClusterYPlane operator+(const ClusterYPlane* other);
+  ClusterYPlane operator+(const ClusterYPlane& other);
   
   //Usual methods
   void order_points();
@@ -104,7 +106,7 @@ public:
   std::vector<HitIdx_t> do_ordering(const size_t start_idx);
 
   bool near(const TVector2& a, const TVector2& b);
-  bool touching(const ClusterYPlane* other);
+  bool touching(const ClusterYPlane& other);
 
   int match(const TVector2& michel_loc);
   size_t find_closest_hit(const TVector2& point);
@@ -119,11 +121,7 @@ public:
   };
   
   
-  inline void set_start_end() {
-    _start = _ahits[_ordered_pts.front()];
-    _end   = _ahits[_ordered_pts.back() ];
-  }
-  
+  void set_start_end();
 };
 
 #endif

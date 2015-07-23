@@ -5,9 +5,10 @@
 #include <iomanip>
 
 namespace larlite {
- 
+  
   bool Michel2DAna::initialize() {
-    
+  
+
     _wire2cm   = ::larutil::GeometryUtilities::GetME() ->WireToCm();
     _time2cm   = ::larutil::GeometryUtilities::GetME() ->TimeToCm();    
     _ne2ADC    = ::larutil::DetectorProperties::GetME()->ElectronsToADC();
@@ -30,14 +31,32 @@ namespace larlite {
     _output_tree->Branch("mean_charges", "std::vector<Double_t>" , &_mean_charges_copy);
     _output_tree->Branch("dqds"        , "std::vector<Double_t>" , &_dqds_copy);
     _output_tree->Branch("s"           , "std::vector<Double_t>" , &_s_copy);
-    _output_tree->Branch("_chi2_copy"  , "std::vector<Double_t>" , &_chi2_copy);    
+    //  _output_tree->Branch("_chi2_copy"  , "std::vector<Double_t>" , &_chi2_copy);    
     
+    _output_tree->Branch("_has_michel"  ,  &_has_michel     , "_has_michel/O");
+    _output_tree->Branch("_tru_id"  ,  &_tru_id     , "_tru_id/O");
+    _output_tree->Branch("_mis_id"  ,  &_mis_id     , "_mis_id/O");
+    _output_tree->Branch("_biggest_was_muon"  ,  &_biggest_was_muon     , "_biggest_was_muon/O");
+
+
+    _output_tree->Branch("_michel_hits" ,  &_michel_hits    , "_michel_hits/I");
+
     _output_tree->Branch("_michel_E"      , &_michel_E      , "_michel_E/D");
     _output_tree->Branch("_michel_L"      , &_michel_L      , "_michel_L/D");
     _output_tree->Branch("d_michel_hit"   , &_d_m_h         , "d_michel_hit/D");
     _output_tree->Branch("_true_michel_E" , &_true_michel_E , "_true_michel_E/D");
     _output_tree->Branch("_reco_Q_o_mc_Q" , &_reco_Q_o_mc_Q , "_reco_Q_o_mc_Q/D");
-    
+
+
+    //output_tree->Branch("_true_michel_E" , &_true_michel_E , "_true_michel_E/D");
+    //output_tree->Branch("_reco_Q_o_mc_Q" , &_reco_Q_o_mc_Q , "_reco_Q_o_mc_Q/D");
+
+    _output_tree->Branch("_small_cluster_nHits" , &_small_cluster_nHits, "_small_cluster_nHits/I");
+    _output_tree->Branch("_small_cluster_L" , &_small_cluster_L , "_small_cluster_L/D");
+
+    _output_tree->Branch("_big_cluster_nHits" , &_big_cluster_nHits, "_big_cluster_nHits/I");
+    _output_tree->Branch("_big_cluster_L" ,    &_big_cluster_L , "_big_cluster_L/D");
+
     
     _output_tree->Branch("_mcQ_frac", &_mcQ_frac, "_mcQ_frac/D");
 
@@ -67,11 +86,26 @@ namespace larlite {
     _output_tree->Branch("_ALL_hits_p2_X", "std::vector<Double_t>" , &_ALL_hits_p2_X);
     _output_tree->Branch("_ALL_hits_p2_Y", "std::vector<Double_t>" , &_ALL_hits_p2_Y);
 
-    _output_tree->Branch("_the_chi_max_peak",    "std::vector<int>", &_the_chi_max_peak);
-    _output_tree->Branch("_num_chi_max_peaks",   &_num_chi_max_peaks, "_num_chi_max_peaks/I");
+    // _output_tree->Branch("_the_chi_max_peak",    "std::vector<int>", &_the_chi_max_peak);
+    //   _output_tree->Branch("_num_chi_max_peaks",   &_num_chi_max_peaks, "_num_chi_max_peaks/I");
 
     _output_tree->Branch("_the_tmean_max_peak", "std::vector<int>", &_the_tmean_max_peak);
     _output_tree->Branch("_num_tmean_max_peaks", &_num_tmean_max_peaks, "_num_tmean_max_peaks/I");
+    
+    _output_tree->Branch("_the_tdqds_min_peak", "std::vector<int>", &_the_tdqds_min_peak);
+    _output_tree->Branch("_num_tdqds_min_peaks", &_num_tdqds_min_peaks, "_num_tdqds_min_peaks/I");
+    
+    _output_tree->Branch("_matched_max_s", &_matched_max_s, "_matched_max_s/D");
+    _output_tree->Branch("_matched_min_s", &_matched_min_s, "_matched_min_s/D");
+
+    _output_tree -> Branch( "_tmean_ped_mean",&_tmean_ped_mean, "_tmean_ped_mean/F");
+    _output_tree -> Branch( "_tmean_ped_rms",&_tmean_ped_rms, "_tmean_ped_rms/F");
+    _output_tree -> Branch( "_tdqds_ped_rms",&_tdqds_ped_rms, "_tdqds_ped_rms/F");
+    _output_tree -> Branch( "_tdqds_ped_mean",&_tdqds_ped_mean, "_tdqds_ped_mean/F");
+
+    _output_tree -> Branch( "_michel_L_true",&_michel_L_true, "_michel_L_true/D");
+    _output_tree -> Branch( "_min_hits_to_edge",&_min_hits_to_edge, "_min_hits_to_edge/I");
+
 
     return true;
     
@@ -79,101 +113,170 @@ namespace larlite {
   
   bool Michel2DAna::analyze(storage_manager* storage) {
 
+    //std::cout<<"\033[91m<<Entry "<<storage->get_index()<<">>\033[00m"<<std::endl;
+    
     TStopwatch fWatch;
     fWatch.Start();
     
     clear_all();
-    std::cout<<"\033[93m"<<Form("CP 1 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    //std::cout<<"\033[93m"<<Form("CP 1 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     fWatch.Start();
     
     //True
-    auto evt_mcshower = storage->get_data<event_mcshower>("mcreco");
-    auto evt_simch    = storage->get_data<event_simch>("largeant");
+    auto const evt_mcshower = storage->get_data<event_mcshower>("mcreco");
+    auto const evt_simch    = storage->get_data<event_simch>("largeant");
     if(!evt_simch || !(evt_simch->size())) {
       print(msg::kERROR,__FUNCTION__,"SimChannel data product not found!");
       return false;
     }
     //Reco
-    auto evt_hits     = storage->get_data<event_hit>    ("gaushit");
-    auto evt_clusters = storage->get_data<event_cluster>(_cluster_producer);
-    auto evt_ass_data = storage->get_data<event_ass>    (_cluster_producer);
+    auto const evt_hits     = storage->get_data<event_hit>    ("gaushit");
+    auto const evt_clusters = storage->get_data<event_cluster>(_cluster_producer);
+    auto const evt_ass_data = storage->get_data<event_ass>    (_cluster_producer);
 
-    std::cout<<"\033[93m"<<Form("CP 2 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    if(!evt_clusters || evt_clusters->empty()) return false;
+
+
+    for(auto const& mcs : *evt_mcshower)
+      if(mcs.MotherPdgCode() == 13 &&
+	 mcs.Process() == "muMinusCaptureAtRest")
+	_has_michel = true;
+    
+    
+    //std::cout<<"\033[93m"<<Form("CP 2 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     fWatch.Start();
     
     //Create ClusterYPlane objects, merge joining clusters
-    if(!convert_2d(evt_hits,
-		   evt_clusters,
-		   evt_ass_data)) return false;
+    if( !convert_2d(evt_hits,
+		    evt_clusters,
+		    evt_ass_data)) return false;
 
-    std::cout<<"\033[93m"<<Form("CP 3 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    //std::cout<<"\033[93m"<<Form("CP 3 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     fWatch.Start();
-    
+
     //lambda returns cluster with most number of ordered_pts
-    auto largest = [](const std::vector<ClusterYPlane*>& _cl)
+    if(_clusters.empty()) return false;
+    //this will change for cosmics, now we assume we only find large cluster
+    auto largest = [](const std::vector<ClusterYPlane>& _cl)
       {
 	size_t idx = 0; size_t size = 0; size_t ret = 0;
 	for(const auto& c : _cl) {
-	  if(c->_ordered_pts.size() > size) {
-	    ret = idx; size = c->_ordered_pts.size();
+	  if(c._ordered_pts.size() > size) {
+	    ret = idx; size = c._ordered_pts.size();
 	  }
 	  ++idx;
 	}
 	return ret;
       };
 
-    std::cout<<"\033[93m"<<Form("CP 4 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    auto& c = _clusters[largest(_clusters)];
+    if(c._ordered_pts.size() < _min_cluster_size) //only this cluster size accepted.
+      return false; 
+
+    //std::cout<<"\033[93m"<<Form("CP 4 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     fWatch.Start();
+
+    //Create truncated mean, and truncated dQds
     
     std::vector<Double_t> truncated_mean;
     std::vector<Double_t> truncated_dqds;
 
-    auto c = _clusters[largest(_clusters)];
-    
-    if(c->_ordered_pts.size() < _min_cluster_size) //only this cluster size accepted.
-      return false;
-    
+    double sum=0;
+    for(auto const& h : c._ahits)
+      sum += h.hit.Integral();
+    std::cout<<sum<<std::endl;
+
     //do truncated mean
     truncated_mean = r2d.windowed_means(_n_window_size,_window_cutoff,0,
-					 c->_ahits, c->_ordered_pts);
+					c._ahits, c._ordered_pts);
 
     std::cout<<"\033[93m"<<Form("CP 5 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+
     fWatch.Start();
-    
-    //cut off the bullshit on the edges of mean
     truncated_mean.erase(truncated_mean.begin(),
 			 truncated_mean.begin() + _truncated_shave);
-    
     truncated_mean.erase(truncated_mean.end() - _truncated_shave,
 			 truncated_mean.end());
-
+    //marker
     std::cout<<"\033[93m"<<Form("CP 6 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     fWatch.Start();
-
-    int s = 3; // must be odd, currently has no setter
-    
-    for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
     
     //do smooth differentiation
+    int s = 3; // must be odd, currently has no setter
+    for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
+
     for(int i = s; i < truncated_mean.size() - s + 1; ++i) {
       std::vector<Double_t> f(truncated_mean.begin() + i - s,truncated_mean.begin() + i + s);
-      std::vector<Double_t> x(c->_s.begin() + i - s + _truncated_shave,c->_s.begin() + i + s + _truncated_shave);
+      std::vector<Double_t> x(c._s.begin() + i - s + _truncated_shave,c._s.begin() + i + s + _truncated_shave);
       truncated_dqds.push_back(r2d.smooth_derive(f,x,2*s+1));
     }
     
     for(int o = 0; o < s; ++o) truncated_dqds.push_back(0.0);
+    c._t_means = truncated_mean;
+    c._t_dqds  = truncated_dqds;
+
+    auto tmean_ped = r2d.PedEstimate( c._t_means, true, 15, 1.0);
+    auto tdqds_ped = r2d.PedEstimate( c._t_dqds,  true, 15, 1.0);
+
+    float  tmean_ped_mean = tmean_ped.first;
+    float tmean_ped_rms = tmean_ped.second;
+    _tmean_ped_mean =  tmean_ped_mean;
+    _tmean_ped_rms =  tmean_ped_rms;
+
+    float  tdqds_ped_mean = tdqds_ped.first;
+    float  tdqds_ped_rms = tdqds_ped.second;
+    _tdqds_ped_mean =  tdqds_ped_mean;
+    _tdqds_ped_rms =  tdqds_ped_rms;
+
+    auto the_tmean_max_peaks = r2d.find_max_pos( c._t_means, _tmean_rise, _tmean_fall, _tmean_thresh,tmean_ped_mean, tmean_ped_rms);
+    auto the_tdqds_min_peaks = r2d.find_min_pos(c._t_dqds, _tdqds_rise, _tdqds_fall, _tdqds_thresh, tdqds_ped_mean, tdqds_ped_rms);
     
-    c->_t_means = truncated_mean;
-    c->_t_dqds  = truncated_dqds;
+    if(!the_tmean_max_peaks.size()) { std::cout << "Rejected no tmean peak\n"; return false; }
+    if(!the_tdqds_min_peaks.size()) { std::cout << "Rejected no tdqds dip\n";  return false; }
     
+    //compare the max peak in tmean to tdqds
+
+    auto matchpeaks =  find_match_peaks(c, the_tmean_max_peaks,the_tdqds_min_peaks, 20);
+
+
+    int tmean_max_ind =matchpeaks.first;
+    int min_to_edge = N_to_edge(c, tmean_max_ind);
+    _min_hits_to_edge = min_to_edge;
+    
+
+    std::cout <<"flag7"<< std::endl;
+
+    if (matchpeaks.first != -1 && matchpeaks.second != -1){
+      _matched_max_s = c._s[matchpeaks.first];
+      _matched_min_s = c._s[matchpeaks.second];
+    }
+
+    else {
+      _matched_max_s = -1;
+      _matched_min_s = -1;
+    }
+    
+
+    //Decide to do the reconstruction.........:-)
+    
+    
+    //do chi2 ana
+    // r2d.do_chi(c,15);
+    std::cout<<"\033[93m"<<Form("CP 8.4 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    fWatch.Start();
+    
+    // auto the_chi_max_peaks   = r2d.find_max_pos(c._chi2,    true, 15, 1.0,  _chi2_rise,  _chi2_fall,  _chi2_thresh);
     
     auto mean_michel_vtx = r2d.DetEVtx(truncated_mean,
-					truncated_dqds); //should return index of highest charge
+				       truncated_dqds); //should return index of highest charge
+
     std::cout << "number is: " << mean_michel_vtx.first << " \n";
+    
     if(mean_michel_vtx.first == 99999) return false;
-    auto real_michel_vtx = r2d.REALDetEVtx(c->_ahits,
-					    c->_ordered_pts,
-					    mean_michel_vtx.first);
+
+    auto real_michel_vtx = r2d.REALDetEVtx(c._ahits,
+					   c._ordered_pts,
+					   mean_michel_vtx.first);
     auto the_vtx = size_t{0}; //reco vtx
 
     std::cout<<"\033[93m"<<Form("CP 7 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
@@ -202,97 +305,121 @@ namespace larlite {
     fWatch.Start();
     
     // Get the closest reconstructed hit to the start of the mcshower
-    TVector2 proj_start;
-    if(!find_projected_start(proj_start,evt_mcshower)) //this actually updated proj_start pointer
-      return false;
+    // TVector2 proj_start;
+    // if(!find_projected_start(proj_start,evt_mcshower)) //this actually updated proj_start pointer
+    //   return false;
 
-    std::cout<<"\033[93m"<<Form("CP 8.1 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
+    // std::cout<<"\033[93m"<<Form("CP 8.1 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    // fWatch.Start();
     
-    auto real_michel = c->find_closest_hit(proj_start); //find closest hit to projection
+    //auto real_michel = c.find_closest_hit(proj_start); //find closest hit to projection
 
-    std::cout<<"\033[93m"<<Form("CP 8.2 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
+    // std::cout<<"\033[93m"<<Form("CP 8.2 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    // fWatch.Start();
     
-    auto thit = c->_ahits[c->_ordered_pts[the_vtx]];    //get hit of the reco vtx point
+    auto thit = c._ahits[c._ordered_pts[the_vtx]];    //get hit of the reco vtx point
 
-    std::cout<<"\033[93m"<<Form("CP 8.3 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
+    // std::cout<<"\033[93m"<<Form("CP 8.3 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    // fWatch.Start();
     
-    r2d.do_chi(c,15);
-    std::cout<<"\033[93m"<<Form("CP 8.4 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
+    Double_t true_rad = r2d.tag_michel(c,the_vtx,forward,evt_hits, _min_michel_rad);
+    _michel_L_true = true_rad;
 
-    r2d.tag_michel(c,the_vtx,forward,evt_hits, _min_michel_rad);
-
-    std::cout<<"\033[93m"<<Form("CP 8.5 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
+    // std::cout<<"\033[93m"<<Form("CP 8.5 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    // fWatch.Start();
 
     r2d.tag_muon(c,the_vtx,forward,evt_hits);
 
-    std::cout<<"\033[93m"<<Form("CP 8.6 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
+    // std::cout<<"\033[93m"<<Form("CP 8.6 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    // fWatch.Start();
     
-    auto j= r2d. chi_max_pos(c, 3);
-    _Q_u_p2 = c-> _muon-> _charge;
+    //auto j= r2d.chi_max_pos(c, 3);
+    
+    _Q_u_p2 = c. _muon. _charge;
 
     //double plane_charge
 
-    std::cout<<"\033[93m"<<Form("CP 9 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
-    fWatch.Start();
+    // std::cout<<"\033[93m"<<Form("CP 9 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
+    // fWatch.Start();
     
-    /////////COMPARE TO MC////////////////
-    
-    //From shower quality 
-    auto _mc_energy_min = 0;
-    auto _mc_energy_max = 65; // ?? MeV ??
-   
-    std::vector<std::vector<unsigned int> > g4_trackid_v;
-    std::vector<unsigned int> mc_index_v;
-    g4_trackid_v.reserve(evt_mcshower->size());
-    
-    for(size_t mc_index=0; mc_index<evt_mcshower->size(); ++mc_index) {
-	auto const& mcs = (*evt_mcshower)[mc_index];
-	
-      if(mcs.MotherPdgCode() == 13 &&
-	 mcs.Process() == "muMinusCaptureAtRest" &&
-	 mcs.DetProfile().E()/mcs.Start().E() > 0.95) {
-	
-	double energy = mcs.DetProfile().E();
-      
-	std::vector<unsigned int> id_v;
-	id_v.reserve(mcs.DaughterTrackID().size());
-      
-	if( _mc_energy_min < energy && energy < _mc_energy_max ) {
-	  for(auto const& id : mcs.DaughterTrackID()) {
-	    if(id == mcs.TrackID()) continue;
-	    id_v.push_back(id);
-	  }
-	  id_v.push_back(mcs.TrackID());
-	  g4_trackid_v.push_back(id_v);
-	  mc_index_v.push_back(mc_index);
-	}
-      
-      }
-    }
-    if(g4_trackid_v.size() == 0) return false;
-        
-    event_hit* ev_hit = nullptr;
-    auto const& ass_hit_v = storage->find_one_ass(evt_clusters->id(),ev_hit,evt_clusters->name());
-    
-    try { fBTAlg.BuildMap(g4_trackid_v, *evt_simch, *ev_hit, ass_hit_v); }
-    catch(larutil::LArUtilException) { return false; }
 
-    auto aho = fBTAlg.BTAlg();
+
+
+
+    ///ADD THE CUT RIGHT HERE !!!!!!
+    ///ADD THE CUT RIGHT HERE !!!!!!
+    ///ADD THE CUT RIGHT HERE !!!!!!
+    ///ADD THE CUT RIGHT HERE !!!!!!
+    ///ADD THE CUT RIGHT HERE !!!!!!
+
+    //aho
     
-    auto reco_michel_hits  = get_summed_mcshower_other(aho,c->_michel->_hits,1);
+    
+    // if(c._michel._num_hits <= _nhits_cut) {
+    //   return false;
+    // }
+
+
+    ///ADD THE CUT RIGHT HERE !!!!!!
+    ///ADD THE CUT RIGHT HERE !!!!!!
+    ///ADD THE CUT RIGHT HERE !!!!!!
+    ///ADD THE CUT RIGHT HERE !!!!!!
+    ///ADD THE CUT RIGHT HERE !!!!!!
+
+    
+    
+    // /////////COMPARE TO MC////////////////
+    
+    // //From shower quality 
+    // auto _mc_energy_min = 0;
+    // auto _mc_energy_max = 65; // ?? MeV ??
+   
+    // std::vector<std::vector<unsigned int> > g4_trackid_v;
+    // std::vector<unsigned int> mc_index_v;
+    // g4_trackid_v.reserve(evt_mcshower->size());
+    
+    // for(size_t mc_index=0; mc_index<evt_mcshower->size(); ++mc_index) {
+    // 	auto const& mcs = (*evt_mcshower)[mc_index];
+	
+    //   if(mcs.MotherPdgCode() == 13 &&
+    // 	 mcs.Process() == "muMinusCaptureAtRest" &&
+    // 	 mcs.DetProfile().E()/mcs.Start().E() > 0.95) {
+	
+    // 	double energy = mcs.DetProfile().E();
+      
+    // 	std::vector<unsigned int> id_v;
+    // 	id_v.reserve(mcs.DaughterTrackID().size());
+      
+    // 	if( _mc_energy_min < energy && energy < _mc_energy_max ) {
+    // 	  for(auto const& id : mcs.DaughterTrackID()) {
+    // 	    if(id == mcs.TrackID()) continue;
+    // 	    id_v.push_back(id);
+    // 	  }
+    // 	  id_v.push_back(mcs.TrackID());
+    // 	  g4_trackid_v.push_back(id_v);
+    // 	  mc_index_v.push_back(mc_index);
+    // 	}
+      
+    //   }
+    // }
+    // if(g4_trackid_v.size() == 0) return false;
+        
+    // event_hit* ev_hit = nullptr;
+    // auto const& ass_hit_v = storage->find_one_ass(evt_clusters->id(),ev_hit,evt_clusters->name());
+    
+    // try { fBTAlg.BuildMap(g4_trackid_v, *evt_simch, *ev_hit, ass_hit_v); }
+    // catch(larutil::LArUtilException) { return false; }
+    
+    // auto aho = fBTAlg.BTAlg();
+    
+    // auto reco_michel_hits  = get_summed_mcshower_other(aho,c._michel->_hits,1);
     
     std::map<Double_t,bool> wires;
 
-    for(const auto& p : c->_ordered_pts)
-      wires[c->_ahits[p].vec.X()] = true;
+    for(const auto& p : c._ordered_pts)
+      wires[c._ahits[p].vec.X()] = true;
     
-    _num_hits = c->_ordered_pts.size();
+    _num_hits = c._ordered_pts.size();
     _num_wires = wires.size();
      
     _num_hits_p_wire = _num_hits/_num_wires;;
@@ -311,29 +438,29 @@ namespace larlite {
     
     _Q_tot_p2 = plane_charge;
     
-    auto all_hits = get_summed_mcshower_other(aho,plane2hits,1);
+    // auto all_hits = get_summed_mcshower_other(aho,plane2hits,1);
     
-    std::vector<larlite::hit> ordered_cluster_hits;
-    for(const auto& idx : c->_ordered_pts)
-      ordered_cluster_hits.push_back(c->_ahits[idx].hit);
-    auto ordered_hits = get_summed_mcshower_other(aho,ordered_cluster_hits,0);
+    // std::vector<larlite::hit> ordered_cluster_hits;
+    // for(const auto& idx : c._ordered_pts)
+    //   ordered_cluster_hits.push_back(c._ahits[idx].hit);
+    // auto ordered_hits = get_summed_mcshower_other(aho,ordered_cluster_hits,0);
     
-    std::vector<larlite::hit> all_cluster_hits;
-    for(const auto& h : c->_ahits)
-      all_cluster_hits.push_back(h.hit);
-    auto cluster_hits = get_summed_mcshower_other(aho,all_cluster_hits,0);
+    // std::vector<larlite::hit> all_cluster_hits;
+    // for(const auto& h : c._ahits)
+    //   all_cluster_hits.push_back(h.hit);
+    // auto cluster_hits = get_summed_mcshower_other(aho,all_cluster_hits,0);
     
-    _simch_michel_true_shower_E     = reco_michel_hits.first;
-    _simch_michel_false_shower_E    = reco_michel_hits.second;
+    // _simch_michel_true_shower_E     = reco_michel_hits.first;
+    // _simch_michel_false_shower_E    = reco_michel_hits.second;
     
-    _simch_plane_true_shower_E      = all_hits.first;
-    _simch_plane_false_shower_E     = all_hits.second;
+    // _simch_plane_true_shower_E      = all_hits.first;
+    // _simch_plane_false_shower_E     = all_hits.second;
     
-    _simch_ordered_true_shower_E    = ordered_hits.first;
-    _simch_ordered_false_shower_E   = ordered_hits.second;
+    // _simch_ordered_true_shower_E    = ordered_hits.first;
+    // _simch_ordered_false_shower_E   = ordered_hits.second;
     
-    _simch_cluster_true_shower_E    = cluster_hits.first;
-    _simch_cluster_false_shower_E   = cluster_hits.second;
+    // _simch_cluster_true_shower_E    = cluster_hits.first;
+    // _simch_cluster_false_shower_E   = cluster_hits.second;
 
     std::cout<<"\033[93m"<<Form("CP 10 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     fWatch.Start();
@@ -342,50 +469,84 @@ namespace larlite {
     ////////////WRITE OUT TO TTREE////////////
     /////////////////////////////////////////
     
-    _tX = c->_ahits[c->_ordered_pts[real_michel]].vec.X();
-    _tY = c->_ahits[c->_ordered_pts[real_michel]].vec.Y();
-    _rX = c->_ahits[c->_ordered_pts[the_vtx]].vec.X();
-    _rY = c->_ahits[c->_ordered_pts[the_vtx]].vec.Y();
+    // _tX = c._ahits[c._ordered_pts[real_michel]].vec.X();
+    // _tY = c._ahits[c._ordered_pts[real_michel]].vec.Y();
+    _rX = c._ahits[c._ordered_pts[the_vtx]].vec.X();
+    _rY = c._ahits[c._ordered_pts[the_vtx]].vec.Y();
 
-    for(const auto& hit : c->_ahits) {
+    for(const auto& hit : c._ahits) {
       _ahits_X_copy.push_back(hit.vec.X());
       _ahits_Y_copy.push_back(hit.vec.Y());
       _charges_copy.push_back(hit.hit.Integral());
     }
     
-    for(const auto& pts : c->_ordered_pts)
+    for(const auto& pts : c._ordered_pts)
       _ordered_pts_copy.push_back(pts);
     
     _mean_charges_copy = truncated_mean;
     _dqds_copy         = truncated_dqds;
-    _s_copy            = c->_s;
+    _s_copy            = c._s;
 
-    _startX = c->_start.vec.X();
-    _startY = c->_start.vec.Y();
-    _endX = c->_end.vec.X();
-    _endY = c->_end.vec.Y();
+    _startX = c._start.vec.X();
+    _startY = c._start.vec.Y();
+    _endX = c._end.vec.X();
+    _endY = c._end.vec.Y();
     
-    _d_m_h = c->_michel_dist;
-    _michel_E = c->_michel->_charge;
-    _michel_L = c->_michel->_length;
-    
+    _d_m_h = c._michel_dist;
+    _michel_E    = c._michel._charge;
+    _michel_L    = c._michel._length;
+    _michel_hits = c._michel._num_hits;
+
     _reco_Q_o_mc_Q = 0.0;
-    _reco_Q_o_mc_Q = _michel_E / _simch_plane_true_shower_E;
     
-    _mcQ_frac = _simch_michel_true_shower_E/( _simch_plane_true_shower_E);
-    _MeV_scale = _mcQ_frac * _true_michel_Det;
+    //_reco_Q_o_mc_Q = _michel_E / _simch_plane_true_shower_E;
     
-    auto the_chi_max_peaks   = r2d.find_max_pos(c->_chi2,    forward, 10, 0.5, _rise, _fall, _thresh);
-    auto the_tmean_max_peaks = r2d.find_max_pos(c->_t_means, forward, 10, 0.5, _rise, _fall, 0);
+    //_mcQ_frac = _simch_michel_true_shower_E/( _simch_plane_true_shower_E);
+    //_MeV_scale = _mcQ_frac * _true_michel_Det;
     
-    printvec(the_chi_max_peaks);
+    //printvec(the_chi_max_peaks);
     
-    _the_chi_max_peak = the_chi_max_peaks;
-    _num_chi_max_peaks = the_chi_max_peaks.size();
+    //_the_chi_max_peak = the_chi_max_peaks;
+    // _num_chi_max_peaks = the_chi_max_peaks.size();
+
     _the_tmean_max_peak  = the_tmean_max_peaks;
     _num_tmean_max_peaks = the_tmean_max_peaks.size();
+
+    _the_tdqds_min_peak  = the_tdqds_min_peaks;
+    _num_tdqds_min_peaks = the_tdqds_min_peaks.size();
     
-    _chi2_copy = c->_chi2;
+    //if( _has_michel)   _tru_id = true;
+    //if(!_has_michel)   _mis_id = true;
+    
+    if(c._muon._length > c._michel._length) {
+      _small_cluster_nHits = c._michel._hits.size();
+      _small_cluster_L     = true_rad;
+      
+      _big_cluster_nHits = c._muon._hits.size();
+      _big_cluster_L     = c._muon._length;
+      
+      _biggest_was_muon = true;
+      
+    } else {
+      //michel bigger!!!
+      
+      _big_cluster_nHits = c._michel._hits.size();
+      _big_cluster_L     = true_rad;
+      
+      _small_cluster_nHits = c._muon._hits.size();
+      _small_cluster_L     = c._muon._length;
+      
+      _biggest_was_muon = false;
+    }
+    
+
+    
+    
+    
+
+    
+    
+    
     _output_tree->Fill();
     
     // don't delete these heap objects ever!!!!
@@ -393,7 +554,7 @@ namespace larlite {
     // delete evt_clusters;
     // delete evt_mcshower;
     // delete evt_ass_data;
-
+    
     
     //delete proj_start;
     
@@ -404,14 +565,19 @@ namespace larlite {
     _large_frac_shower_hits_Y.clear();
     _ALL_hits_p2_X.clear();
     _ALL_hits_p2_Y.clear();
- 
+
+
+    
+    _num_recod++;
     return true;
     
-}
+  }
   
   bool Michel2DAna::finalize() {
     _output_tree->Write();
-    
+
+    std::cout << "\n\n\n\n\\n\n..................hey............. _num_recod: " << _num_recod << " and nhits_cut: " << _nhits_cut << "    \n\n\n\n\n\n";
+
     return true;
   }
 
@@ -453,7 +619,7 @@ namespace larlite {
 	for(unsigned int i = 0; i < the_hits.size(); ++i)
 	  the_hits[i] = evt_hits->at(hit_indicies[i]);
 	
-	_clusters.push_back(new ClusterYPlane(the_hits,
+	_clusters.emplace_back( ClusterYPlane(the_hits,
 					      evt_clusters->at(out_cnt),
 					      _nearX,_nearY,
 					      _d_cutoff));
@@ -487,9 +653,9 @@ namespace larlite {
     while(1) {
       for( a = 0; a < _clusters.size(); ++a) {
 	for( b = 0; b < _clusters.size(); ++b) {
-	  if(a != b && (_clusters[a])->touching(_clusters[b]) ) {
-	    auto bb = *_clusters[a] + _clusters[b]; //real object, how do I put this in a reference of pointers??
-	    _clusters.push_back(new ClusterYPlane(bb)); //wow
+	  if(a != b && (_clusters[a]).touching(_clusters[b]) ) {
+	    auto bb = _clusters[a] + _clusters[b]; //real object, how do I put this in a reference of pointers??
+	    _clusters.push_back(ClusterYPlane(bb)); //wow
 	    goto baka; //ouch
 	  }
 	}
@@ -511,9 +677,10 @@ namespace larlite {
   }
   
   void Michel2DAna::clear_all() {
-    
-    for (std::vector<ClusterYPlane*>::iterator it = _clusters.begin() 
-	   ; it != _clusters.end(); ++it) { delete (*it); } 
+    /*
+      for (std::vector<ClusterYPlane*>::iterator it = _clusters.begin() 
+      ; it != _clusters.end(); ++it) { delete (*it); } 
+    */
     _clusters.clear();
     
     _ahits_X_copy.clear();
@@ -523,6 +690,12 @@ namespace larlite {
     _mean_charges_copy.clear();
     _dqds_copy.clear();
     _s_copy.clear();
+    
+    _has_michel = false;
+    _tru_id = false;
+    _mis_id = false;
+    _biggest_was_muon = false;
+
   }
 
   bool Michel2DAna::find_projected_start(TVector2& p, 
@@ -568,7 +741,7 @@ namespace larlite {
 
     
     //std::cout << "in get_summed... " << std::endl;
-    //for(size_t u = 0; u < c->_ordered_pts.size(); ++u) {
+    //for(size_t u = 0; u < c._ordered_pts.size(); ++u) {
     for(const auto& h : hits) {
       ::btutil::WireRange_t wire_hit(h.Channel(),h.StartTick(),h.EndTick());
       baka1 += aho.MCQ(wire_hit)[0]; // * _ne2ADC;
@@ -593,12 +766,12 @@ namespace larlite {
   bool Michel2DAna::determine_forward(bool& ddiirr, 
 				      size_t mean_michel_vtx,
 				      size_t real_michel_vtx,
-				      const ClusterYPlane* c) {
+				      const ClusterYPlane& c) {
     
     
     
     ddiirr
-      = (double)mean_michel_vtx > (double)(c->_ordered_pts.size()/2.0);
+      = (double)mean_michel_vtx > (double)(c._ordered_pts.size()/2.0);
     
     Double_t part1 = 0;
     Double_t part2 = 0;
@@ -606,16 +779,16 @@ namespace larlite {
     Double_t p1 = 0;
     Double_t p2 = 0;
     
-    for (size_t i = 0; i< c->_ordered_pts.size(); i++){
+    for (size_t i = 0; i< c._ordered_pts.size(); i++){
       if (i < real_michel_vtx)      p1++;
       else if (i > real_michel_vtx) p2++;
     }
     
-    for (size_t i = 0; i< c->_ordered_pts.size(); i++){
+    for (size_t i = 0; i< c._ordered_pts.size(); i++){
       if      (i < real_michel_vtx)
-	part1 += c->_ahits[c->_ordered_pts[i]].hit.Integral();
+	part1 += c._ahits[c._ordered_pts[i]].hit.Integral();
       else if (i > real_michel_vtx)
-	part2 += c->_ahits[c->_ordered_pts[i]].hit.Integral();    
+	part2 += c._ahits[c._ordered_pts[i]].hit.Integral();    
     }
     
     
@@ -664,9 +837,9 @@ namespace larlite {
       
       for (size_t i = real_michel_vtx - w_cutoff; i < real_michel_vtx + w_cutoff; i++){
     	if (i < real_michel_vtx)
-    	  part1 += c->_ahits[c->_ordered_pts[i]].hit.Integral();
+    	  part1 += c._ahits[c._ordered_pts[i]].hit.Integral();
     	else if (i > real_michel_vtx) 
-    	  part2 += c->_ahits[c->_ordered_pts[i]].hit.Integral();
+    	  part2 += c._ahits[c._ordered_pts[i]].hit.Integral();
 	
       }
       
@@ -695,11 +868,160 @@ namespace larlite {
     
     return true;
   }
-  
-  
-  
+
+  std::pair<int, int>  Michel2DAna::find_match_peaks(const ClusterYPlane& c, std::vector<int>& the_tmean_max_peaks,
+						     std::vector<int>& the_tdqds_min_peaks, int range){
+    // c._t_means
+    // c._t_dqds
+
+    std::pair<int,int> res(-1,-1);
+    
+    //the indices of tmean peaks that haven't already been checked
+    std::vector <int> checked_maxes_tmean;
+    for (int l = 0; l < the_tmean_max_peaks.size(); l++){
+      checked_maxes_tmean.push_back(the_tmean_max_peaks.at(l));
+    }
+
+    //the index/indices of matches in 
+    std::vector <int> index_in_tdqds;
+ 
+    int min = -1;
+    int max = -1;
+
+    
+    //for all of the remaining max peaks in tmean, in descending order
+    //while there are still maxes and no matched mins
+    while(checked_maxes_tmean.size() > 0 && index_in_tdqds.size() == 0){
+
+      diagnostic(min, max, checked_maxes_tmean);
+      
+      //find max tmean
+      max = 0;
+      if(checked_maxes_tmean.empty()) {
+	std::cout<<"\033[93m<<LOGIC ERROR>>\033[00m"<<std::endl;
+	throw std::exception();
+      }
+      if(checked_maxes_tmean.at(max) >= c._t_means.size()) {
+	std::cout<<"\033[93m<<LOGIC ERROR>>\033[00m"<<std::endl;
+	return res;
+      }
+      double max_tmean = c._t_means.at(checked_maxes_tmean.at(max));
+      diagnostic(min, max, checked_maxes_tmean);
+
+      /*
+      if (checked_maxes_tmean.size() == 2){
+	std::cout<<"flag1.1" << std::endl;
+        if (checked_maxes_tmean.at( c._t_means[1])> max_tmean){
+	    max_tmean= c._t_means[checked_maxes_tmean.at(1)];
+	    max = 1;
+	    }
+      }
+      */
+
+      if (checked_maxes_tmean.size() > 1){
+	std::cout<<"flag1.2" << std::endl;
+	for (int p = 1; p < checked_maxes_tmean.size(); p++){
+	  if(checked_maxes_tmean.at(p) >= c._t_means.size()) {
+	    std::cout<<"\033[93m<<LOGIC ERROR>>\033[00m"<<std::endl;
+	    return res;
+	  }
+	  if ( c._t_means.at(checked_maxes_tmean.at(p))> max_tmean){
+	    max_tmean= c._t_means.at(checked_maxes_tmean.at(p));
+	    max = p;
+	  }
+	}
+      }
+
+      diagnostic(min, max, checked_maxes_tmean);
+     
+      //compare with peaks in tdqds
+      for( int n = 0; n <  the_tdqds_min_peaks.size(); n++){
+	//if there's one with in range, match= true
+	if (the_tdqds_min_peaks.at(n) < the_tmean_max_peaks.at(max) + range &&
+	    the_tdqds_min_peaks.at(n) > the_tmean_max_peaks.at(max) - range ){
+	  index_in_tdqds.push_back(n);
+	}
+      }
+      
+      //if there are multiple, take the lowest tdqds
+      min=0;
+      if (index_in_tdqds.size() > 1){
+	std::cout <<"flag3.1"<< std::endl;
+	double min_tdqds = c._t_dqds.at(index_in_tdqds.at(min));
+	for (int p = 1; p < index_in_tdqds.size(); p++){
+	  if (c._t_dqds.at(index_in_tdqds.at(p))< min_tdqds){
+	    min_tdqds= c._t_dqds.at(index_in_tdqds.at(p));
+	    min = p;
+	  }
+	}
+      }
+    
+      //if there's one match
+      else if (index_in_tdqds.size() == 1){
+	std::cout <<"flag3.2"<< std::endl;
+	min = index_in_tdqds.at(0);
+      }
+      else {
+	std::cout <<"flag3.3"<< std::endl;
+	//update indices
+	min = -1;
+	max = -1;
+	//update vector
+	std::vector<int> tmp;
+	tmp.reserve(checked_maxes_tmean.size());
+	if( max >= checked_maxes_tmean.size()) {
+	  std::cout<<"\033[93m<<LOGIC ERROR>>\033[00m"<<std::endl;
+	  //throw std::exception();
+	  return res;
+	}
+	for(size_t i=0; i<max; ++i)
+	  tmp.push_back(checked_maxes_tmean.at(i));
+	checked_maxes_tmean = tmp;
+	//checked_maxes_tmean.erase(checked_maxes_tmean.begin() + max);
+      }
+
+      diagnostic(min, max, checked_maxes_tmean);
+      std::cout <<"flag5"<< std::endl;
+           
+    }
+
+    std::cout <<"flag6"<< std::endl;
+
+    //returns the index of the max and min in the tmean ordered vector, returns <-1,-1> if none found
+    if ( max != -1 && min != -1){
+      return std::make_pair(the_tmean_max_peaks.at(max), the_tdqds_min_peaks.at(min));
+      diagnostic(min, max, checked_maxes_tmean);
+    }
+
+    else{
+      return std::make_pair(max, min);
+      diagnostic(min, max, checked_maxes_tmean);
+    }
+  }
+
+
+void Michel2DAna::diagnostic(int min, int max, std::vector<int> v){
+  std::cout <<"the min is: " << min<< std::endl;
+  std::cout <<"the max is: " << max<< std::endl;
+  std::cout <<"the size of checked_maxes_tmean is : " << v.size() << std::endl;
 }
 
+
+int Michel2DAna:: N_to_edge(const ClusterYPlane& c, int tmean_max_ind){
+  int length = c._t_means.size();
+  int left = tmean_max_ind;
+  int right = length - tmean_max_ind-1;
+
+  if (left < right){
+    return left;
+  }
+
+  else{
+    return right;
+  }
+}
+
+}
 
 
 #endif

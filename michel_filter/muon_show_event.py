@@ -15,7 +15,7 @@ def graph(event):
 
     event = int(event)
     evt_num = event
-    f    = rr.TFile.Open("output.root","READ")
+    f    = rr.TFile.Open("output_muons_only.root","READ")
     tree = f.Get("out_tree")
 
     rec  = rn.tree2rec(tree)
@@ -31,7 +31,7 @@ def graph(event):
 
     tmg    = rr.TMultiGraph()
     tcc    = rr.TGraph()
-    ttrue  = rr.TGraph()
+    #ttrue  = rr.TGraph()
     treco  = rr.TGraph()
 
     ahits = np.array([[rec['ahits_X'][evt_num][i],rec['ahits_Y'][evt_num][i]] 
@@ -39,19 +39,19 @@ def graph(event):
 
     rn.fill_graph(tcc,ahits)
 
-    ttrue.SetPoint(0,Xs[evt_num][1],Ys[evt_num][1])
+    #ttrue.SetPoint(0,Xs[evt_num][1],Ys[evt_num][1])
     treco.SetPoint(0,Xs[evt_num][0],Ys[evt_num][0])
 
-    ttrue.SetMarkerStyle(34)
-    ttrue.SetMarkerSize(2)
-    ttrue.SetMarkerColor(30)
+    # ttrue.SetMarkerStyle(34)
+    # ttrue.SetMarkerSize(2)
+    # ttrue.SetMarkerColor(30)
 
     treco.SetMarkerStyle(23)
     treco.SetMarkerSize(2)
     treco.SetMarkerColor(40)
 
     tmg.Add(tcc)
-    tmg.Add(ttrue)
+    #tmg.Add(ttrue)
     tmg.Add(treco)
 
     tmg.Draw("AP")
@@ -158,20 +158,20 @@ def graph(event):
 
     zzz = np.array([[rec['_ALL_hits_p2_X'][evt_num][k],rec['_ALL_hits_p2_Y'][evt_num][k]] 
                     for k in xrange(len(rec['_ALL_hits_p2_X'][evt_num]))])
-    qqq = np.array([[rec['_large_frac_shower_hits_X'][evt_num][k],rec['_large_frac_shower_hits_Y'][evt_num][k]] 
-                    for k in xrange(len(rec['_large_frac_shower_hits_X'][evt_num]))])
+    # qqq = np.array([[rec['_large_frac_shower_hits_X'][evt_num][k],rec['_large_frac_shower_hits_Y'][evt_num][k]] 
+    #                 for k in xrange(len(rec['_large_frac_shower_hits_X'][evt_num]))])
     
     
     rn.fill_graph(allhits,zzz)
-    rn.fill_graph(shohits,qqq)
+    #rn.fill_graph(shohits,qqq)
     
-    shohits.SetMarkerColor(2)
+    #shohits.SetMarkerColor(2)
 
     allhits.SetMarkerStyle(20)
-    shohits.SetMarkerStyle(20)
+    #shohits.SetMarkerStyle(20)
     
     ppp.Add(allhits)
-    ppp.Add(shohits)
+    #ppp.Add(shohits)
 
     ppp.Draw("AP")
     setaxis(ppp,"Z","X")

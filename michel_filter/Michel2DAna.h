@@ -53,7 +53,11 @@ namespace larlite {
     Michel2DAna(std::string cp) : 
       _output_tree     (nullptr),
       _cluster_producer(cp)
-    { _name="Michel2DAna"; _fout=0;}
+    { _name="Michel2DAna"; 
+      _fout=0;
+      _num_recod = 0;
+      _nhits_cut = 0;
+    }
 
 
     /// Default destructor
@@ -76,19 +80,32 @@ namespace larlite {
     void set_near_X(const Double_t i)         { _nearX = i; }
     void set_near_Y(const Double_t i)         { _nearY = i; }
     void set_d_cutoff(const Double_t i)       { _d_cutoff = i;}
-    void set_rise(const Double_t i){_rise = i;}
-    void set_fall(const Double_t i){_fall = i;}
-    void set_threshold(const Double_t i){ _thresh = i;}
+
+    void set_chi2_rise(const Double_t i)     { _chi2_rise = i;}
+    void set_chi2_fall(const Double_t i)     { _chi2_fall = i;}
+    void set_chi2_threshold(const Double_t i){  _chi2_thresh = i;}
     
+    void set_tmean_rise(const Double_t i){_tmean_rise = i;}
+    void set_tmean_fall(const Double_t i ){_tmean_fall = i;}
+    void set_tmean_threshold(const Double_t i){ _tmean_thresh = i;}
+
+    void set_tdqds_rise(const Double_t i){_tdqds_rise = i;}
+    void set_tdqds_fall(const Double_t i){_tdqds_fall = i;}
+    void set_tdqds_threshold(const Double_t i){ _tdqds_thresh = i;}
     
+    void set_nhits_cut(Int_t i) { _nhits_cut = i; }
+
+    Int_t get_num_reco() { return _num_recod; }
 
   private:
    
-    
+    Int_t _nhits_cut;
+    Int_t _num_recod;
+
     Int_t win = 0;
     ::btutil::MCMatchAlg fBTAlg;
     
-    std::vector<ClusterYPlane*> _clusters; 
+    std::vector<ClusterYPlane> _clusters; 
     std::string _cluster_producer;
     
     
@@ -97,9 +114,17 @@ namespace larlite {
     Double_t _d_cutoff = 0;
     Int_t    _min_proto_cluster = 4;
 
-    Double_t  _rise = 5;
-    Double_t  _fall = 5;
-    Double_t  _thresh = 0;
+    Double_t  _chi2_rise = 5;
+    Double_t  _chi2_fall = 5;
+    Double_t  _chi2_thresh = 0;
+
+    Double_t  _tmean_rise = 5;
+    Double_t  _tmean_fall = 5;
+    Double_t  _tmean_thresh = 0;
+
+    Double_t  _tdqds_rise = 5;
+    Double_t  _tdqds_fall = 5;
+    Double_t  _tdqds_thresh = 0;
 
     //Variables going into tree...
     TTree *_output_tree;
@@ -108,7 +133,12 @@ namespace larlite {
     Double_t _tY;
     Double_t _rX;
     Double_t _rY;
+    
+    Bool_t _has_michel;
+    Bool_t _tru_id;
+    Bool_t _mis_id;
 
+    
     std::vector<Double_t> _ahits_X_copy;
     std::vector<Double_t> _ahits_Y_copy;
     std::vector<Double_t> _charges_copy;
@@ -117,7 +147,8 @@ namespace larlite {
     std::vector<Double_t> _dqds_copy;
     std::vector<Double_t> _s_copy;
     std::vector<Double_t> _chi2_copy;
-    
+
+    Int_t _michel_hits;
     
     //0715
     Double_t _num_hits;
@@ -155,13 +186,26 @@ namespace larlite {
 
     std::vector<int> _the_tmean_max_peak;
     int _num_tmean_max_peaks;
+    
+    std::vector<int> _the_tdqds_min_peak;
+    int _num_tdqds_min_peaks;
 
 
     Double_t _lifetime_correction;
+
+    Double_t _matched_max_s;
+    Double_t _matched_min_s;
+
+    float _tmean_ped_mean ;
+    float _tmean_ped_rms ;
+    
+    float _tdqds_ped_mean ;
+    float _tdqds_ped_rms ;
+    
     
     //simchannel
     
-    Double_t _simch_michel_true_shower_E     ;
+    Double_t _simch_michel_true_shower_E    ;
     Double_t _simch_michel_false_shower_E   ;
     
     Double_t _simch_plane_true_shower_E     ;
@@ -173,6 +217,10 @@ namespace larlite {
     Double_t _simch_cluster_true_shower_E   ;
     Double_t _simch_cluster_false_shower_E  ;
 
+    Double_t  _michel_L_true;
+    
+    int  _min_hits_to_edge;
+
     Int_t _evt = 0;
 
     //THE Reco object
@@ -182,7 +230,16 @@ namespace larlite {
     Double_t _time2cm;
     Double_t _wire2cm;
     Double_t _ne2ADC;
+
     
+    Int_t    _small_cluster_nHits;
+    Double_t _small_cluster_L;
+
+    Int_t    _big_cluster_nHits;
+    Double_t _big_cluster_L;
+    
+    Bool_t _biggest_was_muon;
+
     //Python setters with various variables
     int      _min_cluster_size = 25;
     int      _n_window_size    = 25;
@@ -194,14 +251,17 @@ namespace larlite {
     bool determine_forward(bool& ddiirr, 
 			   size_t mean_michel_vtx,
 			   size_t real_michel_vtx,
-			   const ClusterYPlane* c);
-   
-    
+			   const ClusterYPlane& c);
+
+     std::pair<int, int> find_match_peaks(const ClusterYPlane& c, std::vector<int>& the_tmean_max_peaks,
+					  std::vector<int>& the_tdqds_min_peaks, int range);
     
     
     //General Methods
 
     void printvec(std::vector<int> v);
+    
+    void diagnostic(int min, int max, std::vector<int> v);
       
     bool convert_2d(const event_hit     *evt_hits,
 		    const event_cluster *evt_clusters,
@@ -218,6 +278,9 @@ namespace larlite {
 							   bool plane2hits);
     
     void clear_all();
+
+    int  N_to_edge(const ClusterYPlane& c, int tmean_max_ind);
+
   };
 }
 #endif
