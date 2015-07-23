@@ -217,6 +217,7 @@ std::pair<size_t,size_t> Reco2D::DetEVtx(const std::vector<Double_t>& q,
 					 const std::vector<Double_t>& dqds) {
   
   
+
   auto candidate_loc     = find_max(q);
   auto dqdscandidate_loc = find_min(dqds); 
   
@@ -607,7 +608,8 @@ std::vector<int> Reco2D::Reconstruct_Mins( const std::vector<Double_t>& data,
 
       while(1) {
 	if(t_end == data.size() - 1)
-	  break;
+	  goto END;
+	  //break;
 	  
 	if(data[t_end] >= (ped_mean + fall_edge * ped_rms) &&
 	   (data[t_end] >= threshold + ped_mean))
@@ -617,7 +619,7 @@ std::vector<int> Reco2D::Reconstruct_Mins( const std::vector<Double_t>& data,
       }
 	
       result.push_back(find_min_peak(data, t, t_end));	
-	
+    END:
       while(t < t_end) ++t; //secretly increases t...
 	
     }
@@ -651,17 +653,17 @@ std::vector<int> Reco2D::Reconstruct_Maxes( const std::vector<Double_t>& data,
 
 	while(1) {
 	  if(t_end == data.size() - 1)
-	    break;
+	    goto END;
 	  
-	  if(data[t_end] <= (ped_mean + fall_edge * ped_rms) &&
+	  if(data[t_end]  <= (ped_mean + fall_edge * ped_rms) &&
 	     (data[t_end] <= threshold + ped_mean))
 	    break;
 	  else 
 	    ++t_end;
 	}
-	
 	result.push_back(find_max_peak(data, t, t_end));	
 	
+      END:
 	while(t < t_end) ++t; //secretly increases t...
 	
       }

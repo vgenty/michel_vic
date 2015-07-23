@@ -262,7 +262,9 @@ namespace larlite {
     
     void clear_all();
     
-    int  N_to_edge(const ClusterYPlane& c, int tmean_max_ind);
+    int       N_to_edge(const ClusterYPlane& c, int tmean_max_ind);
+    Double_t get_avg(const std::vector<Double_t>& data,int istart, int iend);
+    
     
   };
 }

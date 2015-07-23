@@ -48,11 +48,11 @@ namespace larlite {
     _output_tree->Branch("_true_michel_E" , &_true_michel_E , "_true_michel_E/D");
     _output_tree->Branch("_reco_Q_o_mc_Q" , &_reco_Q_o_mc_Q , "_reco_Q_o_mc_Q/D");
 
-     _output_tree->Branch("_small_cluster_nHits" , &_small_cluster_nHits, "_small_cluster_nHits/I");
-    _output_tree->Branch("_small_cluster_L"     , &_small_cluster_L,     "_small_cluster_L/D");
+     _output_tree->Branch("_small_cluster_nHits", &_small_cluster_nHits, "_small_cluster_nHits/I");
+    _output_tree->Branch("_small_cluster_L",      &_small_cluster_L,     "_small_cluster_L/D");
 
-    _output_tree->Branch("_big_cluster_nHits", &_big_cluster_nHits, "_big_cluster_nHits/I");
-    _output_tree->Branch("_big_cluster_L",     &_big_cluster_L,     "_big_cluster_L/D");
+    _output_tree->Branch("_big_cluster_nHits",    &_big_cluster_nHits, "_big_cluster_nHits/I");
+    _output_tree->Branch("_big_cluster_L",        &_big_cluster_L,     "_big_cluster_L/D");
 
     
     _output_tree->Branch("_mcQ_frac", &_mcQ_frac, "_mcQ_frac/D");
@@ -194,12 +194,21 @@ namespace larlite {
     c._t_means = truncated_mean;
     auto tmean_ped = r2d.PedEstimate( c._t_means, true, 15, 1.0);
     
-    for(int i = 0; i < _truncated_shave; ++i)
-      truncated_mean.at(i) = tmean_ped.first;
-    for(int i = truncated_mean.size() - 1; 
-	i <= truncated_mean.size() - _truncated_shave; 
-	--i)
-      truncated_mean.at(i) = tmean_ped.first;
+    auto first_couple_average = get_avg(truncated_mean,0,_truncated_shave);
+    
+    for(int i = 0; i < _truncated_shave; ++i) 
+      truncated_mean.at(i) = first_couple_average;
+    
+    
+    auto last_couple_average = get_avg(truncated_mean,
+				       truncated_mean.size() - _truncated_shave - 1,
+				       truncated_mean.size() - 1);
+
+    for(int i = truncated_mean.size() - _truncated_shave - 1;
+	i < truncated_mean.size();
+	++i)
+      truncated_mean.at(i) = last_couple_average;
+    
     
     // truncated_mean.erase(truncated_mean.begin(),
     // 			 truncated_mean.begin() + _truncated_shave);
@@ -275,13 +284,18 @@ namespace larlite {
     
     // auto the_chi_max_peaks   = r2d.find_max_pos(c._chi2,    true, 15, 1.0,  _chi2_rise,  _chi2_fall,  _chi2_thresh);
     
-    auto mean_michel_vtx = r2d.DetEVtx(truncated_mean,
-				       truncated_dqds); //should return index of highest charge
-    if(mean_michel_vtx.first == 99999) return false;
+    // auto mean_michel_vtx = r2d.DetEVtx(truncated_mean,
+    // 				       truncated_dqds); //should return index of highest charge
+    // if(mean_michel_vtx.first == 99999) return false;
     
+    // auto real_michel_vtx = r2d.REALDetEVtx(c._ahits,
+    // 					   c._ordered_pts,
+    // 					   mean_michel_vtx.first);
     auto real_michel_vtx = r2d.REALDetEVtx(c._ahits,
-					   c._ordered_pts,
-					   mean_michel_vtx.first);
+    					   c._ordered_pts,
+    					   matchpeaks.first);
+    
+    
     auto the_vtx = size_t{0}; //reco vtx
 
     // std::cout<<"\033[93m"<<Form("CP 7 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
@@ -289,9 +303,15 @@ namespace larlite {
     
     bool forward;
     bool ddiirr;
-    if(!determine_forward(ddiirr,mean_michel_vtx.first,
-			  real_michel_vtx, c))
+    // if(!determine_forward(ddiirr,mean_michel_vtx.first,
+    // 			  real_michel_vtx, c))
+    //   return false;
+
+    if(!determine_forward(ddiirr,matchpeaks.first,
+    			  real_michel_vtx, c))
       return false;
+
+
     
     if(ddiirr) {
       the_vtx = real_michel_vtx + 1;
@@ -341,11 +361,9 @@ namespace larlite {
     // std::cout<<"\033[93m"<<Form("CP 8.3 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     // fWatch.Start();
     
-
     // std::cout<<"\033[93m"<<Form("CP 8.5 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     // fWatch.Start();
-
-
+    
     // std::cout<<"\033[93m"<<Form("CP 8.6 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     // fWatch.Start();
     
@@ -353,11 +371,10 @@ namespace larlite {
     
     _Q_u_p2 = c. _muon. _charge;
 
-
     // std::cout<<"\033[93m"<<Form("CP 9 %g",fWatch.RealTime())<<"\033[00m"<<std::endl;
     // fWatch.Start();
     
-    // /////////COMPARE TO MC////////////////
+    ////////////COMPARE~TO~MC//////////////////
 
     double plane_charge = 0.0;
     std::vector<larlite::hit> plane2hits;
@@ -976,7 +993,7 @@ void Michel2DAna::diagnostic(int min, int max, std::vector<int> v){
   std::cout <<"the max is: " << max<< std::endl;
   std::cout <<"the size of checked_maxes_tmean is : " << v.size() << std::endl;
 }
-
+  
 
 int Michel2DAna:: N_to_edge(const ClusterYPlane& c, int tmean_max_ind){
   int length = c._t_means.size();
@@ -991,7 +1008,19 @@ int Michel2DAna:: N_to_edge(const ClusterYPlane& c, int tmean_max_ind){
     return right;
   }
 }
-
+  
+  Double_t Michel2DAna::get_avg(const std::vector<Double_t>& data,int istart, int iend) {
+    auto k = double{0.0};
+    auto b = double{0.0};
+    while(istart < iend){
+      k += data[istart];
+      b +=1.0;
+      istart++;
+    }
+    
+    return k/b;
+  }
+  
 }
 
 
